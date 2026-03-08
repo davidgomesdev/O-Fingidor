@@ -1,17 +1,20 @@
 name: pessoa-faladora
 services:
   db:
-    image: pgvector/pgvector:pg17 # PostgreSQL with pgvector support
+    image: qdrant/qdrant:v1.17
     container_name: db
-    environment:
-      POSTGRES_USER: ricardo-reis
-      POSTGRES_PASSWORD: isThisNotAVerySecurePassword
-      POSTGRES_DB: pessoa_faladora
+    restart: on-failure:3
     ports:
-      - "15432:5432"
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    expose:
+      - 6333
+      - 6334
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/config.yaml
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./postgres/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - db:/qdrant/storage
 
   jaeger:
     image: jaegertracing/jaeger:latest
@@ -23,6 +26,15 @@ services:
       - "14318:4318"
     environment:
       COLLECTOR_JAEGER_ENABLED: "true"
+    restart: on-failure:3
 
 volumes:
-  pgdata:
+  db:
+
+configs:
+  qdrant_config:
+    # Since this accessible only locally, it's okay to hardcode the api key, right? RIGHT!?
+    content: |
+      log_level: INFO
+      service:
+        api_key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk

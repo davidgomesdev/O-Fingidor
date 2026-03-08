@@ -18,17 +18,19 @@ import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer
 import dev.langchain4j.rag.query.transformer.QueryTransformer
 import dev.langchain4j.store.embedding.EmbeddingStore
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor
+import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
-import io.quarkiverse.langchain4j.pgvector.PgVectorEmbeddingStore
+import io.qdrant.client.QdrantClient
+import io.qdrant.client.QdrantGrpcClient
+import io.qdrant.client.grpc.Collections.Distance
+import io.qdrant.client.grpc.Collections.VectorParams
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Named
 import jakarta.inject.Singleton
-import jakarta.transaction.Transactional
 import kotlinx.serialization.json.Json
-import me.davidgomesdev.db.EmbeddingRepository
 import me.davidgomesdev.llm.config.RAGConfig
 import me.davidgomesdev.observability.attributes
 import me.davidgomesdev.source.PessoaCategory
@@ -41,23 +43,10 @@ import kotlin.time.measureTime
 // Livro do Desassossego
 const val PREVIEW_CATEGORY_ID = 33
 
-val EXPANDING_QUERY_TEMPLATE: PromptTemplate = PromptTemplate.from(
-    """
-    Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL de uma dada pergunta do utilizador.
-    Cada versão deve ser redigida de forma diferente, usando sinónimos ou estruturas de frase alternativas,
-    mas todas devem manter o significado original.
-    Estas versões serão usadas para recuperar documentos relevantes.
-    É muito importante fornecer cada versão da query em uma linha separada,
-    sem enumerações, hífens ou qualquer formatação adicional!
-    Pergunta do utilizador: {{query}}"
-    """.trimIndent()
-)
-
 typealias TextsByCategory = Map<Pair<Int, String>, List<PessoaText>>
 
 @ApplicationScoped
 class RAG(
-    val repository: EmbeddingRepository,
     @param:ConfigProperty(name = "preview-only", defaultValue = "false")
     val isPreviewOnly: Boolean,
     @param:ConfigProperty(name = "recreate.embeddings", defaultValue = "false")
@@ -103,13 +92,11 @@ class RAG(
             .build()
 
     @Singleton
-    @Transactional
     @Suppress("unused")
     fun contentRetriever(
         @Named("PessoaDocuments")
         documents: List<Document>,
         embeddingModel: EmbeddingModel,
-        @Named("PessoaTexts")
         embeddingStore: EmbeddingStore<TextSegment>,
     ): ContentRetriever {
         log.info("Preparing content retriever")
@@ -129,36 +116,35 @@ class RAG(
                 log.info("Running for preview ONLY")
             }
 
-            val ingestedDocumentsCount = repository.count()
-
-            span.addEvent("Found documents", attributes {
-                put("ingested_documents_count", ingestedDocumentsCount)
-            })
-
-            log.info("DB has $ingestedDocumentsCount embeddings")
-
-            if (ingestedDocumentsCount == 0L) {
+            if (recreateEmbeddings) {
                 log.info("Ingesting ${documents.size} documents")
 
-                span.addEvent("Ingesting documents", attributes {
-                    put("documents_count", documents.size.toLong())
-                })
+                val wholeTimeSpent = measureTime {
+                    documents
+                        .chunked(50)
+                        .forEach { chunk ->
+                            val chunkTimeSpent = measureTime {
+                                EmbeddingStoreIngestor.builder()
+                                    .documentSplitter(splitter)
+                                    .embeddingStore(embeddingStore)
+                                    .embeddingModel(embeddingModel)
+                                    .build()
+                                    .ingest(chunk)
+                            }
 
-                val timeSpent = measureTime {
-                    EmbeddingStoreIngestor.builder()
-                        .documentSplitter(splitter)
-                        .embeddingStore(embeddingStore)
-                        .embeddingModel(embeddingModel)
-                        .build()
-                        .ingest(documents)
+                            log.info("Ingested chunk (took $chunkTimeSpent)")
+                            span.addEvent("Ingested chunk", attributes {
+                                put("documents_count", chunk.size.toLong())
+                                put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
+                            })
+                        }
                 }
 
-                span.addEvent("Documents ingested", attributes {
+                log.info("Documents ingested (took $wholeTimeSpent)")
+                span.addEvent("Ingested all documents", attributes {
                     put("documents_count", documents.size.toLong())
-                    put("time_spent_ms", timeSpent.inWholeMilliseconds)
+                    put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
                 })
-
-                log.info("Documents ingested (took $timeSpent)")
             }
 
             span.setStatus(StatusCode.OK)
@@ -183,30 +169,51 @@ class RAG(
             return DefaultQueryTransformer()
         }
 
-        return ExpandingQueryTransformer(chatModel, EXPANDING_QUERY_TEMPLATE)
+        return ExpandingQueryTransformer(chatModel, PromptTemplate.from(config.expandingQueryTemplate()))
     }
 
-    @Named("PessoaTexts")
     @Singleton
-    @Transactional
     @Suppress("unused")
     fun embeddingStore(embeddingModel: EmbeddingModel): EmbeddingStore<TextSegment> {
         log.info("Creating Embedding store")
 
-        val table = if (isPreviewOnly) "embeddings_preview" else "embeddings"
-        val embeddingStore: EmbeddingStore<TextSegment> = PgVectorEmbeddingStore.builder()
-            .host("127.0.0.1")
-            .port(15432)
-            .database("pessoa_faladora")
-            .user("ricardo-reis")
-            .password("isThisNotAVerySecurePassword")
-            .table(table)
-            .dimension(embeddingModel.dimension())
+        val qdrantConfig = config.qdrant()
+        val baseName = qdrantConfig.collection().name()
+        val collectionName = if (isPreviewOnly) "${baseName}_preview" else baseName
+
+        QdrantClient(
+            QdrantGrpcClient.newBuilder(qdrantConfig.host(), 6334, false)
+                .withApiKey(qdrantConfig.apiKey())
+                .build()
+        ).use { client ->
+            val existingCollections: List<String> = client.listCollectionsAsync().get()
+
+            if (collectionName !in existingCollections) {
+                log.info("Collection '$collectionName' not found")
+
+                client.createCollectionAsync(
+                    collectionName,
+                    VectorParams.newBuilder()
+                        .setDistance(Distance.Cosine)
+                        .setSize(embeddingModel.dimension().toLong())
+                        .build()
+                ).get()
+
+                log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
+            } else {
+                log.info("Collection '$collectionName' already exists")
+            }
+        }
+
+        val embeddingStore = QdrantEmbeddingStore.builder()
+            .host(qdrantConfig.host())
+            .apiKey(qdrantConfig.apiKey())
+            .collectionName(collectionName)
             .build()
 
         if (recreateEmbeddings) {
             log.info("Recreating embeddings, deleting")
-            repository.deleteAll()
+            embeddingStore.clearStore()
         }
 
         return embeddingStore
