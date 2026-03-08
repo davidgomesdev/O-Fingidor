@@ -20,17 +20,6 @@ quarkus:
         temperature: 0.7
       embedding-model:
         model-id: qwen3-embedding:8b
-    pgvector:
-      dimension: 256
-  datasource:
-    username: ricardo-reis
-    password: isThisNotAVerySecurePassword
-    jdbc:
-      url: jdbc:postgresql://localhost:15432/pessoa_faladora
-  transaction-manager:
-    default-transaction-timeout: 1000s
-  hibernate-orm:
-    physical-naming-strategy: me.davidgomesdev.db.RepositoryNaming
   http:
     host: 0.0.0.0
     static-dir:
@@ -44,6 +33,19 @@ quarkus:
 rag:
   max-results: 6
   min-score: 0.75
+  expanding-query-template: |
+    Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL de uma dada pergunta do utilizador.
+    Cada versão deve ser redigida de forma diferente, usando sinónimos ou estruturas de frase alternativas,
+    mas todas devem manter o significado original.
+    Estas versões serão usadas para recuperar documentos relevantes.
+    É muito importante fornecer cada versão da query em uma linha separada,
+    sem enumerações, hífens ou qualquer formatação adicional!
+    Pergunta do utilizador: {{query}}"
+  qdrant:
+    host: 127.0.0.1
+    api-key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk
+    collection:
+      name: pessoa_texts
 
 pessoa:
   url: http://127.0.0.1:8080

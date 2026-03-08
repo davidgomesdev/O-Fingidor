@@ -19,6 +19,14 @@ val langchainMarkdownVersion = "1.8.0-beta15"
 val kotlinxSerializationJson = "1.9.0"
 val mutinyVersion = "2.0.0"
 val otelExtension = "1.59.0"
+val qdrantLangchainVersion = "1.12.2-beta22"
+
+// Fixes Quarkus' BOM imposing a broken Qdrant version
+configurations.all {
+    resolutionStrategy {
+        force("dev.langchain4j:langchain4j-qdrant:$qdrantLangchainVersion")
+    }
+}
 
 dependencies {
     implementation(enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}"))
@@ -29,12 +37,10 @@ dependencies {
     implementation("io.quarkus:quarkus-rest")
     implementation("io.quarkus:quarkus-rest-jackson")
     implementation("io.quarkus:quarkus-rest-qute")
-    implementation("io.quarkus:quarkus-jdbc-postgresql")
-    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin")
     implementation("io.quarkiverse.web-bundler:quarkus-web-bundler:$webBundlerVersion")
     implementation("io.quarkiverse.langchain4j:quarkus-langchain4j-core")
     implementation("io.quarkiverse.langchain4j:quarkus-langchain4j-ollama")
-    implementation("io.quarkiverse.langchain4j:quarkus-langchain4j-pgvector")
+    implementation("dev.langchain4j:langchain4j-qdrant:$qdrantLangchainVersion")
     implementation("dev.langchain4j:langchain4j-document-parser-markdown:$langchainMarkdownVersion")
     implementation("io.smallrye.reactive:mutiny-kotlin:$mutinyVersion")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
