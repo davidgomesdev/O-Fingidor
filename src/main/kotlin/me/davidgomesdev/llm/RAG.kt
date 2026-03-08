@@ -110,13 +110,44 @@ class RAG(
             }
             .startSpan()
 
+        val qdrantConfig = config.qdrant()
+        val baseName = qdrantConfig.collection().name()
+        val collectionName = if (isPreviewOnly) "${baseName}_preview" else baseName
+        var isIngestNeeded = recreateEmbeddings
+
+        QdrantClient(
+            QdrantGrpcClient.newBuilder(qdrantConfig.host(), 6334, false)
+                .withApiKey(qdrantConfig.apiKey())
+                .build()
+        ).use { client ->
+            val existingCollections: List<String> = client.listCollectionsAsync().get()
+
+            if (collectionName !in existingCollections) {
+                log.info("Collection '$collectionName' not found")
+
+                client.createCollectionAsync(
+                    collectionName,
+                    VectorParams.newBuilder()
+                        .setDistance(Distance.Cosine)
+                        .setSize(embeddingModel.dimension().toLong())
+                        .build()
+                ).get()
+
+                log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
+                isIngestNeeded = true
+            } else {
+                log.info("Collection '$collectionName' already exists")
+            }
+        }
+
+
         val scope = span.makeCurrent()
         try {
             if (isPreviewOnly) {
                 log.info("Running for preview ONLY")
             }
 
-            if (recreateEmbeddings) {
+            if (isIngestNeeded) {
                 log.info("Ingesting ${documents.size} documents")
 
                 val wholeTimeSpent = measureTime {
@@ -180,30 +211,6 @@ class RAG(
         val qdrantConfig = config.qdrant()
         val baseName = qdrantConfig.collection().name()
         val collectionName = if (isPreviewOnly) "${baseName}_preview" else baseName
-
-        QdrantClient(
-            QdrantGrpcClient.newBuilder(qdrantConfig.host(), 6334, false)
-                .withApiKey(qdrantConfig.apiKey())
-                .build()
-        ).use { client ->
-            val existingCollections: List<String> = client.listCollectionsAsync().get()
-
-            if (collectionName !in existingCollections) {
-                log.info("Collection '$collectionName' not found")
-
-                client.createCollectionAsync(
-                    collectionName,
-                    VectorParams.newBuilder()
-                        .setDistance(Distance.Cosine)
-                        .setSize(embeddingModel.dimension().toLong())
-                        .build()
-                ).get()
-
-                log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
-            } else {
-                log.info("Collection '$collectionName' already exists")
-            }
-        }
 
         val embeddingStore = QdrantEmbeddingStore.builder()
             .host(qdrantConfig.host())
