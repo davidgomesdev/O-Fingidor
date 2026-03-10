@@ -4,6 +4,7 @@ import io.smallrye.config.ConfigMapping
 
 @ConfigMapping(prefix = "rag")
 interface RAGConfig {
+    fun expandQuery(): Boolean
     fun expandingQueryTemplate(): String
     fun maxResults(): Int
     fun minScore(): Double
