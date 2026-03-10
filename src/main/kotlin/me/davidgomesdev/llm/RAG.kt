@@ -120,6 +120,11 @@ class RAG(
                 .withApiKey(qdrantConfig.apiKey())
                 .build()
         ).use { client ->
+            if (recreateEmbeddings) {
+                log.info("Recreating embeddings, deleting")
+                client.deleteCollectionAsync(collectionName).get()
+            }
+
             val existingCollections: List<String> = client.listCollectionsAsync().get()
 
             if (collectionName !in existingCollections) {
@@ -217,11 +222,6 @@ class RAG(
             .apiKey(qdrantConfig.apiKey())
             .collectionName(collectionName)
             .build()
-
-        if (recreateEmbeddings) {
-            log.info("Recreating embeddings, deleting")
-            embeddingStore.clearStore()
-        }
 
         return embeddingStore
     }
