@@ -33,14 +33,14 @@ quarkus:
 rag:
   max-results: 6
   min-score: 0.75
+  expand-query: true
   expanding-query-template: |
     Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL de uma dada pergunta do utilizador.
-    Cada versão deve ser redigida de forma diferente, usando sinónimos ou estruturas de frase alternativas,
-    mas todas devem manter o significado original.
+    Cada versão deve ser redigida de forma diferente, com um objetivo claro, usando sinónimos ou estruturas de frase alternativas, mas todas devem manter o significado original.
     Estas versões serão usadas para recuperar documentos relevantes.
-    É muito importante fornecer cada versão da query em uma linha separada,
-    sem enumerações, hífens ou qualquer formatação adicional!
-    Pergunta do utilizador: {{query}}"
+    Cada versão da query deve estar numa linha separada.
+    Não uses enumerações, hífens ou qualquer formatação adicional.
+    Pergunta do utilizador: {{query}}
   qdrant:
     host: 127.0.0.1
     api-key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk

@@ -12,6 +12,7 @@ import dev.langchain4j.rag.DefaultRetrievalAugmentor
 import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.rag.content.retriever.ContentRetriever
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
+import dev.langchain4j.rag.query.Query
 import dev.langchain4j.rag.query.router.DefaultQueryRouter
 import dev.langchain4j.rag.query.transformer.DefaultQueryTransformer
 import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer
@@ -70,22 +71,7 @@ class RAG(
                 queryTransformer
                     .transform(originalQuery)
                     .also { transformedQuery ->
-                        val transformedQueries = transformedQuery.joinToString(
-                            "\n",
-                            prefix = "[ ",
-                            postfix = " ]"
-                        ) { "'" + it.text() + "'" }
-
-                        log.info("Transformed original query '${originalQuery.text()}' to '$transformedQueries'")
-
-                        Span.current().addEvent(
-                            "Query Transformed",
-                            attributes {
-                                put("original_query", originalQuery.text())
-                                put("transformed_queries", transformedQueries)
-                                put("transform_queries_count", transformedQuery.size.toLong())
-                            }
-                        )
+                        traceQueryExpansion(transformedQuery, originalQuery)
                     }
             }
             .contentInjector(contentInjector)
@@ -200,7 +186,7 @@ class RAG(
     @Singleton
     @Suppress("unused")
     fun queryTransformer(chatModel: ChatModel): QueryTransformer {
-        if (isPreviewOnly) {
+        if (!config.expandQuery()) {
             log.info("Using simple query transformer for preview")
             return DefaultQueryTransformer()
         }
@@ -279,5 +265,27 @@ class RAG(
         }
 
         return allTexts
+    }
+
+    private fun traceQueryExpansion(
+        transformedQuery: Collection<Query>,
+        originalQuery: Query
+    ) {
+        val transformedQueries = transformedQuery.joinToString(
+            "\n",
+            prefix = "[ ",
+            postfix = " ]"
+        ) { "'" + it.text() + "'" }
+
+        log.info("Transformed original query '${originalQuery.text()}' to '$transformedQueries'")
+
+        Span.current().addEvent(
+            "Query Transformed",
+            attributes {
+                put("original_query", originalQuery.text())
+                put("transformed_queries", transformedQueries)
+                put("transform_queries_count", transformedQuery.size.toLong())
+            }
+        )
     }
 }
