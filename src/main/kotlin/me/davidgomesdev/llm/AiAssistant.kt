@@ -7,10 +7,10 @@ import dev.langchain4j.observability.api.listener.AiServiceErrorListener
 import dev.langchain4j.observability.api.listener.AiServiceStartedListener
 import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.service.AiServices
-import io.opentelemetry.api.trace.Span
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import me.davidgomesdev.observability.attributes
+import me.davidgomesdev.observability.span
 import me.davidgomesdev.service.Assistant
 import org.jboss.logging.Logger
 
@@ -23,11 +23,10 @@ class AiAssistant {
     @Suppress("unused")
     fun assistant(chatModel: StreamingChatModel, retrievalAugmentor: RetrievalAugmentor): Assistant {
         log.info("Creating assistant")
-
         return AiServices.builder(Assistant::class.java)
             .registerListeners(
                 AiServiceStartedListener { event ->
-                    Span.current().addEvent(
+                    span().addEvent(
                         "LLM query",
                         attributes {
                             put(
@@ -43,7 +42,7 @@ class AiAssistant {
                         })
                 },
                 AiServiceErrorListener { error ->
-                    Span.current().recordException(error.error())
+                    span().recordException(error.error())
                 })
             .streamingChatModel(chatModel)
             .retrievalAugmentor(retrievalAugmentor)

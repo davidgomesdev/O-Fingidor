@@ -4,12 +4,12 @@ import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
 import dev.langchain4j.service.SystemMessage
 import dev.langchain4j.service.TokenStream
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.observability.attributes
+import me.davidgomesdev.observability.span
 import org.jboss.logging.Logger
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
@@ -29,15 +29,16 @@ class ChatService(val assistant: Assistant) {
     val log: Logger = Logger.getLogger(this::class.java)
 
     fun query(input: String): Multi<String> {
+        val span = span()
+        val scope = span.makeCurrent()
         val chatStream = assistant.chat(input)
         val timeSource = TimeSource.Monotonic
         val startTime = timeSource.markNow()
 
         return Multi.createFrom().emitter { stream ->
             chatStream
-                .onPartialResponse { partialResponse -> stream.emit(partialResponse); }
+                .onPartialResponse { partialResponse -> stream.emit(partialResponse) }
                 .onCompleteResponse { response ->
-                    val message = response.aiMessage().text()
                     val timeTaken = (startTime.elapsedNow())
                         .toString(DurationUnit.SECONDS, 2)
                     val tokensUsed = response.tokenUsage().outputTokenCount()
@@ -46,11 +47,15 @@ class ChatService(val assistant: Assistant) {
                         "Took $timeTaken to respond (used $tokensUsed output tokens)"
                     )
 
-                    Span.current().apply {
+                    span.apply {
                         addEvent(
                             "Response complete",
                             attributes {
-                                put("message", message)
+                                put("query", input)
+                                put("response", response.aiMessage().text())
+                                put("thinking", response.aiMessage().thinking() ?: "")
+                                // Seems like Ollama doesn't feel this too lol
+                                put("model", response.metadata().modelName())
                                 put("model_duration.ms", timeTaken)
                                 put("output_tokens_used", tokensUsed.toLong())
                             }
@@ -58,9 +63,10 @@ class ChatService(val assistant: Assistant) {
                     }
 
                     stream.complete()
+                    scope.close()
                 }
                 .onRetrieved { contents ->
-                    Span.current().apply {
+                    span.apply {
                         contents.forEachIndexed { index, content ->
                             val score = (content.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0
                             val metadata = content.textSegment().metadata()
@@ -86,7 +92,7 @@ class ChatService(val assistant: Assistant) {
                 .onError { error ->
                     stream.fail(error)
 
-                    Span.current().apply {
+                    span.apply {
                         recordException(error)
                         setStatus(StatusCode.ERROR)
                     }

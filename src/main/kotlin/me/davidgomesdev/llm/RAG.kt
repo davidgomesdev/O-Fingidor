@@ -21,7 +21,6 @@ import dev.langchain4j.store.embedding.EmbeddingStore
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.opentelemetry.api.GlobalOpenTelemetry
-import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.qdrant.client.QdrantClient
@@ -34,6 +33,7 @@ import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.llm.config.RAGConfig
 import me.davidgomesdev.observability.attributes
+import me.davidgomesdev.observability.span
 import me.davidgomesdev.source.PessoaCategory
 import me.davidgomesdev.source.PessoaText
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -279,7 +279,7 @@ class RAG(
 
         log.info("Transformed original query '${originalQuery.text()}' to '$transformedQueries'")
 
-        Span.current().addEvent(
+        span().addEvent(
             "Query Transformed",
             attributes {
                 put("original_query", originalQuery.text())

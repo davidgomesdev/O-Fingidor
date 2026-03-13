@@ -6,9 +6,9 @@ import dev.langchain4j.data.message.UserMessage
 import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.injector.DefaultContentInjector
-import io.opentelemetry.api.trace.Span
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.observability.attributes
+import me.davidgomesdev.observability.span
 import org.jboss.logging.Logger
 
 val CONTENT_INJECTOR_TEMPLATE: PromptTemplate = PromptTemplate.from(
@@ -35,7 +35,12 @@ class TextsContentInjector : DefaultContentInjector(
                 return@also
             }
 
-            Span.current().addEvent("Content injected", attributes {
+            if (contents.isEmpty()) {
+                span().addEvent("No content injected")
+                return@also
+            }
+
+            span().addEvent("Content injected", attributes {
                 put(
                     "message_with_content",
                     (it as UserMessage).contents()
