@@ -13,7 +13,6 @@ import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.rag.content.retriever.ContentRetriever
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
 import dev.langchain4j.rag.query.Query
-import dev.langchain4j.rag.query.router.DefaultQueryRouter
 import dev.langchain4j.rag.query.transformer.DefaultQueryTransformer
 import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer
 import dev.langchain4j.rag.query.transformer.QueryTransformer
@@ -70,7 +69,15 @@ class RAG(
         contentInjector: TextsContentInjector
     ): RetrievalAugmentor =
         DefaultRetrievalAugmentor.builder()
-            .queryRouter(DefaultQueryRouter(contentRetriever))
+            .queryRouter { _ ->
+                if (personaContext.persona == Persona.O_FINGIDOR) {
+                    Span.current().addEvent("Skipping RAG")
+                    log.info("Skipping RAG for persona ${Persona.O_FINGIDOR.codeName}")
+                    emptyList()
+                } else {
+                    listOf(contentRetriever)
+                }
+            }
             .queryTransformer { originalQuery ->
                 queryTransformer
                     .transform(originalQuery)
