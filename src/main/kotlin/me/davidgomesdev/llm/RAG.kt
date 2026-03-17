@@ -19,8 +19,10 @@ import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer
 import dev.langchain4j.rag.query.transformer.QueryTransformer
 import dev.langchain4j.store.embedding.EmbeddingStore
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor
+import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.opentelemetry.api.GlobalOpenTelemetry
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.qdrant.client.QdrantClient
@@ -32,6 +34,7 @@ import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.llm.config.RAGConfig
+import me.davidgomesdev.model.Persona
 import me.davidgomesdev.observability.attributes
 import me.davidgomesdev.observability.span
 import me.davidgomesdev.source.PessoaCategory
@@ -53,6 +56,7 @@ class RAG(
     @param:ConfigProperty(name = "recreate.embeddings", defaultValue = "false")
     val recreateEmbeddings: Boolean,
     val config: RAGConfig,
+    val personaContext: PersonaContext,
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
@@ -180,6 +184,21 @@ class RAG(
             .embeddingModel(embeddingModel)
             .maxResults(config.maxResults())
             .minScore(config.minScore())
+            .dynamicFilter { _ ->
+                val persona = personaContext.persona
+
+                if (persona == null) {
+                    Span.current().addEvent("⚠\uFE0F Received null persona when filtering for content!")
+                    log.warn("Received null persona when filtering for content!")
+                    return@dynamicFilter null
+                }
+
+                when (persona) {
+                    Persona.FERNANDO_PESSOA -> null
+                    else ->
+                        metadataKey("author").isEqualTo(persona.name)
+                }
+            }
             .build()
     }
 
