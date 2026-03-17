@@ -2,7 +2,6 @@ package me.davidgomesdev.service
 
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
-import dev.langchain4j.service.SystemMessage
 import dev.langchain4j.service.TokenStream
 import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
@@ -16,9 +15,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 
 fun interface Assistant {
-    @SystemMessage(
-        fromResource = "system_message.txt",
-    )
     fun chat(userMessage: String): TokenStream
 }
 
