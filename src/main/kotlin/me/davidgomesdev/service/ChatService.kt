@@ -3,10 +3,12 @@ package me.davidgomesdev.service
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
 import dev.langchain4j.service.TokenStream
+import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
+import me.davidgomesdev.model.ChatEvent
 import me.davidgomesdev.observability.attributes
 import me.davidgomesdev.observability.span
 import org.jboss.logging.Logger
@@ -24,7 +26,7 @@ class ChatService(val assistant: Assistant) {
 
     val log: Logger = Logger.getLogger(this::class.java)
 
-    fun query(input: String): Multi<String> {
+    fun query(input: String): Multi<ChatEvent> {
         val span = span()
         val scope = span.makeCurrent()
         val chatStream = assistant.chat(input)
@@ -33,15 +35,14 @@ class ChatService(val assistant: Assistant) {
 
         return Multi.createFrom().emitter { stream ->
             chatStream
-                .onPartialResponse { partialResponse -> stream.emit(partialResponse) }
+                .onPartialResponse { partialResponse ->
+                    stream.emit(ChatEvent.Token(partialResponse))
+                }
                 .onCompleteResponse { response ->
-                    val timeTaken = (startTime.elapsedNow())
-                        .toString(DurationUnit.SECONDS, 2)
+                    val timeTaken = startTime.elapsedNow().toString(DurationUnit.SECONDS, 2)
                     val tokensUsed = response.tokenUsage().outputTokenCount()
 
-                    log.info(
-                        "Took $timeTaken to respond (used $tokensUsed output tokens)"
-                    )
+                    log.info("Took $timeTaken to respond (used $tokensUsed output tokens)")
 
                     span.apply {
                         addEvent(
@@ -58,6 +59,7 @@ class ChatService(val assistant: Assistant) {
                         )
                     }
 
+                    stream.emit(ChatEvent.Done(tokensUsed, timeTaken))
                     stream.complete()
                     scope.close()
                 }
@@ -79,11 +81,11 @@ class ChatService(val assistant: Assistant) {
                         }
                     }
 
-                    val sources = contents.joinToString(separator = "\n", transform = ::mergeSources)
+                    val sources = contents.map(::toSourceItem)
 
-                    log.info("Using sources:\n$sources")
+                    log.info("Using sources:\n${sources.joinToString("\n") { "- ${it.author}: ${it.title} (${it.score}%)" }}")
 
-                    stream.emit("<sources>$sources</sources>")
+                    stream.emit(ChatEvent.Sources(sources))
                 }
                 .onError { error ->
                     stream.fail(error)
@@ -99,15 +101,28 @@ class ChatService(val assistant: Assistant) {
         }
     }
 
-    private fun mergeSources(source: Content): String {
+    private fun toSourceItem(source: Content): ChatEvent.Sources.Source {
         val score = ((source.metadata()[ContentMetadata.SCORE] as Double) * 100).roundToInt()
         val metadata = source.textSegment().metadata()
 
-        return "- Categoria: ${metadata.getString("categoryName") ?: ""}\n" +
-                "  Título: ${metadata.getString("title")}\n" +
-                "  Autor ${
-                    metadata.getString("author")
-                } " +
-                "(score: $score%)"
+        val title = metadata.getString("title") ?: ""
+        val author = metadata.getString("author") ?: ""
+        val category = metadata.getString("categoryName") ?: ""
+
+        if (title == "" || author == "" || category == "") {
+            log.warn("Some metadata fields are empty! (title: $title, author: $author, category: $category)")
+            Span.current().addEvent("Some metadata fields are empty!", attributes {
+                put("title", title)
+                put("author", author)
+                put("category", category)
+            })
+        }
+
+        return ChatEvent.Sources.Source(
+            title = title,
+            author = author,
+            category = category,
+            score = score,
+        )
     }
 }

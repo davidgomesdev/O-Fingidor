@@ -1,15 +1,15 @@
 package me.davidgomesdev.web
 
-import io.netty.handler.codec.http.HttpResponseStatus
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.SpanKind
 import io.smallrye.common.annotation.Blocking
-import io.smallrye.mutiny.Multi
+import jakarta.ws.rs.BadRequestException
+import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
-import jakarta.ws.rs.core.MediaType
 import me.davidgomesdev.llm.PersonaContext
+import me.davidgomesdev.model.ChatEvent
 import me.davidgomesdev.model.Persona
 import me.davidgomesdev.service.ChatService
 import org.jboss.logging.Logger
@@ -23,15 +23,12 @@ class ThinkingAPI(val chatService: ChatService, val personaContext: PersonaConte
 
     @PUT
     @Blocking
-    @Produces(MediaType.TEXT_PLAIN)
-    fun queryModel(body: QueryPayload): Multi<String> {
-        if (body.persona.isBlank()) {
-            return createResponse(HttpResponseStatus.BAD_REQUEST, "persona must be present")
-        }
-        personaContext.persona = Persona.entries.firstOrNull { it.codeName == body.persona } ?: return createResponse(
-            HttpResponseStatus.NOT_FOUND,
-            "persona not found"
-        )
+    @Produces("application/x-ndjson")
+    fun queryModel(body: QueryPayload): RestMulti<ChatEvent> {
+        if (body.persona.isBlank()) throw BadRequestException("persona must be present")
+
+        personaContext.persona = Persona.entries.firstOrNull { it.codeName == body.persona }
+            ?: throw NotFoundException("persona not found")
 
         val span = tracer.spanBuilder("API QueryModel").apply {
             personaContext.persona!!.also { persona ->
@@ -51,9 +48,5 @@ class ThinkingAPI(val chatService: ChatService, val personaContext: PersonaConte
             .header("X-Trace-Id", traceId).build()
     }
 }
-
-private fun createResponse(statusCode: HttpResponseStatus, text: String): RestMulti<String> =
-    RestMulti.fromMultiData(Multi.createFrom().item(text))
-        .status(statusCode.code()).build()
 
 data class QueryPayload(val input: String, val persona: String)
