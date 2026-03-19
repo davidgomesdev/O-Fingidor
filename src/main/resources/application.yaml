@@ -28,7 +28,7 @@ ollama:
   chat-model:
     model-id: qwen3:1.7b
     temperature: 0.7
-    thinking: true
+    thinking: false
   embedding-model:
     model-id: qwen3-embedding:8b
 
