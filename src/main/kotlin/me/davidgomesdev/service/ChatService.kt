@@ -49,11 +49,11 @@ class ChatService(val assistant: Assistant) {
                             attributes {
                                 put("query", input)
                                 put("response", response.aiMessage().text())
-                                put("thinking", response.aiMessage().thinking() ?: "")
-                                // Seems like Ollama doesn't feel this too lol
+                                put("thinking", response.aiMessage().thinking())
                                 put("model", response.metadata().modelName())
                                 put("model_duration.ms", timeTaken)
                                 put("output_tokens_used", tokensUsed.toLong())
+                                put("complete_reason", response.finishReason().name)
                             }
                         )
                     }
