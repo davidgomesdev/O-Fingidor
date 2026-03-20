@@ -34,10 +34,10 @@ import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.llm.config.RAGConfig
 import me.davidgomesdev.model.Persona
+import me.davidgomesdev.model.PessoaCategory
+import me.davidgomesdev.model.PessoaText
 import me.davidgomesdev.observability.attributes
 import me.davidgomesdev.observability.span
-import me.davidgomesdev.source.PessoaCategory
-import me.davidgomesdev.source.PessoaText
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 import java.io.File
@@ -70,7 +70,7 @@ class RAG(
     ): RetrievalAugmentor =
         DefaultRetrievalAugmentor.builder()
             .queryRouter { _ ->
-                if (personaContext.persona == Persona.O_FINGIDOR) {
+                if (personaContext.persona == Persona.O_FINGIDOR || personaContext.persona == Persona.NINGUEM) {
                     Span.current().addEvent("Skipping RAG")
                     log.info("Skipping RAG for persona ${Persona.O_FINGIDOR.codeName}")
                     emptyList()

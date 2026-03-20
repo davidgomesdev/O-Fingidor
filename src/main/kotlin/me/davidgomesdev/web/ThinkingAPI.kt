@@ -8,8 +8,8 @@ import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
+import me.davidgomesdev.dto.ChatEvent
 import me.davidgomesdev.llm.PersonaContext
-import me.davidgomesdev.model.ChatEvent
 import me.davidgomesdev.model.Persona
 import me.davidgomesdev.service.ChatService
 import org.jboss.logging.Logger

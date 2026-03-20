@@ -8,7 +8,7 @@ import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
-import me.davidgomesdev.model.ChatEvent
+import me.davidgomesdev.dto.ChatEvent
 import me.davidgomesdev.observability.attributes
 import me.davidgomesdev.observability.span
 import org.jboss.logging.Logger

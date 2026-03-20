@@ -31,7 +31,7 @@ class AiAssistant(val personaContext: PersonaContext) {
         log.info("Creating assistant")
         return AiServices.builder(Assistant::class.java)
             .systemMessageProvider { _ ->
-                if (personaContext.persona == Persona.O_FINGIDOR) null else systemMessage
+                if (personaContext.persona == Persona.NINGUEM) null else systemMessage
             }
             .registerListeners(
                 AiServiceStartedListener { event ->
