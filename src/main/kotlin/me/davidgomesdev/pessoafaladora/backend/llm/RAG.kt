@@ -40,6 +40,7 @@ import me.davidgomesdev.pessoafaladora.backend.model.PessoaText
 import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.eclipse.microprofile.config.inject.ConfigProperty
+import org.eclipse.microprofile.context.ManagedExecutor
 import org.jboss.logging.Logger
 import java.io.File
 import kotlin.time.measureTime
@@ -105,10 +106,13 @@ class RAG(
         documents: List<Document>,
         embeddingModel: EmbeddingModel,
         embeddingStore: EmbeddingStore<TextSegment>,
+        qdrantClient: QdrantClient,
+        managedExecutor: ManagedExecutor,
+        ingestor: EmbeddingStoreIngestor
     ): ContentRetriever {
         log.info("Preparing content retriever")
 
-        val span = tracer.spanBuilder("rag.creating")
+        val span = tracer.spanBuilder("rag.initializing")
             .setSpanKind(SpanKind.INTERNAL).apply {
                 setAttribute("mode", if (isPreviewOnly) "preview" else "full")
                 setAttribute("recreate-embeddings", recreateEmbeddings)
@@ -121,26 +125,37 @@ class RAG(
         val baseName = qdrantConfig.collection().name()
         val collectionName = if (isPreviewOnly) "${baseName}_preview" else baseName
 
-        val qdrantClient = QdrantClient(
-            QdrantGrpcClient.newBuilder(qdrantConfig.host(), 6334, false)
-                .withApiKey(qdrantConfig.apiKey())
-                .build()
-        )
-
         if (recreateEmbeddings) {
             log.info("Recreating embeddings, deleting")
             qdrantClient.deleteCollectionAsync(collectionName).get()
+            span.addEvent("Deleted collection to recreate")
         }
 
-        val ingestedDocuments = getIngestedDocumentIDs(qdrantClient, collectionName, embeddingModel)
+        val existingCollections: List<String> = qdrantClient.listCollectionsAsync().get()
 
-        val scope = span.makeCurrent()
-        try {
-            ingestDocuments(documents, ingestedDocuments, embeddingStore, embeddingModel)
-            span.setStatus(StatusCode.OK)
-        } finally {
-            scope.close()
-            span.end()
+        if (collectionName !in existingCollections) {
+            log.info("Collection '$collectionName' not found")
+
+            qdrantClient.createCollectionAsync(
+                collectionName,
+                VectorParams.newBuilder()
+                    .setDistance(Distance.Cosine)
+                    .setSize(embeddingModel.dimension().toLong())
+                    .build()
+            ).get()
+
+            log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
+            span.addEvent("Created collection")
+        } else {
+            log.info("Collection '$collectionName' already exists")
+        }
+        managedExecutor.runAsync {
+            ingestDocuments(
+                qdrantClient,
+                collectionName,
+                ingestor,
+                documents
+            )
         }
 
         return EmbeddingStoreContentRetriever.builder()
@@ -166,85 +181,98 @@ class RAG(
             .build()
     }
 
-    private fun ingestDocuments(
+
+    fun ingestDocuments(
+        qdrantClient: QdrantClient,
+        collectionName: String,
+        ingestor: EmbeddingStoreIngestor,
         documents: List<Document>,
-        ingestedDocuments: List<Long>,
+    ) {
+        val span = tracer.spanBuilder("rag.ingesting")
+            .setSpanKind(SpanKind.INTERNAL).apply {
+                setAttribute("mode", if (isPreviewOnly) "preview" else "full")
+                setAttribute("recreate-embeddings", recreateEmbeddings)
+                setAttribute("min-score", config.minScore())
+                setAttribute("max-results", config.maxResults().toLong())
+            }
+            .startSpan()
+        val ingestedDocuments = getIngestedDocumentIDs(qdrantClient, collectionName)
+
+        val scope = span.makeCurrent()
+        try {
+
+            if (isPreviewOnly) {
+                log.info("Running for preview ONLY")
+            }
+            val span = Span.current()
+
+            val totalDocumentsLeftToIngest =
+                documents.filterNot { ingestedDocuments.contains(it.metadata().getLong(TextAttributes.TEXT_ID)) }
+
+            if (totalDocumentsLeftToIngest.isEmpty()) {
+                log.info("No documents needed to ingest")
+                return
+            }
+
+            val uniqueDocumentsToIngest =
+                totalDocumentsLeftToIngest.distinctBy { it.metadata().getLong(TextAttributes.TEXT_ID) }
+
+            log.info("Ingesting ${uniqueDocumentsToIngest.size} unique documents (out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})")
+
+            val wholeTimeSpent = measureTime {
+                uniqueDocumentsToIngest
+                    .chunked(50)
+                    .forEach { chunk ->
+                        val chunkTimeSpent = measureTime {
+                            ingestor
+                                .ingest(chunk)
+                        }
+
+                        log.info("Ingested chunk (took $chunkTimeSpent)")
+                        span.addEvent("Ingested chunk", attributes {
+                            put("ingested_documents_count", chunk.size.toLong())
+                            put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
+                        })
+                    }
+            }
+
+            log.info("Documents ingested (took $wholeTimeSpent for ${uniqueDocumentsToIngest.size} documents)")
+            span.addEvent("Ingested documents", attributes {
+                put("ingested_documents_count", uniqueDocumentsToIngest.size.toLong())
+                put("total_documents_count", documents.size.toLong())
+                put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
+            })
+
+            span.setStatus(StatusCode.OK)
+        } finally {
+            scope.close()
+            span.end()
+        }
+    }
+
+    @Singleton
+    @Suppress("unused")
+    fun qdrantClient(): QdrantClient = QdrantClient(
+        QdrantGrpcClient.newBuilder(config.qdrant().host(), 6334, false)
+            .withApiKey(config.qdrant().apiKey())
+            .build()
+    )
+
+    @Singleton
+    @Suppress("unused")
+    fun ingestor(
         embeddingStore: EmbeddingStore<TextSegment>,
         embeddingModel: EmbeddingModel
-    ) {
-        if (isPreviewOnly) {
-            log.info("Running for preview ONLY")
-        }
-        val span = Span.current()
-
-        val totalDocumentsLeftToIngest =
-            documents.filterNot { ingestedDocuments.contains(it.metadata().getLong(TextAttributes.TEXT_ID)) }
-
-        if (totalDocumentsLeftToIngest.isEmpty()) {
-            log.info("No documents needed to ingest")
-            return
-        }
-
-        val uniqueDocumentsToIngest =
-            totalDocumentsLeftToIngest.distinctBy { it.metadata().getLong(TextAttributes.TEXT_ID) }
-
-        log.info("Ingesting ${uniqueDocumentsToIngest.size} unique documents (out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})")
-
-        val ingestor = EmbeddingStoreIngestor.builder()
-            .documentSplitter(splitter)
-            .embeddingStore(embeddingStore)
-            .embeddingModel(embeddingModel)
-            .build()
-
-        val wholeTimeSpent = measureTime {
-            uniqueDocumentsToIngest
-                .chunked(50)
-                .forEach { chunk ->
-                    val chunkTimeSpent = measureTime {
-                        ingestor
-                            .ingest(chunk)
-                    }
-
-                    log.info("Ingested chunk (took $chunkTimeSpent)")
-                    span.addEvent("Ingested chunk", attributes {
-                        put("ingested_documents_count", chunk.size.toLong())
-                        put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
-                    })
-                }
-        }
-
-        log.info("Documents ingested (took $wholeTimeSpent for ${uniqueDocumentsToIngest.size} documents)")
-        span.addEvent("Ingested documents", attributes {
-            put("ingested_documents_count", uniqueDocumentsToIngest.size.toLong())
-            put("total_documents_count", documents.size.toLong())
-            put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
-        })
-    }
+    ): EmbeddingStoreIngestor = EmbeddingStoreIngestor.builder()
+        .documentSplitter(splitter)
+        .embeddingStore(embeddingStore)
+        .embeddingModel(embeddingModel)
+        .build()
 
     private fun getIngestedDocumentIDs(
         qdrantClient: QdrantClient,
         collectionName: String,
-        embeddingModel: EmbeddingModel,
     ): List<Long> {
-        val existingCollections: List<String> = qdrantClient.listCollectionsAsync().get()
-
-        if (collectionName !in existingCollections) {
-            log.info("Collection '$collectionName' not found")
-
-            qdrantClient.createCollectionAsync(
-                collectionName,
-                VectorParams.newBuilder()
-                    .setDistance(Distance.Cosine)
-                    .setSize(embeddingModel.dimension().toLong())
-                    .build()
-            ).get()
-
-            log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
-            return listOf()
-        } else {
-            log.info("Collection '$collectionName' already exists")
-        }
-
         log.info("Getting ingested text IDs")
 
         val results: List<Points.RetrievedPoint> = qdrantClient.scrollAsync(
