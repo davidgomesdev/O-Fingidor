@@ -24,7 +24,7 @@ val CONTENT_INJECTOR_TEMPLATE: PromptTemplate = PromptTemplate.from(
 @ApplicationScoped
 class TextsContentInjector : DefaultContentInjector(
     CONTENT_INJECTOR_TEMPLATE,
-    mutableListOf("author", "title", "categoryName")
+    mutableListOf(TextAttributes.AUTHOR, TextAttributes.TITLE, TextAttributes.CATEGORY_NAME)
 ) {
     val log: Logger = Logger.getLogger(TextsContentInjector::class.java)
 
@@ -57,11 +57,11 @@ class TextsContentInjector : DefaultContentInjector(
         val segmentContent = segment.text()
         val segmentMetadata = segment.metadata()
 
-        val authorDescription = segmentMetadata.getString("author")
+        val authorDescription = segmentMetadata.getString(TextAttributes.AUTHOR)
             .let { author -> if (author == "Fernando Pessoa") "em teu nome" else "sob o teu heterónimo $author" }
 
-        return "- Texto '${segmentMetadata.getString("title")}' " +
-                "da coleção '${segmentMetadata.getString("categoryName")}' " +
+        return "- Texto '${segmentMetadata.getString(TextAttributes.TITLE)}' " +
+                "da coleção '${segmentMetadata.getString(TextAttributes.CATEGORY_NAME)}' " +
                 "$authorDescription:\n" +
                 segmentContent
     }

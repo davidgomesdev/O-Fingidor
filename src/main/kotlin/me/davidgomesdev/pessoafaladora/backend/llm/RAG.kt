@@ -28,6 +28,7 @@ import io.qdrant.client.QdrantClient
 import io.qdrant.client.QdrantGrpcClient
 import io.qdrant.client.grpc.Collections.Distance
 import io.qdrant.client.grpc.Collections.VectorParams
+import io.qdrant.client.grpc.Points
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Named
 import jakarta.inject.Singleton
@@ -47,6 +48,15 @@ import kotlin.time.measureTime
 const val PREVIEW_CATEGORY_ID = 33
 
 typealias TextsByCategory = Map<Pair<Int, String>, List<PessoaText>>
+
+
+object TextAttributes {
+    const val TEXT_ID = "textId"
+    const val TITLE = "title"
+    const val AUTHOR = "author"
+    const val CATEGORY_NAME = "categoryName"
+    const val CATEGORY_ID = "categoryId"
+}
 
 @ApplicationScoped
 class RAG(
@@ -110,76 +120,23 @@ class RAG(
         val qdrantConfig = config.qdrant()
         val baseName = qdrantConfig.collection().name()
         val collectionName = if (isPreviewOnly) "${baseName}_preview" else baseName
-        var isIngestNeeded = recreateEmbeddings
 
-        QdrantClient(
+        val qdrantClient = QdrantClient(
             QdrantGrpcClient.newBuilder(qdrantConfig.host(), 6334, false)
                 .withApiKey(qdrantConfig.apiKey())
                 .build()
-        ).use { client ->
-            if (recreateEmbeddings) {
-                log.info("Recreating embeddings, deleting")
-                client.deleteCollectionAsync(collectionName).get()
-            }
+        )
 
-            val existingCollections: List<String> = client.listCollectionsAsync().get()
-
-            if (collectionName !in existingCollections) {
-                log.info("Collection '$collectionName' not found")
-
-                client.createCollectionAsync(
-                    collectionName,
-                    VectorParams.newBuilder()
-                        .setDistance(Distance.Cosine)
-                        .setSize(embeddingModel.dimension().toLong())
-                        .build()
-                ).get()
-
-                log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
-                isIngestNeeded = true
-            } else {
-                log.info("Collection '$collectionName' already exists")
-            }
+        if (recreateEmbeddings) {
+            log.info("Recreating embeddings, deleting")
+            qdrantClient.deleteCollectionAsync(collectionName).get()
         }
 
+        val ingestedDocuments = getIngestedDocumentIDs(qdrantClient, collectionName, embeddingModel)
 
         val scope = span.makeCurrent()
         try {
-            if (isPreviewOnly) {
-                log.info("Running for preview ONLY")
-            }
-
-            if (isIngestNeeded) {
-                log.info("Ingesting ${documents.size} documents")
-
-                val wholeTimeSpent = measureTime {
-                    documents
-                        .chunked(50)
-                        .forEach { chunk ->
-                            val chunkTimeSpent = measureTime {
-                                EmbeddingStoreIngestor.builder()
-                                    .documentSplitter(splitter)
-                                    .embeddingStore(embeddingStore)
-                                    .embeddingModel(embeddingModel)
-                                    .build()
-                                    .ingest(chunk)
-                            }
-
-                            log.info("Ingested chunk (took $chunkTimeSpent)")
-                            span.addEvent("Ingested chunk", attributes {
-                                put("documents_count", chunk.size.toLong())
-                                put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
-                            })
-                        }
-                }
-
-                log.info("Documents ingested (took $wholeTimeSpent)")
-                span.addEvent("Ingested all documents", attributes {
-                    put("documents_count", documents.size.toLong())
-                    put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
-                })
-            }
-
+            ingestDocuments(documents, ingestedDocuments, embeddingStore, embeddingModel)
             span.setStatus(StatusCode.OK)
         } finally {
             scope.close()
@@ -207,6 +164,106 @@ class RAG(
                 }
             }
             .build()
+    }
+
+    private fun ingestDocuments(
+        documents: List<Document>,
+        ingestedDocuments: List<Long>,
+        embeddingStore: EmbeddingStore<TextSegment>,
+        embeddingModel: EmbeddingModel
+    ) {
+        if (isPreviewOnly) {
+            log.info("Running for preview ONLY")
+        }
+        val span = Span.current()
+
+        val totalDocumentsLeftToIngest =
+            documents.filterNot { ingestedDocuments.contains(it.metadata().getLong(TextAttributes.TEXT_ID)) }
+
+        if (totalDocumentsLeftToIngest.isEmpty()) {
+            log.info("No documents needed to ingest")
+            return
+        }
+
+        val uniqueDocumentsToIngest =
+            totalDocumentsLeftToIngest.distinctBy { it.metadata().getLong(TextAttributes.TEXT_ID) }
+
+        log.info("Ingesting ${uniqueDocumentsToIngest.size} unique documents (out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})")
+
+        val ingestor = EmbeddingStoreIngestor.builder()
+            .documentSplitter(splitter)
+            .embeddingStore(embeddingStore)
+            .embeddingModel(embeddingModel)
+            .build()
+
+        val wholeTimeSpent = measureTime {
+            uniqueDocumentsToIngest
+                .chunked(50)
+                .forEach { chunk ->
+                    val chunkTimeSpent = measureTime {
+                        ingestor
+                            .ingest(chunk)
+                    }
+
+                    log.info("Ingested chunk (took $chunkTimeSpent)")
+                    span.addEvent("Ingested chunk", attributes {
+                        put("ingested_documents_count", chunk.size.toLong())
+                        put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
+                    })
+                }
+        }
+
+        log.info("Documents ingested (took $wholeTimeSpent for ${uniqueDocumentsToIngest.size} documents)")
+        span.addEvent("Ingested documents", attributes {
+            put("ingested_documents_count", uniqueDocumentsToIngest.size.toLong())
+            put("total_documents_count", documents.size.toLong())
+            put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
+        })
+    }
+
+    private fun getIngestedDocumentIDs(
+        qdrantClient: QdrantClient,
+        collectionName: String,
+        embeddingModel: EmbeddingModel,
+    ): List<Long> {
+        val existingCollections: List<String> = qdrantClient.listCollectionsAsync().get()
+
+        if (collectionName !in existingCollections) {
+            log.info("Collection '$collectionName' not found")
+
+            qdrantClient.createCollectionAsync(
+                collectionName,
+                VectorParams.newBuilder()
+                    .setDistance(Distance.Cosine)
+                    .setSize(embeddingModel.dimension().toLong())
+                    .build()
+            ).get()
+
+            log.info("Collection '$collectionName' created successfully with dimension ${embeddingModel.dimension()}")
+            return listOf()
+        } else {
+            log.info("Collection '$collectionName' already exists")
+        }
+
+        log.info("Getting ingested text IDs")
+
+        val results: List<Points.RetrievedPoint> = qdrantClient.scrollAsync(
+            Points.ScrollPoints.newBuilder()
+                .setCollectionName(collectionName)
+                // This is really fast and doesn't require much memory (they are only IDs)
+                .setLimit(-1)
+                .setWithPayload(
+                    Points.WithPayloadSelector.newBuilder()
+                        .setInclude(
+                            Points.PayloadIncludeSelector.newBuilder()
+                                .addFields(TextAttributes.TEXT_ID)
+                        )
+                )
+                .setWithVectors(Points.WithVectorsSelector.newBuilder().setEnable(false))
+                .build()
+        ).get().resultList
+
+        return results.map { it.getPayloadOrThrow(TextAttributes.TEXT_ID).integerValue }.distinct()
     }
 
     @Singleton
@@ -248,13 +305,15 @@ class RAG(
                 .map {
                     Document.document(
                         it.content, Metadata.from(
-                            mapOf(
-                                "title" to it.title,
-                                "author" to it.author,
-                                "textId" to it.id,
-                                "categoryId" to category.key.first,
-                                "categoryName" to category.key.second,
-                            )
+                            TextAttributes.run {
+                                mapOf(
+                                    TITLE to it.title,
+                                    AUTHOR to it.author,
+                                    TEXT_ID to it.id,
+                                    CATEGORY_ID to category.key.first,
+                                    CATEGORY_NAME to category.key.second,
+                                )
+                            }
                         )
                     )
                 }
@@ -284,11 +343,15 @@ class RAG(
             }
         }
 
-        log.info("Total amount of texts ${allTexts.map { it.value.size }.sum()}")
-
         if (isPreviewOnly) {
-            return allTexts.filter { it.key.first == PREVIEW_CATEGORY_ID }
+            val previewTexts = allTexts.filter { it.key.first == PREVIEW_CATEGORY_ID }
+
+            log.info("Using preview amount of texts ${previewTexts.map { it.value.size }.sum()}")
+
+            return previewTexts
         }
+
+        log.info("Total amount of texts ${allTexts.map { it.value.size }.sum()}")
 
         return allTexts
     }
