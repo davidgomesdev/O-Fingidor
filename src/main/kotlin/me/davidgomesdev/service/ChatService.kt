@@ -105,11 +105,12 @@ class ChatService(val assistant: Assistant) {
         val score = ((source.metadata()[ContentMetadata.SCORE] as Double) * 100).roundToInt()
         val metadata = source.textSegment().metadata()
 
+        val id = metadata.getString("textId") ?: ""
         val title = metadata.getString("title") ?: ""
         val author = metadata.getString("author") ?: ""
         val category = metadata.getString("categoryName") ?: ""
 
-        if (title == "" || author == "" || category == "") {
+        if (listOf(id, title, author, category).any(String::isBlank)) {
             log.warn("Some metadata fields are empty! (title: $title, author: $author, category: $category)")
             Span.current().addEvent("Some metadata fields are empty!", attributes {
                 put("title", title)
@@ -119,6 +120,7 @@ class ChatService(val assistant: Assistant) {
         }
 
         return ChatEvent.Sources.Source(
+            id = id,
             title = title,
             author = author,
             category = category,
