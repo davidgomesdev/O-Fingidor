@@ -2,6 +2,9 @@
   <configuration default="false" name="All texts" type="QuarkusRunConfiguration" factoryName="QuarkusRunConfiguration">
     <module name="pessoa-faladora.main" />
     <option name="profile" />
-    <method v="2" />
+      <method v="2">
+          <option name="RunConfigurationTask" enabled="true" run_configuration_name="Launch Dependencies"
+                  run_configuration_type="docker-deploy"/>
+      </method>
   </configuration>
 </component>
