@@ -1,4 +1,4 @@
-package me.davidgomesdev.llm
+package me.davidgomesdev.pessoafaladora.backend.llm
 
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
@@ -8,7 +8,7 @@ import dev.langchain4j.model.ollama.OllamaEmbeddingModel
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
-import me.davidgomesdev.llm.config.OllamaConfig
+import me.davidgomesdev.pessoafaladora.backend.llm.config.OllamaConfig
 import org.jboss.logging.Logger
 
 @ApplicationScoped

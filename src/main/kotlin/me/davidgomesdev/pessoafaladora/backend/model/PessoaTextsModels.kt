@@ -1,4 +1,4 @@
-package me.davidgomesdev.model
+package me.davidgomesdev.pessoafaladora.backend.model
 
 import kotlinx.serialization.Serializable
 

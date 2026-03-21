@@ -1,4 +1,4 @@
-package me.davidgomesdev.service
+package me.davidgomesdev.pessoafaladora.backend.service
 
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
@@ -8,9 +8,9 @@ import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
-import me.davidgomesdev.dto.ChatEvent
-import me.davidgomesdev.observability.attributes
-import me.davidgomesdev.observability.span
+import me.davidgomesdev.pessoafaladora.backend.dto.ChatEvent
+import me.davidgomesdev.pessoafaladora.backend.observability.attributes
+import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.jboss.logging.Logger
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
