@@ -1,4 +1,4 @@
-package me.davidgomesdev.llm
+package me.davidgomesdev.pessoafaladora.backend.llm
 
 import dev.langchain4j.data.message.ChatMessage
 import dev.langchain4j.data.message.TextContent
@@ -7,8 +7,8 @@ import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.injector.DefaultContentInjector
 import jakarta.enterprise.context.ApplicationScoped
-import me.davidgomesdev.observability.attributes
-import me.davidgomesdev.observability.span
+import me.davidgomesdev.pessoafaladora.backend.observability.attributes
+import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.jboss.logging.Logger
 
 val CONTENT_INJECTOR_TEMPLATE: PromptTemplate = PromptTemplate.from(

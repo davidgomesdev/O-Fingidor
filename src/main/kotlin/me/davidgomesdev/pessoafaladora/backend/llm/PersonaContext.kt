@@ -1,7 +1,7 @@
-package me.davidgomesdev.llm
+package me.davidgomesdev.pessoafaladora.backend.llm
 
 import jakarta.enterprise.context.RequestScoped
-import me.davidgomesdev.model.Persona
+import me.davidgomesdev.pessoafaladora.backend.model.Persona
 
 @RequestScoped
 class PersonaContext {

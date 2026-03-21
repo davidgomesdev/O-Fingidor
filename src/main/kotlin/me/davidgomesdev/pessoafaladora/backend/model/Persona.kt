@@ -1,4 +1,4 @@
-package me.davidgomesdev.model
+package me.davidgomesdev.pessoafaladora.backend.model
 
 @Suppress("unused")
 enum class Persona(val displayName: String, val category: PersonaCategory) {

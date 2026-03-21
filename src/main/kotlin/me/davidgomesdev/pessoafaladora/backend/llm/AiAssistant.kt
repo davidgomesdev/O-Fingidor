@@ -1,4 +1,4 @@
-package me.davidgomesdev.llm
+package me.davidgomesdev.pessoafaladora.backend.llm
 
 import dev.langchain4j.data.message.SystemMessage
 import dev.langchain4j.data.message.TextContent
@@ -9,10 +9,10 @@ import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.service.AiServices
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
-import me.davidgomesdev.model.Persona
-import me.davidgomesdev.observability.attributes
-import me.davidgomesdev.observability.span
-import me.davidgomesdev.service.Assistant
+import me.davidgomesdev.pessoafaladora.backend.model.Persona
+import me.davidgomesdev.pessoafaladora.backend.observability.attributes
+import me.davidgomesdev.pessoafaladora.backend.observability.span
+import me.davidgomesdev.pessoafaladora.backend.service.Assistant
 import org.jboss.logging.Logger
 
 @ApplicationScoped

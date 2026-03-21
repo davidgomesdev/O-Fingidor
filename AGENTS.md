@@ -14,7 +14,7 @@ embeddings), OpenTelemetry (traces via Jaeger).
 ## Architecture
 
 ```
-src/main/kotlin/me/davidgomesdev/
+src/main/kotlin/me/davidgomesdev/pessoafaladora/backend/
   Main.kt                  ← @QuarkusMain entry point
   web/
     IndexResource.kt       ← GET / — serves the Qute HTML shell, injects PESSOA_URL

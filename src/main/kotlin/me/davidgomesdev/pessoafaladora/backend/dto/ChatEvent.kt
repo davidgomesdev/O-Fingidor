@@ -1,4 +1,4 @@
-package me.davidgomesdev.dto
+package me.davidgomesdev.pessoafaladora.backend.dto
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo

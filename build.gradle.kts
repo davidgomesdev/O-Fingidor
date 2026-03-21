@@ -50,7 +50,7 @@ dependencies {
     testImplementation("io.quarkus:quarkus-junit5")
 }
 
-group = "me.davidgomesdev"
+group = "me.davidgomesdev.pessoafaladora"
 version = "1.0.0-SNAPSHOT"
 
 java {

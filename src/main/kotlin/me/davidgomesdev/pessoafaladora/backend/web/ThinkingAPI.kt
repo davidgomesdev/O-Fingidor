@@ -1,4 +1,4 @@
-package me.davidgomesdev.web
+package me.davidgomesdev.pessoafaladora.backend.web
 
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.SpanKind
@@ -8,10 +8,10 @@ import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
-import me.davidgomesdev.dto.ChatEvent
-import me.davidgomesdev.llm.PersonaContext
-import me.davidgomesdev.model.Persona
-import me.davidgomesdev.service.ChatService
+import me.davidgomesdev.pessoafaladora.backend.dto.ChatEvent
+import me.davidgomesdev.pessoafaladora.backend.llm.PersonaContext
+import me.davidgomesdev.pessoafaladora.backend.model.Persona
+import me.davidgomesdev.pessoafaladora.backend.service.ChatService
 import org.jboss.logging.Logger
 import org.jboss.resteasy.reactive.RestMulti
 

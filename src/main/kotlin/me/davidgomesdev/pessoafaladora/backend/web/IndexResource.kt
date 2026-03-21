@@ -1,4 +1,4 @@
-package me.davidgomesdev.web
+package me.davidgomesdev.pessoafaladora.backend.web
 
 import io.quarkus.qute.Location
 import io.quarkus.qute.Template

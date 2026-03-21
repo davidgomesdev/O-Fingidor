@@ -1,4 +1,4 @@
-package me.davidgomesdev.llm
+package me.davidgomesdev.pessoafaladora.backend.llm
 
 import dev.langchain4j.data.document.Document
 import dev.langchain4j.data.document.Metadata
@@ -32,12 +32,12 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
-import me.davidgomesdev.llm.config.RAGConfig
-import me.davidgomesdev.model.Persona
-import me.davidgomesdev.model.PessoaCategory
-import me.davidgomesdev.model.PessoaText
-import me.davidgomesdev.observability.attributes
-import me.davidgomesdev.observability.span
+import me.davidgomesdev.pessoafaladora.backend.llm.config.RAGConfig
+import me.davidgomesdev.pessoafaladora.backend.model.Persona
+import me.davidgomesdev.pessoafaladora.backend.model.PessoaCategory
+import me.davidgomesdev.pessoafaladora.backend.model.PessoaText
+import me.davidgomesdev.pessoafaladora.backend.observability.attributes
+import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.jboss.logging.Logger
 import java.io.File

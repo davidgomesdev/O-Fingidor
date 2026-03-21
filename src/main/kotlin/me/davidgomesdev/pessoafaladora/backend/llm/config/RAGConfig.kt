@@ -1,4 +1,4 @@
-package me.davidgomesdev.llm.config
+package me.davidgomesdev.pessoafaladora.backend.llm.config
 
 import io.smallrye.config.ConfigMapping
 

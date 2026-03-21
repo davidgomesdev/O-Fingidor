@@ -1,4 +1,4 @@
-package me.davidgomesdev.observability
+package me.davidgomesdev.pessoafaladora.backend.observability
 
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.common.AttributesBuilder
