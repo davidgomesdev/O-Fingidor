@@ -27,7 +27,7 @@ quarkus:
 
 ollama:
   base-url: http://127.0.0.1:11434
-  timeout: 60s
+  timeout: 120s
   chat-model:
     model-id: qwen3:1.7b
     temperature: 0.7
@@ -39,6 +39,8 @@ rag:
   max-results: 6
   min-score: 0.75
   expand-query: false
+  # Ingest 25 documents at a time
+  ingestion-chunk-size: 25
   expanding-query-template: |
     Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL de uma dada pergunta do utilizador.
     Cada versão deve ser redigida de forma diferente, com um objetivo claro, usando sinónimos ou estruturas de frase alternativas, mas todas devem manter o significado original.

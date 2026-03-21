@@ -149,6 +149,7 @@ class RAG(
         } else {
             log.info("Collection '$collectionName' already exists")
         }
+
         managedExecutor.runAsync {
             ingestDocuments(
                 qdrantClient,
@@ -221,7 +222,7 @@ class RAG(
 
             val wholeTimeSpent = measureTime {
                 uniqueDocumentsToIngest
-                    .chunked(50)
+                    .chunked(config.ingestionChunkSize())
                     .forEach { chunk ->
                         val chunkTimeSpent = measureTime {
                             ingestor

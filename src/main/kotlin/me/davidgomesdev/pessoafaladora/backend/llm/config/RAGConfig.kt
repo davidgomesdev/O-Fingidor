@@ -8,6 +8,7 @@ interface RAGConfig {
     fun expandingQueryTemplate(): String
     fun maxResults(): Int
     fun minScore(): Double
+    fun ingestionChunkSize(): Int
     fun qdrant(): QdrantConfig
 
     interface QdrantConfig {
