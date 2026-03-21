@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
     <configuration default="false" name="Launch Dependencies" type="docker-deploy" factoryName="docker-compose.yml"
-                   server-name="Docker">
+                   activateToolWindowBeforeRun="false" server-name="Docker">
         <deployment type="docker-compose.yml">
             <settings>
                 <option name="sourceFilePath" value="docker-compose.yaml"/>
