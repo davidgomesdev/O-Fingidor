@@ -9,6 +9,7 @@ import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.pessoafaladora.backend.dto.ChatEvent
+import me.davidgomesdev.pessoafaladora.backend.llm.TextAttributes
 import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.jboss.logging.Logger
@@ -73,8 +74,10 @@ class ChatService(val assistant: Assistant) {
                                 "Source Retrieved",
                                 attributes {
                                     put("index", index.toString())
-                                    put("title", metadata.getString("title"))
-                                    put("category", metadata.getString("categoryName"))
+                                    TextAttributes.run {
+                                        put("title", metadata.getString(TITLE))
+                                        put("category", metadata.getString(CATEGORY_NAME))
+                                    }
                                     put("score", String.format("%.2f", score))
                                 }
                             )
@@ -105,10 +108,10 @@ class ChatService(val assistant: Assistant) {
         val score = ((source.metadata()[ContentMetadata.SCORE] as Double) * 100).roundToInt()
         val metadata = source.textSegment().metadata()
 
-        val id = metadata.getLong("textId") ?: 0
-        val title = metadata.getString("title") ?: ""
-        val author = metadata.getString("author") ?: ""
-        val category = metadata.getString("categoryName") ?: ""
+        val id = metadata.getLong(TextAttributes.TEXT_ID) ?: 0
+        val title = metadata.getString(TextAttributes.TITLE) ?: ""
+        val author = metadata.getString(TextAttributes.AUTHOR) ?: ""
+        val category = metadata.getString(TextAttributes.CATEGORY_NAME) ?: ""
 
         if (listOf(title, author, category).any(String::isBlank)) {
             log.warn("Some metadata fields are empty! (title: $title, author: $author, category: $category)")
