@@ -43,3 +43,4 @@ nb-configuration.xml
 .kotlin
 
 docker-compose-modified.yaml
+./system_message.txt

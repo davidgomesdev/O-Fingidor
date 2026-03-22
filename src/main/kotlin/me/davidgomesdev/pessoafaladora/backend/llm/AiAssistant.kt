@@ -14,12 +14,14 @@ import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
 import me.davidgomesdev.pessoafaladora.backend.service.Assistant
 import org.jboss.logging.Logger
+import java.io.File
 
 @ApplicationScoped
 class AiAssistant(val personaContext: PersonaContext) {
 
     val log: Logger = Logger.getLogger(this::class.java)
 
+    // Used if there is no local system_message.txt
     private val systemMessage: String =
         Thread.currentThread().contextClassLoader
             .getResourceAsStream("system_message.txt")!!
@@ -31,7 +33,13 @@ class AiAssistant(val personaContext: PersonaContext) {
         log.info("Creating assistant")
         return AiServices.builder(Assistant::class.java)
             .systemMessageProvider { _ ->
-                if (personaContext.persona == Persona.NINGUEM) null else systemMessage
+                if (personaContext.persona == Persona.NINGUEM) return@systemMessageProvider null
+
+                val systemMessageLocalFile = File("system_message.txt")
+
+                if (systemMessageLocalFile.exists()) return@systemMessageProvider systemMessageLocalFile.readText()
+
+                systemMessage
             }
             .registerListeners(
                 AiServiceStartedListener { event ->
