@@ -35,6 +35,8 @@ class ChatService(val assistant: Assistant) {
         val startTime = timeSource.markNow()
 
         return Multi.createFrom().emitter { stream ->
+            stream.emit(ChatEvent.Start(span.spanContext.traceId))
+
             chatStream
                 .onPartialResponse { partialResponse ->
                     stream.emit(ChatEvent.Token(partialResponse))

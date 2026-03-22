@@ -32,7 +32,7 @@ class ThinkingAPI(val chatService: ChatService, val personaContext: PersonaConte
 
         val span = tracer.spanBuilder("API QueryModel").apply {
             personaContext.persona!!.also { persona ->
-                log.info("Using persona: $persona")
+                log.info("Using persona: ${persona.displayName}")
                 setAttribute("persona", persona.codeName)
             }
         }

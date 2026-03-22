@@ -246,8 +246,6 @@ class RAG(
                                 log.error("Failed to ingest", ex)
                                 span.setStatus(StatusCode.ERROR)
                                 span.recordException(ex)
-                                scope.close()
-                                span.end()
                                 return
                             }
                         }

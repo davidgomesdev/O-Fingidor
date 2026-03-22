@@ -5,11 +5,14 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes(
+    JsonSubTypes.Type(value = ChatEvent.Start::class, name = "start"),
     JsonSubTypes.Type(value = ChatEvent.Token::class, name = "token"),
     JsonSubTypes.Type(value = ChatEvent.Sources::class, name = "sources"),
     JsonSubTypes.Type(value = ChatEvent.Done::class, name = "done"),
 )
 sealed class ChatEvent {
+
+    data class Start(val traceId: String) : ChatEvent()
 
     data class Token(val value: String) : ChatEvent()
 
