@@ -239,8 +239,17 @@ class RAG(
                     .chunked(config.ingestionChunkSize())
                     .forEach { chunk ->
                         val chunkTimeSpent = measureTime {
-                            ingestor
-                                .ingest(chunk)
+                            try {
+                                ingestor
+                                    .ingest(chunk)
+                            } catch (ex: Exception) {
+                                log.error("Failed to ingest", ex)
+                                span.setStatus(StatusCode.ERROR)
+                                span.recordException(ex)
+                                scope.close()
+                                span.end()
+                                return
+                            }
                         }
 
                         log.info("Ingested chunk (took $chunkTimeSpent)")
