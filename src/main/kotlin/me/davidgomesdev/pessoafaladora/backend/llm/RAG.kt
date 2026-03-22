@@ -18,6 +18,7 @@ import dev.langchain4j.rag.query.transformer.ExpandingQueryTransformer
 import dev.langchain4j.rag.query.transformer.QueryTransformer
 import dev.langchain4j.store.embedding.EmbeddingStore
 import dev.langchain4j.store.embedding.EmbeddingStoreIngestor
+import dev.langchain4j.store.embedding.filter.Filter
 import dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey
 import dev.langchain4j.store.embedding.qdrant.QdrantEmbeddingStore
 import io.opentelemetry.api.GlobalOpenTelemetry
@@ -148,6 +149,7 @@ class RAG(
             span.addEvent("Created collection")
         } else {
             log.info("Collection '$collectionName' already exists")
+            span.addEvent("Collection exists, proceeding")
         }
 
         managedExecutor.runAsync {
@@ -159,27 +161,37 @@ class RAG(
             )
         }
 
+        span.setStatus(StatusCode.OK)
+        span.end()
+
         return EmbeddingStoreContentRetriever.builder()
             .embeddingStore(embeddingStore)
             .embeddingModel(embeddingModel)
             .maxResults(config.maxResults())
             .minScore(config.minScore())
-            .dynamicFilter { _ ->
-                val persona = personaContext.persona
-
-                if (persona == null) {
-                    Span.current().addEvent("⚠\uFE0F Received null persona when filtering for content!")
-                    log.warn("Received null persona when filtering for content!")
-                    return@dynamicFilter null
-                }
-
-                when (persona) {
-                    Persona.FERNANDO_PESSOA -> null
-                    else ->
-                        metadataKey("author").isEqualTo(persona.name)
-                }
-            }
+            .dynamicFilter(::filterPersona)
             .build()
+    }
+
+    private fun filterPersona(
+        @Suppress("unused_parameter")
+        query: Query
+    ): Filter? {
+        val persona = personaContext.persona
+
+        if (persona == null) {
+            Span.current().addEvent("⚠\uFE0F Received null persona when filtering for content!")
+            log.warn("Received null persona when filtering for content!")
+            return null
+        }
+
+        return when (persona) {
+            Persona.FERNANDO_PESSOA -> null
+            // Filter out any text
+            Persona.NINGUEM -> metadataKey("textId").isEqualTo(-1)
+            else ->
+                metadataKey("author").isEqualTo(persona.name)
+        }
     }
 
 
@@ -205,7 +217,6 @@ class RAG(
             if (isPreviewOnly) {
                 log.info("Running for preview ONLY")
             }
-            val span = Span.current()
 
             val totalDocumentsLeftToIngest =
                 documents.filterNot { ingestedDocuments.contains(it.metadata().getLong(TextAttributes.TEXT_ID)) }
@@ -218,7 +229,10 @@ class RAG(
             val uniqueDocumentsToIngest =
                 totalDocumentsLeftToIngest.distinctBy { it.metadata().getLong(TextAttributes.TEXT_ID) }
 
-            log.info("Ingesting ${uniqueDocumentsToIngest.size} unique documents (out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})")
+            log.info(
+                "Ingesting ${uniqueDocumentsToIngest.size} unique documents " +
+                        "(out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})"
+            )
 
             val wholeTimeSpent = measureTime {
                 uniqueDocumentsToIngest
