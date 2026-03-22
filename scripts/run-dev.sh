@@ -26,7 +26,7 @@ fi
 
 ENV_VARIABLES=$(printf 'RAG_QDRANT_API_KEY="%s" PREVIEW_ONLY="%s" QUARKUS_HTTP_CORS_ORIGINS="%s"' \
     "$QDRANT_API_KEY" \
-    "${PREVIEW_ONLY:false}" \
+    "${PREVIEW_ONLY:-false}" \
     "${ALLOWED_ORIGINS:-http://127.0.0.1:8080,http://localhost:8080}"
 )
 

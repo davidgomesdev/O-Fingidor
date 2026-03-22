@@ -188,9 +188,9 @@ class RAG(
         return when (persona) {
             Persona.FERNANDO_PESSOA -> null
             // Filter out any text
-            Persona.NINGUEM -> metadataKey("textId").isEqualTo(-1)
+            Persona.NINGUEM -> metadataKey(TextAttributes.TEXT_ID).isEqualTo(-1)
             else ->
-                metadataKey("author").isEqualTo(persona.name)
+                metadataKey(TextAttributes.AUTHOR).isEqualTo(persona.name)
         }
     }
 
