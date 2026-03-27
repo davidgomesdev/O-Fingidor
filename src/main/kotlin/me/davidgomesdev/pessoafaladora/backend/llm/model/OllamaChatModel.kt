@@ -1,4 +1,4 @@
-package me.davidgomesdev.pessoafaladora.backend.llm
+package me.davidgomesdev.pessoafaladora.backend.llm.model
 
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
@@ -7,18 +7,15 @@ import dev.langchain4j.model.ollama.OllamaChatModel
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.inject.Singleton
 import me.davidgomesdev.pessoafaladora.backend.llm.config.OllamaConfig
 import org.jboss.logging.Logger
 
 @ApplicationScoped
-class OllamaModels(val config: OllamaConfig) {
+class OllamaChatModel(val config: OllamaConfig) : LanguageModel {
 
     val log: Logger = Logger.getLogger(this::class.java)
 
-    @Singleton
-    @Suppress("unused")
-    fun chatModel(): ChatModel {
+    override fun chatModel(): ChatModel {
         log.info("Creating Ollama chat model: ${config.chatModel().modelId()}")
         return OllamaChatModel.builder()
             .baseUrl(config.baseUrl())
@@ -28,9 +25,7 @@ class OllamaModels(val config: OllamaConfig) {
             .build()
     }
 
-    @Singleton
-    @Suppress("unused")
-    fun streamingChatModel(): StreamingChatModel {
+    override fun streamingChatModel(): StreamingChatModel {
         return config.chatModel().run {
             log.info("Creating Ollama streaming chat model: ${modelId()}")
             OllamaStreamingChatModel.builder()
@@ -44,9 +39,7 @@ class OllamaModels(val config: OllamaConfig) {
         }
     }
 
-    @Singleton
-    @Suppress("unused")
-    fun embeddingModel(): EmbeddingModel {
+    override fun embeddingModel(): EmbeddingModel {
         log.info("Creating Ollama embedding model: ${config.embeddingModel().modelId()}")
         return OllamaEmbeddingModel.builder()
             .baseUrl(config.baseUrl())
@@ -55,4 +48,3 @@ class OllamaModels(val config: OllamaConfig) {
             .build()
     }
 }
-
