@@ -3,7 +3,7 @@ package me.davidgomesdev.pessoafaladora.backend.llm.config
 import io.smallrye.config.ConfigMapping
 import java.time.Duration
 
-@ConfigMapping(prefix = "ollama")
+@ConfigMapping(prefix = "model.ollama")
 interface OllamaConfig {
     fun baseUrl(): String
     fun timeout(): Duration
