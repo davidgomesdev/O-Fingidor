@@ -40,6 +40,7 @@ dependencies {
     implementation("io.quarkiverse.web-bundler:quarkus-web-bundler:$webBundlerVersion")
     implementation("io.quarkiverse.langchain4j:quarkus-langchain4j-core")
     implementation("dev.langchain4j:langchain4j-ollama")
+    implementation("dev.langchain4j:langchain4j-anthropic")
     implementation("dev.langchain4j:langchain4j-qdrant:$qdrantLangchainVersion")
     implementation("dev.langchain4j:langchain4j-document-parser-markdown:$langchainMarkdownVersion")
     implementation("io.smallrye.reactive:mutiny-kotlin:$mutinyVersion")
