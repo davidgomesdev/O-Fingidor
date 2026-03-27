@@ -10,7 +10,8 @@ import org.jboss.logging.Logger
 
 @ApplicationScoped
 class ModelsProducer(
-    private val ollama: OllamaChatModel,
+    private val ollama: OllamaLanguageModel,
+    private val anthropic: AnthropicLanguageModel,
     @param:ConfigProperty(name = "model.name")
     private val name: String,
 ) : LanguageModel {
@@ -21,17 +22,25 @@ class ModelsProducer(
     }
 
     @Singleton
-    override fun chatModel(): ChatModel {
-        return ollama.chatModel()
-    }
+    override fun chatModel(): ChatModel =
+        when (name) {
+            "ollama" -> ollama.chatModel()
+            "anthropic" -> anthropic.chatModel()
+            else -> throw IllegalArgumentException("Unknown chat model '$name'")
+        }
 
     @Singleton
-    override fun streamingChatModel(): StreamingChatModel {
-        return ollama.streamingChatModel()
-    }
+    override fun streamingChatModel(): StreamingChatModel =
+        when (name) {
+            "ollama" -> ollama.streamingChatModel()
+            "anthropic" -> anthropic.streamingChatModel()
+            else -> throw IllegalArgumentException("Unknown chat model '$name'")
+        }
 
     @Singleton
-    override fun embeddingModel(): EmbeddingModel {
+    @Suppress("unused")
+    fun embeddingModel(): EmbeddingModel {
+        // Anthropic doesn't have an embedding model
         return ollama.embeddingModel()
     }
 }

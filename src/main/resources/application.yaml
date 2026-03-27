@@ -37,6 +37,15 @@ model:
       thinking: false
     embedding-model:
       model-id: qwen3-embedding:8b
+  anthropic:
+    timeout: 60s
+    api-key: REPLACE_ME
+    chat-model:
+      # options (api alias): https://platform.claude.com/docs/en/about-claude/models/overview#latest-models-comparison
+      model-id: claude-haiku-4-5
+      temperature: 0.7
+      thinking: true
+      max-tokens: 50000
 
 rag:
   max-results: 6

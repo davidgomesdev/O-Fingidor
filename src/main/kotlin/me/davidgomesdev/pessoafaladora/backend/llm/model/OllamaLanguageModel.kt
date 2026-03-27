@@ -11,7 +11,7 @@ import me.davidgomesdev.pessoafaladora.backend.llm.config.OllamaConfig
 import org.jboss.logging.Logger
 
 @ApplicationScoped
-class OllamaChatModel(val config: OllamaConfig) : LanguageModel {
+class OllamaLanguageModel(val config: OllamaConfig) : LanguageModel {
 
     val log: Logger = Logger.getLogger(this::class.java)
 
@@ -39,7 +39,7 @@ class OllamaChatModel(val config: OllamaConfig) : LanguageModel {
         }
     }
 
-    override fun embeddingModel(): EmbeddingModel {
+    fun embeddingModel(): EmbeddingModel {
         log.info("Creating Ollama embedding model: ${config.embeddingModel().modelId()}")
         return OllamaEmbeddingModel.builder()
             .baseUrl(config.baseUrl())
