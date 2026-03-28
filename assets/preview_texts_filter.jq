@@ -2,7 +2,7 @@
 # Usage: jq -f jq_filter.jq all_texts.json
 
 def find_categories:
-  if .title == "Cartas de Amor" or .title == "MENSAGEM" or .title == "O GUARDADOR DE REBANHOS" then
+  if .title == "Cartas de Amor" or .title == "MENSAGEM" or .title == "O GUARDADOR DE REBANHOS" or .title == "Livro do Desassossego" then
     {
       id: .id,
       title: .title,

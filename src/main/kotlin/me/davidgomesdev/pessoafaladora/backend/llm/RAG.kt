@@ -46,9 +46,6 @@ import org.jboss.logging.Logger
 import java.io.File
 import kotlin.time.measureTime
 
-// Livro do Desassossego
-const val PREVIEW_CATEGORY_ID = 33
-
 typealias TextsByCategory = Map<Pair<Int, String>, List<PessoaText>>
 
 
@@ -373,7 +370,12 @@ class RAG(
     @ApplicationScoped
     @Suppress("unused")
     fun allTextsByCategory(): TextsByCategory {
-        val rootCategories = Json.decodeFromString<List<PessoaCategory>>(File("assets/all_texts.json").readText())
+        val filename = if (isPreviewOnly) {
+            log.info("Using preview only texts")
+            "assets/preview_texts.json"
+        } else "assets/all_texts.json"
+
+        val rootCategories = Json.decodeFromString<List<PessoaCategory>>(File(filename).readText())
         val allTexts = mutableMapOf<Pair<Int, String>, MutableList<PessoaText>>()
 
         val categoriesToBeProcessed = rootCategories.toMutableList()
@@ -391,14 +393,6 @@ class RAG(
                 if (category.texts != null)
                     categoryTexts.addAll(category.texts)
             }
-        }
-
-        if (isPreviewOnly) {
-            val previewTexts = allTexts.filter { it.key.first == PREVIEW_CATEGORY_ID }
-
-            log.info("Using preview amount of texts ${previewTexts.map { it.value.size }.sum()}")
-
-            return previewTexts
         }
 
         log.info("Total amount of texts ${allTexts.map { it.value.size }.sum()}")
