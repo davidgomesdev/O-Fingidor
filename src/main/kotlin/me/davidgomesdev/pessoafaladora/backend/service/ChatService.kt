@@ -43,9 +43,9 @@ class ChatService(val assistant: Assistant) {
                 }
                 .onCompleteResponse { response ->
                     val timeTaken = startTime.elapsedNow().toString(DurationUnit.SECONDS, 2)
-                    val tokensUsed = response.tokenUsage().outputTokenCount()
+                    val totalTokensUsed = response.tokenUsage().totalTokenCount()
 
-                    log.info("Took $timeTaken to respond (used $tokensUsed output tokens)")
+                    log.info("Took $timeTaken to respond (used $totalTokensUsed output tokens)")
 
                     span.apply {
                         addEvent(
@@ -56,34 +56,34 @@ class ChatService(val assistant: Assistant) {
                                 put("thinking", response.aiMessage().thinking())
                                 put("model", response.metadata().modelName())
                                 put("model_duration.ms", timeTaken)
-                                put("output_tokens_used", tokensUsed.toLong())
+                                put("total_tokens_used", totalTokensUsed.toLong())
+                                put("input_tokens_used", response.tokenUsage().inputTokenCount().toLong())
+                                put("output_tokens_used", response.tokenUsage().outputTokenCount().toLong())
                                 put("complete_reason", response.finishReason().name)
                             }
                         )
                     }
 
-                    stream.emit(ChatEvent.Done(tokensUsed, timeTaken))
+                    stream.emit(ChatEvent.Done(totalTokensUsed, timeTaken))
                     stream.complete()
                     scope.close()
                 }
                 .onRetrieved { contents ->
                     span.apply {
-                        contents.forEachIndexed { index, content ->
-                            val score = (content.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0
-                            val metadata = content.textSegment().metadata()
+                        val eventAttributes = attributes {
+                            contents.forEachIndexed { index, content ->
+                                val score = (content.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0
+                                val metadata = content.textSegment().metadata()
 
-                            addEvent(
-                                "Source Retrieved",
-                                attributes {
-                                    put("index", index.toString())
-                                    TextAttributes.run {
-                                        put("title", metadata.getString(TITLE))
-                                        put("category", metadata.getString(CATEGORY_NAME))
-                                    }
-                                    put("score", String.format("%.2f", score))
+                                TextAttributes.run {
+                                    put("${index}_title", metadata.getString(TITLE))
+                                    put("${index}_category", metadata.getString(CATEGORY_NAME))
                                 }
-                            )
+                                put("${index}_score", String.format("%.2f", score))
+                            }
                         }
+
+                        addEvent("Sources Retrieved", eventAttributes)
                     }
 
                     val sources = contents.map(::toSourceItem)
