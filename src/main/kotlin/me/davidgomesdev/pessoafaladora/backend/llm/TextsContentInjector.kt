@@ -3,6 +3,7 @@ package me.davidgomesdev.pessoafaladora.backend.llm
 import dev.langchain4j.data.message.ChatMessage
 import dev.langchain4j.data.message.TextContent
 import dev.langchain4j.data.message.UserMessage
+import dev.langchain4j.model.input.Prompt
 import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.injector.DefaultContentInjector
@@ -10,22 +11,21 @@ import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.jboss.logging.Logger
+import java.io.File
 
-val CONTENT_INJECTOR_TEMPLATE: PromptTemplate = PromptTemplate.from(
-    """
-    {{userMessage}}
-    
-    Responde tendo em conta estes textos teus:
-    
-    {{contents}}
-    """.trimIndent()
-)
+private const val PROMPT_FILE_NAME = "content_injector.txt"
 
 @ApplicationScoped
 class TextsContentInjector : DefaultContentInjector(
-    CONTENT_INJECTOR_TEMPLATE,
     mutableListOf(TextAttributes.AUTHOR, TextAttributes.TITLE, TextAttributes.CATEGORY_NAME)
 ) {
+
+    // Used if there is no local
+    private val promptTemplate: String =
+        Thread.currentThread().contextClassLoader
+            .getResourceAsStream("prompts/$PROMPT_FILE_NAME")!!
+            .reader().readText()
+
     val log: Logger = Logger.getLogger(TextsContentInjector::class.java)
 
     override fun inject(contents: List<Content>, chatMessage: ChatMessage): ChatMessage {
@@ -49,6 +49,21 @@ class TextsContentInjector : DefaultContentInjector(
                 )
             })
         }
+    }
+
+    override fun createPrompt(chatMessage: ChatMessage, contents: MutableList<Content?>): Prompt {
+        val variables: MutableMap<String, Any> = hashMapOf(
+            "userMessage" to (chatMessage as UserMessage).singleText(),
+            "contents" to format(contents)
+        )
+        val localPromptFile = File(PROMPT_FILE_NAME)
+        val prompt = PromptTemplate.from(
+            if (localPromptFile.exists()) {
+                localPromptFile.readText()
+            } else promptTemplate
+        )
+
+        return prompt.apply(variables)
     }
 
     override fun format(content: Content): String {
