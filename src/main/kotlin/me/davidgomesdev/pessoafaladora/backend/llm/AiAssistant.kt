@@ -16,6 +16,8 @@ import me.davidgomesdev.pessoafaladora.backend.service.Assistant
 import org.jboss.logging.Logger
 import java.io.File
 
+private const val PROMPT_FILE_NAME = "system_message.txt"
+
 @ApplicationScoped
 class AiAssistant(val personaContext: PersonaContext) {
 
@@ -24,7 +26,7 @@ class AiAssistant(val personaContext: PersonaContext) {
     // Used if there is no local system_message.txt
     private val systemMessage: String =
         Thread.currentThread().contextClassLoader
-            .getResourceAsStream("system_message.txt")!!
+            .getResourceAsStream("prompts/$PROMPT_FILE_NAME")!!
             .reader().readText()
 
     @Singleton
@@ -35,7 +37,7 @@ class AiAssistant(val personaContext: PersonaContext) {
             .systemMessageProvider { _ ->
                 if (personaContext.persona == Persona.NINGUEM) return@systemMessageProvider null
 
-                val systemMessageLocalFile = File("system_message.txt")
+                val systemMessageLocalFile = File(PROMPT_FILE_NAME)
 
                 if (systemMessageLocalFile.exists()) return@systemMessageProvider systemMessageLocalFile.readText()
 
