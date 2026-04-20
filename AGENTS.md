@@ -2,12 +2,15 @@
 
 ## Project Overview
 
-Quarkus + Kotlin backend for **Pessoa Faladora**, a chatbot that answers questions as the Portuguese poet Fernando
-Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant for storing embeddings and Ollama for
-querying the chat model, and streams responses to the UI over HTTP.
+Quarkus + Kotlin backend for **Pessoa Faladora**, a chatbot that answers questions as various personas of the Portuguese
+poet Fernando
+Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant for storing embeddings and supports
+both Ollama and Anthropic Claude for
+querying the chat model, and streams responses to the UI over HTTP as Server-Sent Events (NDJSON format).
 
-**Stack:** Quarkus 3.32, Kotlin/JVM 21, LangChain4j (via `quarkus-langchain4j`), Qdrant (vector store), Ollama (LLM +
-embeddings), OpenTelemetry (traces via Jaeger).
+**Stack:** Quarkus 3.32.2, Kotlin/JVM 2.2.20, LangChain4j (via `quarkus-langchain4j`), Qdrant (vector store), Ollama or
+Anthropic Claude (LLM),
+OpenTelemetry (traces via Jaeger).
 
 ---
 
@@ -18,25 +21,40 @@ src/main/kotlin/me/davidgomesdev/pessoafaladora/backend/
   Main.kt                  ← @QuarkusMain entry point
   web/
     IndexResource.kt       ← GET / — serves the Qute HTML shell, injects PESSOA_URL
-    ThinkingAPI.kt         ← PUT /pensa — streaming chat endpoint
+    ThinkingAPI.kt         ← PUT /pensa — streaming chat endpoint (NDJSON ChatEvent)
   service/
-    ChatService.kt         ← Orchestrates LangChain4j TokenStream → Mutiny Multi<String>
+    ChatService.kt         ← Orchestrates LangChain4j TokenStream → Mutiny Multi<ChatEvent>
   llm/
     AiAssistant.kt         ← Builds the AiServices Assistant CDI bean
     RAG.kt                 ← Wires RAG pipeline: ingestion, Qdrant store, retriever, query transformer
     TextsContentInjector.kt← Custom ContentInjector: formats retrieved texts into the prompt
+    PersonaContext.kt      ← @RequestScoped bean — carries persona for the current request
     config/
       RAGConfig.kt         ← @ConfigMapping for the `rag.*` config prefix
+      OllamaConfig.kt      ← @ConfigMapping for the `model.ollama.*` config prefix
+      AnthropicConfig.kt   ← @ConfigMapping for the `model.anthropic.*` config prefix
+    model/
+      LanguageModel.kt     ← Interface for language model abstraction
+      OllamaLanguageModel.kt  ← Ollama implementation
+      AnthropicLanguageModel.kt← Anthropic Claude implementation
+      ModelsProducer.kt    ← CDI producer that selects LLM based on config
   observability/
     TracingUtils.kt        ← Helpers: span(), attributes { } builder DSL
-  source/
-    PessoaModels.kt        ← @Serializable data classes: PessoaCategory, PessoaText
+  model/
+    Persona.kt             ← Enum: Persona (FERNANDO_PESSOA, ALBERTO_CAEIRO, etc.) + PersonaCategory
+    PessoaTextModels.kt    ← Data classes: PessoaCategory, PessoaText
+  dto/
+    ChatEvent.kt           ← Sealed class: Start, Token, Sources, Done events
+    PessoaSourceDtos.kt    ← DTOs for source metadata
 src/main/resources/
-  application.yaml         ← All runtime config (Ollama, Qdrant, OTEL, CORS, …)
-  system_message.txt       ← LLM system prompt — defines Fernando Pessoa's identity and rules
+  application.yaml         ← All runtime config (model selection, Ollama, Anthropic, Qdrant, OTEL, CORS, …)
+  prompts/
+    system_message.txt     ← LLM system prompt — defines Fernando Pessoa's identity and rules
+    content_injector.txt   ← Prompt template for injecting retrieved content
   templates/index.html     ← Qute template; injects window.PESSOA_URL for the JS UI
 assets/
   all_texts.json           ← Full corpus of Fernando Pessoa's texts (categories + texts tree)
+  preview_texts.json       ← Subset of texts for preview mode (category 33 only)
 ```
 
 ---
@@ -45,17 +63,23 @@ assets/
 
 | File                            | Role                                                                                                     |
 |---------------------------------|----------------------------------------------------------------------------------------------------------|
-| `web/ThinkingAPI.kt`            | `PUT /pensa` — accepts `QueryPayload(input)`, returns `Multi<String>` with OTel span                     |
+| `web/ThinkingAPI.kt`            | `PUT /pensa` — accepts `QueryPayload(input, persona)`, returns `Multi<ChatEvent>` with OTel span         |
 | `web/IndexResource.kt`          | `GET /` — renders `index.html` Qute template with `pessoa.url` config value                              |
-| `service/ChatService.kt`        | Calls `Assistant.chat()`, emits partial tokens, emits `<sources>…</sources>` on retrieval                |
-| `llm/HeteronymContext.kt`       | `@RequestScoped` bean — carries the optional heteronym filter for the current request                    |
+| `service/ChatService.kt`        | Calls `Assistant.chat()`, emits ChatEvent.Token, ChatEvent.Sources, ChatEvent.Done                       |
+| `llm/PersonaContext.kt`         | `@RequestScoped` bean — carries the persona for the current request                                      |
 | `llm/AiAssistant.kt`            | CDI `@Singleton` factory — builds `AiServices` with streaming model, RAG augmentor, listeners            |
 | `llm/RAG.kt`                    | Creates/recreates Qdrant collection, ingests documents, builds `ContentRetriever` and `QueryTransformer` |
-| `llm/TextsContentInjector.kt`   | Overrides `DefaultContentInjector` to format each retrieved segment with title/category/author           |
+| `llm/TextsContentInjector.kt`   | Overrides `DefaultContentInjector` to format retrieved segments using `content_injector.txt` template    |
 | `llm/config/RAGConfig.kt`       | `@ConfigMapping(prefix = "rag")` — typed access to RAG tuning parameters                                 |
+| `llm/config/OllamaConfig.kt`    | `@ConfigMapping(prefix = "model.ollama")` — Ollama-specific config                                       |
+| `llm/config/AnthropicConfig.kt` | `@ConfigMapping(prefix = "model.anthropic")` — Anthropic-specific config                                 |
+| `llm/model/ModelsProducer.kt`   | CDI producer — selects LLM implementation based on `model.name` config                                   |
 | `observability/TracingUtils.kt` | `span()` returns `Span.current()`; `attributes { }` is an `AttributesBuilder` DSL                        |
-| `source/PessoaModels.kt`        | `PessoaCategory` / `PessoaText` — used to deserialize `assets/all_texts.json`                            |
-| `system_message.txt`            | System prompt loaded via `@SystemMessage(fromResource = "system_message.txt")`                           |
+| `model/Persona.kt`              | Enum of personas (FERNANDO_PESSOA, ALBERTO_CAEIRO, etc.) with display names and categories               |
+| `model/PessoaTextModels.kt`     | `PessoaCategory` / `PessoaText` — data classes for corpus structure                                      |
+| `dto/ChatEvent.kt`              | Sealed class hierarchy for streaming events (Start, Token, Sources, Done)                                |
+| `prompts/system_message.txt`    | System prompt loaded via `@SystemMessage(fromResource = "prompts/system_message.txt")`                   |
+| `prompts/content_injector.txt`  | Prompt template for formatting retrieved content in RAG                                                  |
 
 ---
 
@@ -63,18 +87,20 @@ assets/
 
 ### `PUT /pensa`
 
-- **Body:** `{"input": "<question>", "heteronym": "<name>"}`  — `heteronym` is optional
-- **Response:** `text/plain` streaming — partial LLM tokens followed by a final `<sources>…</sources>` chunk
+- **Body:** `{"input": "<question>", "persona": "<codename>"}` — `persona` is required
+- **Response:** `application/x-ndjson` streaming — NDJSON ChatEvent objects
 - **Header:** `X-Trace-Id` — OTel trace ID for the request
-- When `heteronym` is provided the retriever filters to embeddings whose `author` metadata equals that value
-  (e.g. `"Alberto Caeiro"`, `"Álvaro de Campos"`, `"Ricardo Reis"`, `"Bernardo Soares"`, `"Fernando Pessoa"`).
-  The value is also recorded as a `heteronym` attribute on the OTel span.
-- The `<sources>` chunk format (one source per line):
-  ```
-  - Categoria: <categoryName>
-    Título: <title>
-    Autor <author> (score: <N>%)
-  ```
+- **Personas:** `ninguem`, `o_fingidor` (dev), `fernando_pessoa` (ortónimo), `alberto_caeiro`, `alvaro_de_campos`,
+  `ricardo_reis` (heterónimos), `bernardo_soares` (semi-heterónimo)
+- When persona is provided the retriever filters to embeddings whose `author` metadata matches that persona's display
+  name.
+  The persona is also recorded as an attribute on the OTel span.
+- **ChatEvent types:**
+  - `Start`: `{"type": "start", "traceId": "<id>"}`
+  - `Token`: `{"type": "token", "value": "<text>"}`
+  - `Sources`:
+    `{"type": "sources", "items": [{"id": N, "title": "...", "author": "...", "category": "...", "score": N}]}`
+  - `Done`: `{"type": "done", "tokensUsed": N, "timeTaken": "X.XXs"}`
 
 ### `GET /`
 
@@ -95,21 +121,34 @@ Start with: `docker compose up -d`
 
 ## Configuration (`application.yaml` / env overrides)
 
-| Key                                                   | Default                  | Notes                                                         |
-|-------------------------------------------------------|--------------------------|---------------------------------------------------------------|
-| `quarkus.langchain4j.ollama.base-url`                 | `http://127.0.0.1:11434` | Ollama server URL                                             |
-| `quarkus.langchain4j.ollama.chat-model.model-id`      | `qwen3:0.6b`             | LLM model for chat                                            |
-| `quarkus.langchain4j.ollama.embedding-model.model-id` | `qwen3-embedding:0.6b`   | Embedding model for RAG                                       |
-| `quarkus.otel.exporter.otlp.endpoint`                 | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                   |
-| `rag.max-results`                                     | `6`                      | Max retrieved chunks per query                                |
-| `rag.min-score`                                       | `0.75`                   | Minimum cosine similarity score                               |
-| `rag.expand-query`                                    | `false`                  | Enable `ExpandingQueryTransformer`                            |
-| `rag.qdrant.host`                                     | `127.0.0.1`              | Qdrant host                                                   |
-| `rag.qdrant.collection.name`                          | `pessoa_texts`           | Qdrant collection; `_preview` suffix when `preview-only=true` |
-| `pessoa.url`                                          | `http://127.0.0.1:8080`  | Injected into the HTML template as `window.PESSOA_URL`        |
-| `preview-only`                                        | `false`                  | Limits corpus to category 33 (Livro do Desassossego)          |
-| `recreate.embeddings`                                 | `false`                  | Drop and re-ingest the Qdrant collection on startup           |
-| `QUARKUS_HTTP_CORS_ORIGINS`                           | (see yaml)               | Allowed CORS origins (env override)                           |
+| Key                                      | Default                  | Notes                                                              |
+|------------------------------------------|--------------------------|--------------------------------------------------------------------|
+| `model.name`                             | `ollama`                 | LLM provider: `ollama` or `anthropic`                              |
+| `model.ollama.base-url`                  | `http://127.0.0.1:11434` | Ollama server URL                                                  |
+| `model.ollama.timeout`                   | `600s`                   | Ollama request timeout                                             |
+| `model.ollama.chat-model.model-id`       | `qwen3:1.7b`             | Ollama LLM model for chat                                          |
+| `model.ollama.chat-model.temperature`    | `0.7`                    | Temperature for Ollama chat model                                  |
+| `model.ollama.chat-model.thinking`       | `false`                  | Enable thinking/reasoning for Ollama                               |
+| `model.ollama.embedding-model.model-id`  | `qwen3-embedding:8b`     | Ollama embedding model for RAG                                     |
+| `model.anthropic.api-key`                | `REPLACE_ME`             | Anthropic API key                                                  |
+| `model.anthropic.timeout`                | `60s`                    | Anthropic request timeout                                          |
+| `model.anthropic.chat-model.model-id`    | `claude-haiku-4-5`       | Anthropic model ID (e.g. `claude-haiku-4-5`, `claude-sonnet-4-6`)  |
+| `model.anthropic.chat-model.temperature` | `0.7`                    | Temperature for Anthropic chat model                               |
+| `model.anthropic.chat-model.thinking`    | `true`                   | Enable extended thinking for Claude                                |
+| `model.anthropic.chat-model.max-tokens`  | `50000`                  | Max output tokens for Anthropic                                    |
+| `quarkus.otel.exporter.otlp.endpoint`    | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                        |
+| `rag.max-results`                        | `6`                      | Max retrieved chunks per query                                     |
+| `rag.min-score`                          | `0.75`                   | Minimum cosine similarity score                                    |
+| `rag.expand-query`                       | `false`                  | Enable `ExpandingQueryTransformer`                                 |
+| `rag.ingestion-chunk-size`               | `25`                     | Number of documents to ingest in parallel                          |
+| `rag.expanding-query-template`           | (see yaml)               | Portuguese prompt template for query expansion                     |
+| `rag.qdrant.host`                        | `127.0.0.1`              | Qdrant host                                                        |
+| `rag.qdrant.api-key`                     | (see yaml)               | Qdrant API key (matches docker-compose config)                     |
+| `rag.qdrant.collection.name`             | `pessoa_texts`           | Qdrant collection name; `_preview` suffix when `preview-only=true` |
+| `pessoa.url`                             | `http://127.0.0.1:8080`  | Injected into the HTML template as `window.PESSOA_URL`             |
+| `preview-only`                           | `false`                  | Limits corpus to preview subset (uses `preview_texts.json`)        |
+| `recreate.embeddings`                    | `false`                  | Drop and re-ingest the Qdrant collection on startup                |
+| `QUARKUS_HTTP_CORS_ORIGINS`              | (see yaml)               | Allowed CORS origins (env override)                                |
 
 ---
 
@@ -148,20 +187,28 @@ Or use the convenience script (starts Docker services, sets Java 21, launches a 
 - **CDI `@Singleton` factory methods in `@ApplicationScoped` beans**: LangChain4j components (`Assistant`,
   `RetrievalAugmentor`, `ContentRetriever`, etc.) are produced via `@Singleton`-annotated functions inside
   `@ApplicationScoped` classes (`AiAssistant`, `RAG`). Follow this pattern when adding new LangChain4j beans.
+- **LLM provider abstraction**: The `LanguageModel` interface allows switching between Ollama and Anthropic.
+  `ModelsProducer` creates the appropriate implementation based on `model.name` config. Both implementations
+  support streaming, temperature, and thinking/reasoning modes.
 - **OTel tracing**: Use `span()` to get the current span and `attributes { }` to build `Attributes`. Always close
   scopes in a `finally` block. Spans created manually must be ended with `span.end()`.
 - **Streaming via Mutiny**: The LLM token stream is bridged from LangChain4j's `TokenStream` to a
-  `Multi<String>` inside `ChatService.query()`. New streaming endpoints should follow the same
+  `Multi<ChatEvent>` inside `ChatService.query()`. New streaming endpoints should follow the same
   `Multi.createFrom().emitter { }` pattern and use `@Blocking` on the JAX-RS method.
-- **Sources sentinel**: `ChatService` emits retrieved sources as a single `<sources>…</sources>` chunk via
-  `stream.emit(...)` inside `onRetrieved`. The UI (and any other consumer) must handle this sentinel separately
-  from the main token stream.
-- **Corpus loading**: `RAG.allTextsByCategory()` deserializes `assets/all_texts.json` into a
-  `Map<Pair<Int, String>, List<PessoaText>>` at startup. Category 33 is the preview subset
-  (`PREVIEW_CATEGORY_ID`).
+- **ChatEvent streaming**: `ChatService` emits structured events: `Start` (with trace ID), `Token` (partial text),
+  `Sources` (retrieved documents with metadata and scores), `Done` (token counts and timing). All events are
+  serialized as NDJSON.
+- **Corpus loading**: `RAG.allTextsByCategory()` deserializes `assets/all_texts.json` (or `preview_texts.json` if
+  `preview-only=true`) into a `Map<Pair<Int, String>, List<PessoaText>>` at startup.
+- **Persona-based filtering**: The `PersonaContext` request-scoped bean carries the selected persona.
+  `RAG.contentRetriever()` applies a metadata filter to retrieve only texts authored by the selected persona's
+  display name (e.g., "Alberto Caeiro").
+- **Content injection**: `TextsContentInjector` uses a customizable prompt template (`content_injector.txt`) to
+  format retrieved content before injection into the LLM context. The template can be overridden at runtime by
+  placing a local copy in the working directory.
 - **Dependency versions**: All inline versions live in `build.gradle.kts` as `val` properties at the top of the
   file. The Quarkus BOM version is driven by `gradle.properties` (`quarkusPlatformVersion`). The Qdrant
   LangChain4j dependency is force-resolved due to a broken version in Quarkus' BOM — keep the
   `resolutionStrategy { force(…) }` block when updating.
-- **`preview-only` mode**: Injected as a `@ConfigProperty` into `RAG`. When `true`, only texts from the
-  *Livro do Desassossego* category are ingested and a `_preview`-suffixed Qdrant collection is used.
+- **`preview-only` mode**: Injected as a `@ConfigProperty` into `RAG`. When `true`, loads `preview_texts.json`
+  instead of the full corpus and uses a `_preview`-suffixed Qdrant collection.
