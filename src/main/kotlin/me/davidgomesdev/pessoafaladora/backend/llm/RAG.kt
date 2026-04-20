@@ -34,6 +34,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
+import me.davidgomesdev.pessoafaladora.backend.dto.PessoaCategoryDto
 import me.davidgomesdev.pessoafaladora.backend.llm.config.RAGConfig
 import me.davidgomesdev.pessoafaladora.backend.model.Persona
 import me.davidgomesdev.pessoafaladora.backend.model.PessoaCategory
@@ -47,7 +48,6 @@ import java.io.File
 import kotlin.time.measureTime
 
 typealias TextsByCategory = Map<Pair<Int, String>, List<PessoaText>>
-
 
 object TextAttributes {
     const val TEXT_ID = "textId"
@@ -375,10 +375,10 @@ class RAG(
             "assets/preview_texts.json"
         } else "assets/all_texts.json"
 
-        val rootCategories = Json.decodeFromString<List<PessoaCategory>>(File(filename).readText())
+        val rootCategories = Json.decodeFromString<List<PessoaCategoryDto>>(File(filename).readText())
         val allTexts = mutableMapOf<Pair<Int, String>, MutableList<PessoaText>>()
 
-        val categoriesToBeProcessed = rootCategories.toMutableList()
+        val categoriesToBeProcessed = rootCategories.map(PessoaCategory::fromRootCategory).toMutableList()
 
         while (categoriesToBeProcessed.isNotEmpty()) {
             val currentCategories = categoriesToBeProcessed.toList()
@@ -386,12 +386,13 @@ class RAG(
             categoriesToBeProcessed.clear()
 
             currentCategories.forEach { category ->
-                categoriesToBeProcessed.addAll(category.subcategories)
+                categoriesToBeProcessed.addAll(category.subcategories.map {
+                    PessoaCategory.from(category.rootCategoryId ?: category.id, category)
+                })
 
                 val categoryTexts = allTexts.getOrPut(Pair(category.id, category.title)) { mutableListOf() }
 
-                if (category.texts != null)
-                    categoryTexts.addAll(category.texts)
+                categoryTexts.addAll(category.texts)
             }
         }
 
