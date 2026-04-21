@@ -8,7 +8,8 @@ Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant
 both Ollama and Anthropic Claude for
 querying the chat model, and streams responses to the UI over HTTP as Server-Sent Events (NDJSON format).
 
-**Stack:** Quarkus 3.32.2, Kotlin/JVM 2.2.20, LangChain4j (via `quarkus-langchain4j`), Qdrant (vector store), Ollama or
+**Stack:** Quarkus 3.32.2, Kotlin/JVM 2.2.20, Gradle, LangChain4j (via `quarkus-langchain4j`), Qdrant (vector store),
+Ollama or
 Anthropic Claude (LLM),
 OpenTelemetry (traces via Jaeger).
 
@@ -61,25 +62,25 @@ assets/
 
 ### Key Files
 
-| File                            | Role                                                                                                     |
-|---------------------------------|----------------------------------------------------------------------------------------------------------|
-| `web/ThinkingAPI.kt`            | `PUT /pensa` — accepts `QueryPayload(input, persona)`, returns `Multi<ChatEvent>` with OTel span         |
-| `web/IndexResource.kt`          | `GET /` — renders `index.html` Qute template with `pessoa.url` config value                              |
-| `service/ChatService.kt`        | Calls `Assistant.chat()`, emits ChatEvent.Token, ChatEvent.Sources, ChatEvent.Done                       |
-| `llm/PersonaContext.kt`         | `@RequestScoped` bean — carries the persona for the current request                                      |
-| `llm/AiAssistant.kt`            | CDI `@Singleton` factory — builds `AiServices` with streaming model, RAG augmentor, listeners            |
-| `llm/RAG.kt`                    | Creates/recreates Qdrant collection, ingests documents, builds `ContentRetriever` and `QueryTransformer` |
-| `llm/TextsContentInjector.kt`   | Overrides `DefaultContentInjector` to format retrieved segments using `content_injector.txt` template    |
-| `llm/config/RAGConfig.kt`       | `@ConfigMapping(prefix = "rag")` — typed access to RAG tuning parameters                                 |
-| `llm/config/OllamaConfig.kt`    | `@ConfigMapping(prefix = "model.ollama")` — Ollama-specific config                                       |
-| `llm/config/AnthropicConfig.kt` | `@ConfigMapping(prefix = "model.anthropic")` — Anthropic-specific config                                 |
-| `llm/model/ModelsProducer.kt`   | CDI producer — selects LLM implementation based on `model.name` config                                   |
-| `observability/TracingUtils.kt` | `span()` returns `Span.current()`; `attributes { }` is an `AttributesBuilder` DSL                        |
-| `model/Persona.kt`              | Enum of personas (FERNANDO_PESSOA, ALBERTO_CAEIRO, etc.) with display names and categories               |
-| `model/PessoaTextModels.kt`     | `PessoaCategory` / `PessoaText` — data classes for corpus structure                                      |
-| `dto/ChatEvent.kt`              | Sealed class hierarchy for streaming events (Start, Token, Sources, Done)                                |
-| `prompts/system_message.txt`    | System prompt loaded via `@SystemMessage(fromResource = "prompts/system_message.txt")`                   |
-| `prompts/content_injector.txt`  | Prompt template for formatting retrieved content in RAG                                                  |
+| File                            | Role                                                                                                                                           |
+|---------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
+| `web/ThinkingAPI.kt`            | `PUT /pensa` — accepts `QueryPayload(input, persona)`, returns `Multi<ChatEvent>` with OTel span                                               |
+| `web/IndexResource.kt`          | `GET /` — renders `index.html` Qute template with `pessoa.url` config value                                                                    |
+| `service/ChatService.kt`        | Calls `Assistant.chat()`, emits ChatEvent.Token, ChatEvent.Sources, ChatEvent.Done                                                             |
+| `llm/PersonaContext.kt`         | `@RequestScoped` bean — carries the persona for the current request                                                                            |
+| `llm/AiAssistant.kt`            | CDI `@Singleton` factory — builds `AiServices` with streaming model, RAG augmentor, listeners                                                  |
+| `llm/RAG.kt`                    | Creates/recreates Qdrant collection, ingests documents, builds `ContentRetriever` and `QueryTransformer`. Uses semantic chunking when enabled. |
+| `llm/TextsContentInjector.kt`   | Overrides `DefaultContentInjector` to format retrieved segments using `content_injector.txt` template                                          |
+| `llm/config/RAGConfig.kt`       | `@ConfigMapping(prefix = "rag")` — typed access to RAG tuning parameters                                                                       |
+| `llm/config/OllamaConfig.kt`    | `@ConfigMapping(prefix = "model.ollama")` — Ollama-specific config                                                                             |
+| `llm/config/AnthropicConfig.kt` | `@ConfigMapping(prefix = "model.anthropic")` — Anthropic-specific config                                                                       |
+| `llm/model/ModelsProducer.kt`   | CDI producer — selects LLM implementation based on `model.name` config                                                                         |
+| `observability/TracingUtils.kt` | `span()` returns `Span.current()`; `attributes { }` is an `AttributesBuilder` DSL                                                              |
+| `model/Persona.kt`              | Enum of personas (FERNANDO_PESSOA, ALBERTO_CAEIRO, etc.) with display names and categories                                                     |
+| `model/PessoaTextModels.kt`     | `PessoaCategory` / `PessoaText` — data classes for corpus structure                                                                            |
+| `dto/ChatEvent.kt`              | Sealed class hierarchy for streaming events (Start, Token, Sources, Done)                                                                      |
+| `prompts/system_message.txt`    | System prompt loaded via `@SystemMessage(fromResource = "prompts/system_message.txt")`                                                         |
+| `prompts/content_injector.txt`  | Prompt template for formatting retrieved content in RAG                                                                                        |
 
 ---
 
@@ -121,34 +122,38 @@ Start with: `docker compose up -d`
 
 ## Configuration (`application.yaml` / env overrides)
 
-| Key                                      | Default                  | Notes                                                              |
-|------------------------------------------|--------------------------|--------------------------------------------------------------------|
-| `model.name`                             | `ollama`                 | LLM provider: `ollama` or `anthropic`                              |
-| `model.ollama.base-url`                  | `http://127.0.0.1:11434` | Ollama server URL                                                  |
-| `model.ollama.timeout`                   | `600s`                   | Ollama request timeout                                             |
-| `model.ollama.chat-model.model-id`       | `qwen3:1.7b`             | Ollama LLM model for chat                                          |
-| `model.ollama.chat-model.temperature`    | `0.7`                    | Temperature for Ollama chat model                                  |
-| `model.ollama.chat-model.thinking`       | `false`                  | Enable thinking/reasoning for Ollama                               |
-| `model.ollama.embedding-model.model-id`  | `qwen3-embedding:8b`     | Ollama embedding model for RAG                                     |
-| `model.anthropic.api-key`                | `REPLACE_ME`             | Anthropic API key                                                  |
-| `model.anthropic.timeout`                | `60s`                    | Anthropic request timeout                                          |
-| `model.anthropic.chat-model.model-id`    | `claude-haiku-4-5`       | Anthropic model ID (e.g. `claude-haiku-4-5`, `claude-sonnet-4-6`)  |
-| `model.anthropic.chat-model.temperature` | `0.7`                    | Temperature for Anthropic chat model                               |
-| `model.anthropic.chat-model.thinking`    | `true`                   | Enable extended thinking for Claude                                |
-| `model.anthropic.chat-model.max-tokens`  | `50000`                  | Max output tokens for Anthropic                                    |
-| `quarkus.otel.exporter.otlp.endpoint`    | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                        |
-| `rag.max-results`                        | `6`                      | Max retrieved chunks per query                                     |
-| `rag.min-score`                          | `0.75`                   | Minimum cosine similarity score                                    |
-| `rag.expand-query`                       | `false`                  | Enable `ExpandingQueryTransformer`                                 |
-| `rag.ingestion-chunk-size`               | `25`                     | Number of documents to ingest in parallel                          |
-| `rag.expanding-query-template`           | (see yaml)               | Portuguese prompt template for query expansion                     |
-| `rag.qdrant.host`                        | `127.0.0.1`              | Qdrant host                                                        |
-| `rag.qdrant.api-key`                     | (see yaml)               | Qdrant API key (matches docker-compose config)                     |
-| `rag.qdrant.collection.name`             | `pessoa_texts`           | Qdrant collection name; `_preview` suffix when `preview-only=true` |
-| `pessoa.url`                             | `http://127.0.0.1:8080`  | Injected into the HTML template as `window.PESSOA_URL`             |
-| `preview-only`                           | `false`                  | Limits corpus to preview subset (uses `preview_texts.json`)        |
-| `recreate.embeddings`                    | `false`                  | Drop and re-ingest the Qdrant collection on startup                |
-| `QUARKUS_HTTP_CORS_ORIGINS`              | (see yaml)               | Allowed CORS origins (env override)                                |
+| Key                                          | Default                  | Notes                                                              |
+|----------------------------------------------|--------------------------|--------------------------------------------------------------------|
+| `model.name`                                 | `ollama`                 | LLM provider: `ollama` or `anthropic`                              |
+| `model.ollama.base-url`                      | `http://127.0.0.1:11434` | Ollama server URL                                                  |
+| `model.ollama.timeout`                       | `600s`                   | Ollama request timeout                                             |
+| `model.ollama.chat-model.model-id`           | `qwen3:1.7b`             | Ollama LLM model for chat                                          |
+| `model.ollama.chat-model.temperature`        | `0.7`                    | Temperature for Ollama chat model                                  |
+| `model.ollama.chat-model.thinking`           | `false`                  | Enable thinking/reasoning for Ollama                               |
+| `model.ollama.embedding-model.model-id`      | `qwen3-embedding:8b`     | Ollama embedding model for RAG                                     |
+| `model.anthropic.api-key`                    | `REPLACE_ME`             | Anthropic API key                                                  |
+| `model.anthropic.timeout`                    | `60s`                    | Anthropic request timeout                                          |
+| `model.anthropic.chat-model.model-id`        | `claude-haiku-4-5`       | Anthropic model ID (e.g. `claude-haiku-4-5`, `claude-sonnet-4-6`)  |
+| `model.anthropic.chat-model.temperature`     | `0.7`                    | Temperature for Anthropic chat model                               |
+| `model.anthropic.chat-model.thinking`        | `true`                   | Enable extended thinking for Claude                                |
+| `model.anthropic.chat-model.max-tokens`      | `50000`                  | Max output tokens for Anthropic                                    |
+| `quarkus.otel.exporter.otlp.endpoint`        | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                        |
+| `rag.max-results`                            | `6`                      | Max retrieved chunks per query                                     |
+| `rag.min-score`                              | `0.75`                   | Minimum cosine similarity score                                    |
+| `rag.expand-query`                           | `false`                  | Enable `ExpandingQueryTransformer`                                 |
+| `rag.ingestion-chunk-size`                   | `25`                     | Number of documents to ingest in parallel                          |
+| `rag.expanding-query-template`               | (see yaml)               | Portuguese prompt template for query expansion                     |
+| `rag.semantic-chunking.enabled`              | `false`                  | Use semantic chunking instead of regex splitting                   |
+| `rag.semantic-chunking.similarity-threshold` | `0.7`                    | Cosine similarity threshold for merging adjacent chunks (0.0-1.0)  |
+| `rag.semantic-chunking.min-chunk-size`       | `100`                    | Minimum chunk size in chars, force merge below this                |
+| `rag.semantic-chunking.max-chunk-size`       | `1000`                   | Maximum chunk size in chars, fallback to sentence split above      |
+| `rag.qdrant.host`                            | `127.0.0.1`              | Qdrant host                                                        |
+| `rag.qdrant.api-key`                         | (see yaml)               | Qdrant API key (matches docker-compose config)                     |
+| `rag.qdrant.collection.name`                 | `pessoa_texts`           | Qdrant collection name; `_preview` suffix when `preview-only=true` |
+| `pessoa.url`                                 | `http://127.0.0.1:8080`  | Injected into the HTML template as `window.PESSOA_URL`             |
+| `preview-only`                               | `false`                  | Limits corpus to preview subset (uses `preview_texts.json`)        |
+| `recreate.embeddings`                        | `false`                  | Drop and re-ingest the Qdrant collection on startup                |
+| `QUARKUS_HTTP_CORS_ORIGINS`                  | (see yaml)               | Allowed CORS origins (env override)                                |
 
 ---
 
@@ -212,3 +217,7 @@ Or use the convenience script (starts Docker services, sets Java 21, launches a 
   `resolutionStrategy { force(…) }` block when updating.
 - **`preview-only` mode**: Injected as a `@ConfigProperty` into `RAG`. When `true`, loads `preview_texts.json`
   instead of the full corpus and uses a `_preview`-suffixed Qdrant collection.
+- **Semantic chunking**: When enabled (`rag.semantic-chunking.enabled=true`), uses `SemanticDocumentSplitter`
+  instead of regex-based splitting. Splits on paragraph boundaries, embeds segments, and merges based on
+  cosine similarity to preserve semantic coherence. Falls back to sentence splitting for oversized paragraphs.
+  Tunable via `similarity-threshold` (0.6-0.8), `min-chunk-size`, and `max-chunk-size` config.

@@ -65,6 +65,11 @@ rag:
     api-key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk
     collection:
       name: pessoa_texts
+  semantic-chunking:
+    enabled: false
+    similarity-threshold: 0.7
+    min-chunk-size: 100
+    max-chunk-size: 1000
 
 pessoa:
   url: http://127.0.0.1:8080

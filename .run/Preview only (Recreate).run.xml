@@ -1,14 +1,15 @@
 <component name="ProjectRunConfigurationManager">
-    <configuration default="false" name="Preview only (Recreate)" type="QuarkusRunConfiguration"
-                   factoryName="QuarkusRunConfiguration" focusToolWindowBeforeRun="true">
+  <configuration default="false" name="Preview only (Recreate)" type="QuarkusRunConfiguration"
+                 factoryName="QuarkusRunConfiguration" focusToolWindowBeforeRun="true">
     <option name="env">
       <map>
+        <entry key="MODEL_OLLAMA_EMBEDDING_MODEL_MODEL_ID" value="qwen3-embedding:0.6b"/>
         <entry key="PREVIEW_ONLY" value="true" />
         <entry key="RECREATE_EMBEDDINGS" value="true" />
       </map>
     </option>
     <module name="pessoa-faladora.main" />
     <option name="profile" />
-        <method v="2"/>
+    <method v="2"/>
   </configuration>
 </component>
