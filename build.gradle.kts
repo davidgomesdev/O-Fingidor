@@ -20,6 +20,7 @@ val kotlinxSerializationJson = "1.9.0"
 val mutinyVersion = "2.0.0"
 val otelExtension = "1.59.0"
 val qdrantLangchainVersion = "1.12.2-beta22"
+val mockito = "5.2.1"
 
 // Fixes Quarkus' BOM imposing a broken Qdrant version
 configurations.all {
@@ -49,6 +50,8 @@ dependencies {
     implementation("io.quarkus:quarkus-opentelemetry")
     implementation("io.opentelemetry:opentelemetry-extension-kotlin:$otelExtension")
     testImplementation("io.quarkus:quarkus-junit5")
+    testImplementation("io.quarkus:quarkus-junit5-mockito")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:$mockito")
 }
 
 group = "me.davidgomesdev.pessoafaladora"

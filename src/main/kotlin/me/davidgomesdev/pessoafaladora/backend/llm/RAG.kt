@@ -1,6 +1,7 @@
 package me.davidgomesdev.pessoafaladora.backend.llm
 
 import dev.langchain4j.data.document.Document
+import dev.langchain4j.data.document.DocumentSplitter
 import dev.langchain4j.data.document.Metadata
 import dev.langchain4j.data.document.splitter.DocumentByRegexSplitter
 import dev.langchain4j.data.document.splitter.DocumentBySentenceSplitter
@@ -65,10 +66,22 @@ class RAG(
     val recreateEmbeddings: Boolean,
     val config: RAGConfig,
     val personaContext: PersonaContext,
+    val embeddingModel: EmbeddingModel,
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
-    val splitter = DocumentByRegexSplitter("\n\n", "\n", 900, 0, DocumentBySentenceSplitter(300, 0))
+    val splitter: DocumentSplitter = if (config.semanticChunking().enabled()) {
+        log.info("Using SemanticDocumentSplitter with threshold=${config.semanticChunking().similarityThreshold()}")
+        SemanticDocumentSplitter(
+            embeddingModel = embeddingModel,
+            minChunkSize = config.semanticChunking().minChunkSize(),
+            maxChunkSize = config.semanticChunking().maxChunkSize(),
+            similarityThreshold = config.semanticChunking().similarityThreshold()
+        )
+    } else {
+        log.info("Using DocumentByRegexSplitter")
+        DocumentByRegexSplitter("\n\n", "\n", 900, 0, DocumentBySentenceSplitter(300, 0))
+    }
 
     @Singleton
     @Suppress("unused")
