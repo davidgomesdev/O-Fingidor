@@ -92,7 +92,7 @@ class RAG(
     ): RetrievalAugmentor =
         DefaultRetrievalAugmentor.builder()
             .queryRouter { _ ->
-                if (personaContext.persona == Persona.O_FINGIDOR || personaContext.persona == Persona.NINGUEM) {
+                if (personaContext.persona == Persona.O_FINGIDOR) {
                     Span.current().addEvent("Skipping RAG")
                     log.info("Skipping RAG for persona ${Persona.O_FINGIDOR.codeName}")
                     emptyList()
@@ -198,7 +198,7 @@ class RAG(
         return when (persona) {
             Persona.FERNANDO_PESSOA -> null
             // Filter out any text
-            Persona.NINGUEM -> metadataKey(TextAttributes.TEXT_ID).isEqualTo(-1)
+            Persona.O_FINGIDOR -> metadataKey(TextAttributes.TEXT_ID).isEqualTo(-1)
             else ->
                 metadataKey(TextAttributes.AUTHOR).isEqualTo(persona.name)
         }

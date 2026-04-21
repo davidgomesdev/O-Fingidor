@@ -91,7 +91,7 @@ assets/
 - **Body:** `{"input": "<question>", "persona": "<codename>"}` — `persona` is required
 - **Response:** `application/x-ndjson` streaming — NDJSON ChatEvent objects
 - **Header:** `X-Trace-Id` — OTel trace ID for the request
-- **Personas:** `ninguem`, `o_fingidor` (dev), `fernando_pessoa` (ortónimo), `alberto_caeiro`, `alvaro_de_campos`,
+- **Personas:** `o_fingidor` (dev), `fernando_pessoa` (ortónimo), `alberto_caeiro`, `alvaro_de_campos`,
   `ricardo_reis` (heterónimos), `bernardo_soares` (semi-heterónimo)
 - When persona is provided the retriever filters to embeddings whose `author` metadata matches that persona's display
   name.
