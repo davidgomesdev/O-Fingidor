@@ -48,18 +48,18 @@ model:
       max-tokens: 50000
 
 rag:
-  max-results: 6
+  max-results: 10
   min-score: 0.75
   expand-query: false
   # Ingest 25 documents at a time
   ingestion-chunk-size: 25
   expanding-query-template: |
-    Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL de uma dada pergunta do utilizador.
-    Cada versão deve ser redigida de forma diferente, com um objetivo claro, usando sinónimos ou estruturas de frase alternativas, mas todas devem manter o significado original.
-    Estas versões serão usadas para recuperar documentos relevantes.
-    Cada versão da query deve estar numa linha separada.
-    Não uses enumerações, hífens ou qualquer formatação adicional.
-    Pergunta do utilizador: {{query}}
+    Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL da seguinte pergunta, para recuperar textos relevantes sobre Fernando Pessoa, os seus heterónimos e obra.
+    Cada versão deve explorar um ângulo diferente: temático, biográfico, filosófico, poético ou literário.
+    Quando relevante, usa nomes de heterónimos (Alberto Caeiro, Álvaro de Campos, Ricardo Reis, Bernardo Soares), títulos de obras ou vocabulário literário português da época.
+    Mantém o sentido original mas varia vocabulário e estrutura para maximizar cobertura de recuperação.
+    Cada versão numa linha separada. Sem enumerações, hífens ou formatação adicional.
+    Pergunta: {{query}}
   qdrant:
     host: 127.0.0.1
     api-key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk
