@@ -24,7 +24,8 @@ quarkus:
         # Dev Compose JS
         - http://localhost:8081
         - http://127.0.0.1:8081
-
+  vertx:
+    max-event-loop-execute-time: 30s
 model:
   # options: ollama, anthropic
   name: ollama
@@ -51,8 +52,7 @@ rag:
   max-results: 10
   min-score: 0.75
   expand-query: false
-  # Ingest 25 documents at a time
-  ingestion-chunk-size: 25
+  ingestion-chunk-size: 10
   expanding-query-template: |
     Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL da seguinte pergunta, para recuperar textos relevantes sobre Fernando Pessoa, os seus heterónimos e obra.
     Cada versão deve explorar um ângulo diferente: temático, biográfico, filosófico, poético ou literário.
