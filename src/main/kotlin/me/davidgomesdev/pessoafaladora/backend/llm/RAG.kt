@@ -232,31 +232,15 @@ class RAG(
                     }
                     .chunked(config.ingestionChunkSize())
                     .forEach { chunk ->
-                        val chunkSpan = tracer.spanBuilder("rag.ingesting.chunk")
-                            .setParent(io.opentelemetry.context.Context.current().with(span))
-                            .setSpanKind(SpanKind.INTERNAL)
-                            .setAttribute("chunk_size", chunk.size.toLong())
-                            .startSpan()
+                        val ingestionResult = ingestChunk(chunk, ingestor)
 
-                        val chunkTimeSpent = measureTime {
-                            try {
-                                ingestor.ingest(chunk)
-                            } catch (ex: Exception) {
-                                log.error("Failed to ingest", ex)
-                                chunkSpan.setStatus(StatusCode.ERROR)
-                                chunkSpan.recordException(ex)
-                                chunkSpan.end()
-                                span.setStatus(StatusCode.ERROR)
-                                span.recordException(ex)
-                                return
-                            }
+                        if (ingestionResult.isFailure) {
+                            span.setStatus(StatusCode.ERROR)
+                            span.recordException(ingestionResult.exceptionOrNull()!!)
+                            return
+                        } else {
+                            ingestedCount += chunk.size
                         }
-
-                        ingestedCount += chunk.size
-                        log.info("Ingested chunk of ${chunk.size} (took $chunkTimeSpent)")
-                        chunkSpan.setAttribute("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
-                        chunkSpan.setStatus(StatusCode.OK)
-                        chunkSpan.end()
                     }
             }
 
@@ -273,6 +257,55 @@ class RAG(
             scope.close()
             span.end()
         }
+    }
+
+    private fun ingestChunk(chunk: List<Document>, ingestor: EmbeddingStoreIngestor): Result<Unit> {
+        if (log.isDebugEnabled) {
+            val textsLink = chunk.joinToString(separator = "\n") {
+                "${
+                    it.metadata().getString(TextAttributes.TITLE)
+                } - https://pessoa.davidgomes.blog/textReader/${
+                    it.metadata().getLong(
+                        TextAttributes.TEXT_ID
+                    )
+                }"
+            }
+            log.debug("Ingesting $textsLink")
+        }
+
+        val chunkSpan = tracer.spanBuilder("rag.ingesting.chunk")
+            .setParent(io.opentelemetry.context.Context.current().with(Span.current()))
+            .setSpanKind(SpanKind.INTERNAL)
+            .setAttribute("chunk_size", chunk.size.toLong())
+            .startSpan()
+
+        val chunkTimeSpent = measureTime {
+            try {
+                ingestor.ingest(chunk)
+            } catch (ex: Exception) {
+                log.error("Failed to ingest", ex)
+                chunkSpan.setStatus(StatusCode.ERROR)
+                chunkSpan.recordException(ex)
+                chunkSpan.end()
+                return Result.failure(ex)
+            }
+        }
+
+        log.info("Ingested chunk of ${chunk.size} (took $chunkTimeSpent)")
+        chunkSpan.setAttribute("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
+        chunkSpan.setAllAttributes(attributes {
+            chunk.forEachIndexed { index, document ->
+                put(
+                    "text_id_$index", document.metadata().getLong(
+                        TextAttributes.TEXT_ID
+                    ) ?: 0
+                )
+            }
+        })
+        chunkSpan.setStatus(StatusCode.OK)
+        chunkSpan.end()
+
+        return Result.success(Unit)
     }
 
     @Singleton
@@ -365,7 +398,7 @@ class RAG(
 
                 currentCategories.forEach { category ->
                     categoriesToBeProcessed.addAll(category.subcategories.map {
-                        PessoaCategory.from(category.rootCategoryId ?: category.id, category)
+                        PessoaCategory.from(category.rootCategoryId ?: category.id, it)
                     })
 
                     category.texts
