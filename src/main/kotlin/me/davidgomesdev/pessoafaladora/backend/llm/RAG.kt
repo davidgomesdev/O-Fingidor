@@ -32,14 +32,12 @@ import io.qdrant.client.grpc.Collections.Distance
 import io.qdrant.client.grpc.Collections.VectorParams
 import io.qdrant.client.grpc.Points
 import jakarta.enterprise.context.ApplicationScoped
-import jakarta.inject.Named
 import jakarta.inject.Singleton
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.pessoafaladora.backend.dto.PessoaCategoryDto
 import me.davidgomesdev.pessoafaladora.backend.llm.config.RAGConfig
 import me.davidgomesdev.pessoafaladora.backend.model.Persona
 import me.davidgomesdev.pessoafaladora.backend.model.PessoaCategory
-import me.davidgomesdev.pessoafaladora.backend.model.PessoaText
 import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -47,8 +45,6 @@ import org.eclipse.microprofile.context.ManagedExecutor
 import org.jboss.logging.Logger
 import java.io.File
 import kotlin.time.measureTime
-
-typealias TextsByCategory = Map<Pair<Int, String>, List<PessoaText>>
 
 object TextAttributes {
     const val TEXT_ID = "textId"
@@ -113,8 +109,6 @@ class RAG(
     @Singleton
     @Suppress("unused")
     fun contentRetriever(
-        @Named("PessoaDocuments")
-        documents: List<Document>,
         embeddingModel: EmbeddingModel,
         embeddingStore: EmbeddingStore<TextSegment>,
         qdrantClient: QdrantClient,
@@ -166,8 +160,7 @@ class RAG(
             ingestDocuments(
                 qdrantClient,
                 collectionName,
-                ingestor,
-                documents
+                ingestor
             )
         }
 
@@ -209,7 +202,6 @@ class RAG(
         qdrantClient: QdrantClient,
         collectionName: String,
         ingestor: EmbeddingStoreIngestor,
-        documents: List<Document>,
     ) {
         val span = tracer.spanBuilder("rag.ingesting")
             .setSpanKind(SpanKind.INTERNAL).apply {
@@ -219,61 +211,62 @@ class RAG(
                 setAttribute("max-results", config.maxResults().toLong())
             }
             .startSpan()
-        val ingestedDocuments = getIngestedDocumentIDs(qdrantClient, collectionName)
+        val ingestedDocumentIds = getIngestedDocumentIDs(qdrantClient, collectionName).toSet()
 
         val scope = span.makeCurrent()
         try {
-
             if (isPreviewOnly) {
                 log.info("Running for preview ONLY")
             }
 
-            val totalDocumentsLeftToIngest =
-                documents.filterNot { ingestedDocuments.contains(it.metadata().getLong(TextAttributes.TEXT_ID)) }
+            val seenIds = mutableSetOf<Long>()
+            var ingestedCount = 0
 
-            if (totalDocumentsLeftToIngest.isEmpty()) {
-                log.info("No documents needed to ingest")
-                return
-            }
-
-            val uniqueDocumentsToIngest =
-                totalDocumentsLeftToIngest.distinctBy { it.metadata().getLong(TextAttributes.TEXT_ID) }
-
-            log.info(
-                "Ingesting ${uniqueDocumentsToIngest.size} unique documents " +
-                        "(out of ${documents.size} total; non-unique count is ${totalDocumentsLeftToIngest.size})"
-            )
+            log.info("Ingesting documents")
 
             val wholeTimeSpent = measureTime {
-                uniqueDocumentsToIngest
+                documentSequence()
+                    .filter { doc ->
+                        val textId = doc.metadata().getLong(TextAttributes.TEXT_ID) ?: return@filter true
+                        textId !in ingestedDocumentIds && seenIds.add(textId)
+                    }
                     .chunked(config.ingestionChunkSize())
                     .forEach { chunk ->
+                        val chunkSpan = tracer.spanBuilder("rag.ingesting.chunk")
+                            .setParent(io.opentelemetry.context.Context.current().with(span))
+                            .setSpanKind(SpanKind.INTERNAL)
+                            .setAttribute("chunk_size", chunk.size.toLong())
+                            .startSpan()
+
                         val chunkTimeSpent = measureTime {
                             try {
-                                ingestor
-                                    .ingest(chunk)
+                                ingestor.ingest(chunk)
                             } catch (ex: Exception) {
                                 log.error("Failed to ingest", ex)
+                                chunkSpan.setStatus(StatusCode.ERROR)
+                                chunkSpan.recordException(ex)
+                                chunkSpan.end()
                                 span.setStatus(StatusCode.ERROR)
                                 span.recordException(ex)
                                 return
                             }
                         }
 
-                        log.info("Ingested chunk (took $chunkTimeSpent)")
-                        span.addEvent("Ingested chunk", attributes {
-                            put("ingested_documents_count", chunk.size.toLong())
-                            put("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
-                        })
+                        ingestedCount += chunk.size
+                        log.info("Ingested chunk of ${chunk.size} (took $chunkTimeSpent)")
+                        chunkSpan.setAttribute("time_spent_ms", chunkTimeSpent.inWholeMilliseconds)
+                        chunkSpan.setStatus(StatusCode.OK)
+                        chunkSpan.end()
                     }
             }
 
-            log.info("Documents ingested (took $wholeTimeSpent for ${uniqueDocumentsToIngest.size} documents)")
-            span.addEvent("Ingested documents", attributes {
-                put("ingested_documents_count", uniqueDocumentsToIngest.size.toLong())
-                put("total_documents_count", documents.size.toLong())
-                put("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
-            })
+            if (ingestedCount == 0) {
+                log.info("No documents needed to ingest")
+            } else {
+                log.info("Documents ingested (took $wholeTimeSpent for $ingestedCount documents)")
+                span.setAttribute("ingested_count", ingestedCount.toLong())
+                span.setAttribute("time_spent_ms", wholeTimeSpent.inWholeMilliseconds)
+            }
 
             span.setStatus(StatusCode.OK)
         } finally {
@@ -330,7 +323,7 @@ class RAG(
     @Suppress("unused")
     fun queryTransformer(chatModel: ChatModel): QueryTransformer {
         if (!config.expandQuery()) {
-            log.info("Using simple query transformer for preview")
+            log.info("Using simple query transformer")
             return DefaultQueryTransformer()
         }
 
@@ -355,63 +348,46 @@ class RAG(
         return embeddingStore
     }
 
-    @Named("PessoaDocuments")
-    @ApplicationScoped
-    @Suppress("unused")
-    fun documents(allTextsByCategory: TextsByCategory): List<Document> {
-        return allTextsByCategory.map { category ->
-            category.value
-                .filter { it.content.isNotBlank() }
-                .map {
-                    Document.document(
-                        it.content, Metadata.from(
-                            TextAttributes.run {
-                                mapOf(
-                                    TITLE to it.title,
-                                    AUTHOR to it.author,
-                                    TEXT_ID to it.id,
-                                    CATEGORY_ID to category.key.first,
-                                    CATEGORY_NAME to category.key.second,
-                                )
-                            }
-                        )
-                    )
-                }
-        }.flatten()
-    }
-
-    @ApplicationScoped
-    @Suppress("unused")
-    fun allTextsByCategory(): TextsByCategory {
+    private fun documentSequence(): Sequence<Document> {
         val filename = if (isPreviewOnly) {
             log.info("Using preview only texts")
             "assets/preview_texts.json"
         } else "assets/all_texts.json"
 
         val rootCategories = Json.decodeFromString<List<PessoaCategoryDto>>(File(filename).readText())
-        val allTexts = mutableMapOf<Pair<Int, String>, MutableList<PessoaText>>()
 
-        val categoriesToBeProcessed = rootCategories.map(PessoaCategory::fromRootCategory).toMutableList()
+        return sequence {
+            val categoriesToBeProcessed = rootCategories.map(PessoaCategory::fromRootCategory).toMutableList()
 
-        while (categoriesToBeProcessed.isNotEmpty()) {
-            val currentCategories = categoriesToBeProcessed.toList()
+            while (categoriesToBeProcessed.isNotEmpty()) {
+                val currentCategories = categoriesToBeProcessed.toList()
+                categoriesToBeProcessed.clear()
 
-            categoriesToBeProcessed.clear()
+                currentCategories.forEach { category ->
+                    categoriesToBeProcessed.addAll(category.subcategories.map {
+                        PessoaCategory.from(category.rootCategoryId ?: category.id, category)
+                    })
 
-            currentCategories.forEach { category ->
-                categoriesToBeProcessed.addAll(category.subcategories.map {
-                    PessoaCategory.from(category.rootCategoryId ?: category.id, category)
-                })
-
-                val categoryTexts = allTexts.getOrPut(Pair(category.id, category.title)) { mutableListOf() }
-
-                categoryTexts.addAll(category.texts)
+                    category.texts
+                        .filter { it.content.isNotBlank() }
+                        .forEach { text ->
+                            yield(
+                                Document.document(
+                                    text.content, Metadata.from(
+                                        mapOf(
+                                            TextAttributes.TITLE to text.title,
+                                            TextAttributes.AUTHOR to text.author,
+                                            TextAttributes.TEXT_ID to text.id,
+                                            TextAttributes.CATEGORY_ID to category.id,
+                                            TextAttributes.CATEGORY_NAME to category.title,
+                                        )
+                                    )
+                                )
+                            )
+                        }
+                }
             }
         }
-
-        log.info("Total amount of texts ${allTexts.map { it.value.size }.sum()}")
-
-        return allTexts
     }
 
     private fun traceQueryExpansion(
