@@ -193,7 +193,7 @@ class RAG(
             // Filter out any text
             Persona.O_FINGIDOR -> metadataKey(TextAttributes.TEXT_ID).isEqualTo(-1)
             else ->
-                metadataKey(TextAttributes.AUTHOR).isEqualTo(persona.name)
+                metadataKey(TextAttributes.AUTHOR).isEqualTo(persona.displayName)
         }
     }
 
