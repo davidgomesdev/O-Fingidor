@@ -1,3 +1,9 @@
+"%prod":
+  quarkus:
+    http:
+      static-dir:
+        endpoint: composeResources
+        path: uiResources/composeResources
 quarkus:
   devservices:
     enabled: false
@@ -13,9 +19,6 @@ quarkus:
         endpoint: http://localhost:14317
   http:
     host: 0.0.0.0
-    static-dir:
-      endpoint: composeResources
-      path: uiResources/composeResources
     cors:
       enabled: true
       origins:
