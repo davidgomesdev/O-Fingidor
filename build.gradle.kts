@@ -21,6 +21,7 @@ val mutinyVersion = "2.0.0"
 val otelExtension = "1.59.0"
 val qdrantLangchainVersion = "1.12.2-beta22"
 val mockito = "5.2.1"
+val nimbusJoseJwtVersion = "10.7"
 
 // Fixes Quarkus' BOM imposing a broken Qdrant version
 configurations.all {
@@ -49,7 +50,7 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-opentelemetry")
     implementation("io.opentelemetry:opentelemetry-extension-kotlin:$otelExtension")
-    implementation("com.nimbusds:nimbus-jose-jwt")
+    implementation("com.nimbusds:nimbus-jose-jwt:$nimbusJoseJwtVersion")
     implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin")
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-flyway")

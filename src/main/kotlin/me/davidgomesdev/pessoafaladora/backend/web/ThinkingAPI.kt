@@ -46,22 +46,28 @@ class ThinkingAPI(
         var sessionToken: String? = null
 
         if (authorization == null) {
-            sessionToken = sessionService.createSession(requestedPersona)
-            val conversationId = sessionService.extractConversationId(sessionToken)
-            conversationContext.conversationId = conversationId
+            val session = sessionService.createSession(requestedPersona)
+            sessionToken = session.token
+            conversationContext.conversationId = session.conversationId
             personaContext.persona = requestedPersona
+            log.info("New session started: conversationId=${session.conversationId} persona=${requestedPersona.codeName}")
         } else {
             val token = authorization.removePrefix("Bearer ").trim()
             val conversationId = sessionService.extractConversationId(token)
             val storedPersona = sessionService.getPersona(conversationId)
+
             if (storedPersona != requestedPersona) {
+                log.warn("Persona mismatch: session=$conversationId stored=${storedPersona.codeName} requested=${requestedPersona.codeName}")
                 throw WebApplicationException(
                     Response.status(409).entity("Persona mismatch: session was created for ${storedPersona.codeName}")
                         .build()
                 )
             }
+
             conversationContext.conversationId = conversationId
             personaContext.persona = storedPersona
+
+            log.debug("Continuing session: conversationId=$conversationId persona=${storedPersona.codeName}")
         }
 
         val span = tracer.spanBuilder("API QueryModel").apply {
@@ -77,7 +83,7 @@ class ThinkingAPI(
         log.info("Querying model with trace ID: $traceId")
 
         val multi = RestMulti
-            .fromMultiData(chatService.query(body.input))
+            .fromMultiData(chatService.query(body.input, span))
             .header("X-Trace-Id", traceId)
 
         if (sessionToken != null) {
