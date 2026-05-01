@@ -1,4 +1,4 @@
-# pessoa-faladora
+# O Fingidor
 
 ## Set up Ollama
 

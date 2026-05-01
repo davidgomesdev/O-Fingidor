@@ -1,4 +1,4 @@
-name: pessoa-faladora
+name: o-fingidor
 services:
   db:
     image: qdrant/qdrant:v1.17
