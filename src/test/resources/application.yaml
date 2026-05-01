@@ -48,3 +48,10 @@ rag:
 
 pessoa:
   url: http://127.0.0.1:8080
+
+session:
+  jwt:
+    secret: test-secret-that-is-at-least-32-chars!!
+    ttl: PT1H
+  memory:
+    max-messages: 20

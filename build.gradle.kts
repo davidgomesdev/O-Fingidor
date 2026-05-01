@@ -49,9 +49,16 @@ dependencies {
     implementation("io.quarkus:quarkus-arc")
     implementation("io.quarkus:quarkus-opentelemetry")
     implementation("io.opentelemetry:opentelemetry-extension-kotlin:$otelExtension")
+    implementation("com.nimbusds:nimbus-jose-jwt")
+    implementation("io.quarkus:quarkus-hibernate-orm-panache-kotlin")
+    implementation("io.quarkus:quarkus-jdbc-postgresql")
+    implementation("io.quarkus:quarkus-flyway")
+    implementation("com.github.f4b6a3:uuid-creator:6.0.0")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.quarkus:quarkus-junit5-mockito")
+    testImplementation("io.rest-assured:rest-assured:5.5.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:$mockito")
+    testImplementation("io.quarkus:quarkus-jdbc-h2")
 }
 
 group = "me.davidgomesdev.pessoafaladora"
