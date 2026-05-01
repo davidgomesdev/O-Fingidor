@@ -1,4 +1,4 @@
-package me.davidgomesdev.pessoafaladora.backend.llm.config
+package me.davidgomesdev.pessoafaladora.backend.session
 
 import com.google.common.util.concurrent.Futures
 import dev.langchain4j.model.embedding.EmbeddingModel
@@ -16,7 +16,7 @@ import me.davidgomesdev.pessoafaladora.backend.service.Assistant
 import org.mockito.Mockito
 import java.util.function.Consumer
 
-class RAGConfigTestProfile : QuarkusTestProfile {
+class SessionServiceTestProfile : QuarkusTestProfile {
     override fun getConfigOverrides(): Map<String, String> = mapOf(
         "recreate.embeddings" to "false",
         "preview-only" to "true",
@@ -24,7 +24,7 @@ class RAGConfigTestProfile : QuarkusTestProfile {
         "session.jwt.ttl" to "PT1H",
         "session.memory.max-messages" to "20",
         "quarkus.datasource.db-kind" to "h2",
-        "quarkus.datasource.jdbc.url" to "jdbc:h2:mem:rag_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
+        "quarkus.datasource.jdbc.url" to "jdbc:h2:mem:session_test;DB_CLOSE_DELAY=-1;MODE=PostgreSQL",
         "quarkus.datasource.username" to "sa",
         "quarkus.datasource.password" to "",
         "quarkus.flyway.migrate-at-start" to "true",

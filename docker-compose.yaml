@@ -28,8 +28,22 @@ services:
       COLLECTOR_JAEGER_ENABLED: "true"
     restart: on-failure:3
 
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: on-failure:3
+    environment:
+      POSTGRES_USER: pessoa
+      POSTGRES_PASSWORD: pessoa
+      POSTGRES_DB: pessoa
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   db:
+  postgres_data:
 
 configs:
   qdrant_config:

@@ -29,6 +29,17 @@ quarkus:
         - http://127.0.0.1:8081
   vertx:
     max-event-loop-execute-time: 120s
+  datasource:
+    db-kind: postgresql
+    username: pessoa
+    password: pessoa
+    jdbc:
+      url: jdbc:postgresql://127.0.0.1:5432/pessoa
+  hibernate-orm:
+    database:
+      generation: none
+  flyway:
+    migrate-at-start: true
 model:
   # options: ollama, anthropic
   name: ollama
@@ -76,3 +87,11 @@ rag:
 
 pessoa:
   url: http://127.0.0.1:8080
+
+session:
+  jwt:
+    secret: REPLACE_ME_WITH_A_STRONG_SECRET_AT_LEAST_32_CHARS
+    ttl: PT1H
+  memory:
+    max-messages: 20
+

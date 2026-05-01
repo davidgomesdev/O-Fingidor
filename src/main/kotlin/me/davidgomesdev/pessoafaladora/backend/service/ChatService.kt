@@ -2,37 +2,49 @@ package me.davidgomesdev.pessoafaladora.backend.service
 
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
+import dev.langchain4j.service.MemoryId
 import dev.langchain4j.service.TokenStream
+import dev.langchain4j.service.UserMessage
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.pessoafaladora.backend.dto.ChatEvent
+import me.davidgomesdev.pessoafaladora.backend.llm.ChatHistoryRepository
 import me.davidgomesdev.pessoafaladora.backend.llm.TextAttributes
 import me.davidgomesdev.pessoafaladora.backend.observability.attributes
 import me.davidgomesdev.pessoafaladora.backend.observability.span
+import me.davidgomesdev.pessoafaladora.backend.session.ConversationContext
 import org.jboss.logging.Logger
+import java.util.UUID
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 
 fun interface Assistant {
-    fun chat(userMessage: String): TokenStream
+    fun chat(@MemoryId memoryId: String, @UserMessage message: String): TokenStream
 }
 
 @ApplicationScoped
 @Startup
-class ChatService(val assistant: Assistant) {
+class ChatService(
+    val assistant: Assistant,
+    val conversationContext: ConversationContext,
+    val chatHistoryRepository: ChatHistoryRepository,
+) {
 
     val log: Logger = Logger.getLogger(this::class.java)
 
     fun query(input: String): Multi<ChatEvent> {
+        val conversationId = conversationContext.conversationId
+            ?: error("conversationId not set on ConversationContext")
         val span = span()
         val scope = span.makeCurrent()
-        val chatStream = assistant.chat(input)
+        val chatStream = assistant.chat(conversationId, input)
         val timeSource = TimeSource.Monotonic
         val startTime = timeSource.markNow()
+        var capturedSources: List<ChatEvent.Sources.Source> = emptyList()
 
         return Multi.createFrom().emitter { stream ->
             stream.emit(ChatEvent.Start(span.spanContext.traceId))
@@ -64,6 +76,13 @@ class ChatService(val assistant: Assistant) {
                         )
                     }
 
+                    chatHistoryRepository.persist(
+                        conversationId = UUID.fromString(conversationId),
+                        userMessage = input,
+                        aiResponse = response.aiMessage().text() ?: "",
+                        sources = capturedSources,
+                    )
+
                     stream.emit(ChatEvent.Done(totalTokensUsed, timeTaken))
                     stream.complete()
                     scope.close()
@@ -87,6 +106,7 @@ class ChatService(val assistant: Assistant) {
                     }
 
                     val sources = contents.map(::toSourceItem)
+                    capturedSources = sources
 
                     log.info("Using sources:\n${sources.joinToString("\n") { "- ${it.author}: ${it.title} (${it.score}%)" }}")
 
@@ -94,6 +114,7 @@ class ChatService(val assistant: Assistant) {
                 }
                 .onError { error ->
                     stream.fail(error)
+                    scope.close()
 
                     span.apply {
                         recordException(error)
