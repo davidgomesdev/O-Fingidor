@@ -22,6 +22,7 @@ val otelExtension = "1.59.0"
 val qdrantLangchainVersion = "1.12.2-beta22"
 val mockito = "5.2.1"
 val nimbusJoseJwtVersion = "10.7"
+val arrowVersion = "2.2.2.1"
 
 // Fixes Quarkus' BOM imposing a broken Qdrant version
 configurations.all {
@@ -55,6 +56,7 @@ dependencies {
     implementation("io.quarkus:quarkus-jdbc-postgresql")
     implementation("io.quarkus:quarkus-flyway")
     implementation("com.github.f4b6a3:uuid-creator:6.0.0")
+    implementation("io.arrow-kt:arrow-core:$arrowVersion")
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.quarkus:quarkus-junit5-mockito")
     testImplementation("io.rest-assured:rest-assured:5.5.0")

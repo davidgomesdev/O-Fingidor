@@ -1,10 +1,10 @@
-# AGENTS.md — Pessoa Faladora Backend
+# AGENTS.md — O Fingidor Backend
 
 ## Project Overview
 
-Quarkus + Kotlin backend for **Pessoa Faladora**, a chatbot that answers questions as various personas of the Portuguese
-poet Fernando
-Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant for storing embeddings and supports
+Quarkus + Kotlin backend for **O Fingidor**, a chatbot that answers questions as various personas of the Portuguese
+poet Fernando Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant for storing embeddings
+and supports
 both Ollama and Anthropic Claude for
 querying the chat model, and streams responses to the UI over HTTP as Server-Sent Events (NDJSON format).
 
