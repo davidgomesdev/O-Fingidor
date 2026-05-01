@@ -21,11 +21,10 @@ class SessionServiceTest {
 
     @Test
     fun `createSession returns a valid JWT containing conversationId`() {
-        val token = sessionService.createSession(Persona.ALBERTO_CAEIRO)
-        assertNotNull(token)
-        val conversationId = sessionService.extractConversationId(token)
-        assertNotNull(conversationId)
-        assertTrue(conversationId.isNotBlank())
+        val session = sessionService.createSession(Persona.ALBERTO_CAEIRO)
+        assertNotNull(session.token)
+        assertNotNull(session.conversationId)
+        assertTrue(session.conversationId.isNotBlank())
     }
 
     @Test
@@ -44,9 +43,8 @@ class SessionServiceTest {
 
     @Test
     fun `getPersona returns persona stored during createSession`() {
-        val token = sessionService.createSession(Persona.RICARDO_REIS)
-        val conversationId = sessionService.extractConversationId(token)
-        val persona = sessionService.getPersona(conversationId)
+        val session = sessionService.createSession(Persona.RICARDO_REIS)
+        val persona = sessionService.getPersona(session.conversationId)
         assertEquals(Persona.RICARDO_REIS, persona)
     }
 

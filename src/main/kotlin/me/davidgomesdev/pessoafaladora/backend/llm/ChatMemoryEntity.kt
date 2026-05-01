@@ -28,8 +28,8 @@ class ChatMemoryEntity : PanacheEntityBase {
     companion object : PanacheCompanionBase<ChatMemoryEntity, UUID> {
         fun findByConversationIdOrdered(conversationId: UUID): List<ChatMemoryEntity> =
             find(
-                "conversationId = :conversationId ORDER BY createdAt ASC",
-                mapOf("conversationId" to conversationId)
+                "FROM ChatMemoryEntity WHERE conversationId = :cid ORDER BY createdAt ASC",
+                mapOf("cid" to conversationId)
             ).list()
 
         fun deleteByConversationId(conversationId: UUID): Long =

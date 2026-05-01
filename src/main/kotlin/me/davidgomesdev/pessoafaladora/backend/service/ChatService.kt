@@ -36,7 +36,7 @@ class ChatService(
 
     val log: Logger = Logger.getLogger(this::class.java)
 
-    fun query(input: String): Multi<ChatEvent> {
+    fun query(input: String, callerSpan: Span): Multi<ChatEvent> {
         val conversationId = conversationContext.conversationId
             ?: error("conversationId not set on ConversationContext")
         val span = span()
@@ -86,6 +86,7 @@ class ChatService(
                     stream.emit(ChatEvent.Done(totalTokensUsed, timeTaken))
                     stream.complete()
                     scope.close()
+                    callerSpan.end()
                 }
                 .onRetrieved { contents ->
                     span.apply {
@@ -115,6 +116,7 @@ class ChatService(
                 .onError { error ->
                     stream.fail(error)
                     scope.close()
+                    callerSpan.end()
 
                     span.apply {
                         recordException(error)
