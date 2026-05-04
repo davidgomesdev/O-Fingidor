@@ -1,21 +1,42 @@
-# AGENTS.md — O Fingidor Backend
+# AGENTS.md — O Fingidor (Monorepo)
 
 ## Project Overview
 
-Quarkus + Kotlin backend for **O Fingidor**, a chatbot that answers questions as various personas of the Portuguese
-poet Fernando Pessoa. It uses a RAG (Retrieval-Augmented Generation) pipeline backed by Qdrant for storing embeddings
-and supports
-both Ollama and Anthropic Claude for
-querying the chat model, and streams responses to the UI over HTTP as Server-Sent Events (NDJSON format).
+Monorepo for **O Fingidor**, a chatbot that answers questions as various personas of the Portuguese poet Fernando
+Pessoa.
 
-**Stack:** Quarkus 3.32.2, Kotlin/JVM 2.2.20, Gradle, LangChain4j (via `quarkus-langchain4j`), Qdrant (vector store),
-Ollama or
-Anthropic Claude (LLM),
-OpenTelemetry (traces via Jaeger).
+**Modules:**
+
+- **Root** — Quarkus + Kotlin/JVM backend: RAG pipeline (Qdrant), Ollama/Anthropic Claude LLM, streams NDJSON over HTTP
+- **`:composeApp`** — Kotlin Multiplatform + Compose Multiplatform UI: targets JS (web) and JVM (desktop dev). Builds to
+  a JS bundle deployed into the backend's static resources.
+
+**Stack:** Quarkus 3.32.2, Kotlin 2.3.0/JVM 21, Gradle 9.1, LangChain4j (`quarkus-langchain4j`), Qdrant (vector
+store), Ollama or Anthropic Claude (LLM), OpenTelemetry (traces via Jaeger), Compose Multiplatform 1.10.0, Ktor 3.4.0.
 
 ---
 
 ## Architecture
+
+### UI module (`composeApp/`)
+
+```
+composeApp/src/
+  commonMain/   ← All UI logic, Ktor HTTP client, shared widgets
+  webMain/      ← Web-specific entry point + resources (index.html, styles.css)
+  jsMain/       ← JS-target-specific code (Config.kt actual)
+  jvmMain/      ← JVM desktop entry point (Window); Config.kt actual
+  webTest/      ← Tests running on JS target
+```
+
+Key UI files: `App.kt` (root composable + state), `service/ThinkAPI.kt` (Ktor streaming client),
+`service/Config.kt` (expect/actual for platform URL), `widget/Drawing.kt` (AppHeader, FernandoPessoaLogo),
+`widget/PersonaSidebar.kt`, `Colors.kt`, `Theme.kt`.
+
+UI strings are in **Portuguese**. Colors from `Colors.kt` only — no hardcoded hex. Access resources via
+`ofingidor.composeapp.generated.resources.Res`.
+
+### Backend module (root)
 
 ```
 src/main/kotlin/me/davidgomesdev/pessoafaladora/backend/
@@ -53,9 +74,12 @@ src/main/resources/
     system_message.txt     ← LLM system prompt — defines Fernando Pessoa's identity and rules
     content_injector.txt   ← Prompt template for injecting retrieved content
   templates/index.html     ← Qute template; injects window.PESSOA_URL for the JS UI
+  web/static/              ← UI JS bundle deployed here by :composeApp:deployToBackend
 assets/
   all_texts.json           ← Full corpus of Fernando Pessoa's texts (categories + texts tree)
   preview_texts.json       ← Subset of texts for preview mode (category 33 only)
+uiResources/
+  composeResources/        ← UI compiled resources deployed here by :composeApp:deployToBackend
 ```
 
 ---
@@ -159,7 +183,7 @@ Start with: `docker compose up -d`
 
 ## Developer Workflows
 
-### Run in dev mode (hot-reload)
+### Run backend in dev mode (hot-reload)
 
 ```shell
 ./gradlew quarkusDev
@@ -173,7 +197,27 @@ Or use the convenience script (starts Docker services, sets Java 21, launches a 
 
 `PREVIEW_ONLY` and `ALLOWED_ORIGINS` environment variables are forwarded by the script.
 
-### Build a runnable JAR
+### Run UI (JVM desktop, hot-reload)
+
+```shell
+./gradlew :composeApp:hotRunJvm --mainClass "me.davidgomesdev.ofingidor.ui.MainKt" --quiet
+```
+
+### Run UI (web dev server)
+
+```shell
+./gradlew :composeApp:jsBrowserDevelopmentRun
+```
+
+### Deploy UI to backend static resources
+
+```shell
+./gradlew :composeApp:deployToBackend
+```
+
+Builds the JS bundle and copies it to `src/main/resources/web/static/` and `uiResources/composeResources/`.
+
+### Build backend JAR
 
 ```shell
 ./gradlew build
@@ -182,7 +226,8 @@ Or use the convenience script (starts Docker services, sets Java 21, launches a 
 ### Run tests
 
 ```shell
-./gradlew test
+./gradlew test                        # backend tests
+./gradlew :composeApp:jsBrowserTest   # UI tests
 ```
 
 ---

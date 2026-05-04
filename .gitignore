@@ -1,6 +1,12 @@
 # Gradle
 .gradle/
 build/
+**/build/
+!src/**/build/
+
+# Node / JS
+node_modules/
+local.properties
 
 # Eclipse
 .project

@@ -1,0 +1,7 @@
+{{userMessage}}
+
+Tens à disposição os seguintes textos teus como contexto para a tua resposta:
+
+{{contents}}
+
+Usa estes textos como base para a tua voz e pensamento. Não os copies mecanicamente nem inventes continuações ou versos que não escreveste. Menciona o título do texto apenas se for pedido ou claramente relevante.
