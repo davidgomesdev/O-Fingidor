@@ -1,0 +1,54 @@
+name: o-fingidor
+services:
+  db:
+    image: qdrant/qdrant:v1.17
+    container_name: db
+    restart: on-failure:3
+    ports:
+      - "127.0.0.1:6333:6333"
+      - "127.0.0.1:6334:6334"
+    expose:
+      - 6333
+      - 6334
+    configs:
+      - source: qdrant_config
+        target: /qdrant/config/config.yaml
+    volumes:
+      - db:/qdrant/storage
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    container_name: jaeger
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"  # Jaeger UI
+      - "14317:4317"
+      - "14318:4318"
+    environment:
+      COLLECTOR_JAEGER_ENABLED: "true"
+    restart: on-failure:3
+
+  postgres:
+    image: postgres:17
+    container_name: postgres
+    restart: on-failure:3
+    environment:
+      POSTGRES_USER: pessoa
+      POSTGRES_PASSWORD: pessoa
+      POSTGRES_DB: pessoa
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  db:
+  postgres_data:
+
+configs:
+  qdrant_config:
+    # Since this accessible only locally, it's okay to hardcode the api key, right? RIGHT!?
+    content: |
+      log_level: INFO
+      service:
+        api_key: iLUhRXjvzDCxuDLQVa6arrl5J4A2qw6bRP0p06Euj2sAwqq9lpEsCoPU0vuDuGHk

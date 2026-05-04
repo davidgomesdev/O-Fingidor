@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ "$(basename "$PWD")" == "scripts" ]; then
+  cd ..
+fi
+
+function start_ollama() {
+  # Ollama runs on a service, no need to launch
+  until curl -s http://localhost:11434/v1/models > /dev/null; do
+    echo "Waiting for Ollama server to start..."
+    sleep 2
+  done
+}
+
+start_ollama
+
+# Switch to Java 21 on Linux AMD64 and MacOS
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+else
+  JAVA_HOME="$(/usr/libexec/java_home -v 21)"
+  export JAVA_HOME
+fi
+
+ENV_VARIABLES=$(printf 'RAG_QDRANT_API_KEY="%s" PREVIEW_ONLY="%s" QUARKUS_HTTP_CORS_ORIGINS="%s"' \
+    "$QDRANT_API_KEY" \
+    "${PREVIEW_ONLY:-false}" \
+    "${ALLOWED_ORIGINS:-http://127.0.0.1:8080,http://localhost:8080}"
+)
+
+docker compose -f docker-compose-modified.yaml up -d
+tmux new-session -d -s PessoaFaladora \
+  "$ENV_VARIABLES ./gradlew quarkusDev"

@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+    <configuration default="false" name="🔮Preview only (small models)" type="QuarkusRunConfiguration"
+                   factoryName="QuarkusRunConfiguration" folderName="🔮" focusToolWindowBeforeRun="true">
+        <option name="env">
+            <map>
+                <entry key="MODEL_OLLAMA_EMBEDDING_MODEL_MODEL_ID" value="qwen3-embedding:0.6b"/>
+                <entry key="PREVIEW_ONLY" value="true"/>
+                <entry key="RAG_INGESTION_CHUNK_SIZE" value="5"/>
+                <entry key="RAG_SEMANTIC_CHUNKING_ENABLED" value="false"/>
+            </map>
+        </option>
+        <module name="o-fingidor.backend.main"/>
+        <option name="profile"/>
+        <method v="2"/>
+    </configuration>
+</component>

@@ -1,0 +1,57 @@
+quarkus:
+  devservices:
+    enabled: false
+  live-reload:
+    enabled: false
+  otel:
+    enabled: false
+  http:
+    test-port: 0
+
+model:
+  name: ollama
+  ollama:
+    base-url: http://127.0.0.1:11434
+    timeout: 600s
+    chat-model:
+      model-id: qwen3:1.7b
+      temperature: 0.7
+      thinking: false
+    embedding-model:
+      model-id: qwen3-embedding:8b
+  anthropic:
+    timeout: 60s
+    api-key: test-key
+    chat-model:
+      model-id: claude-haiku-4-5
+      temperature: 0.7
+      thinking: true
+      max-tokens: 50000
+
+rag:
+  max-results: 6
+  min-score: 0.75
+  expand-query: false
+  ingestion-chunk-size: 25
+  expanding-query-template: |
+    Test template {{n}} {{query}}
+  qdrant:
+    host: 127.0.0.1
+    api-key: test-key
+    collection:
+      name: test_collection
+  semantic-chunking:
+    enabled: false
+    similarity-threshold: 0.7
+    min-chunk-size: 100
+    max-chunk-size: 1000
+
+pessoa:
+  url: http://127.0.0.1:8080
+
+session:
+  jwt:
+    secret: test-secret-that-is-at-least-32-chars!!
+    ttl: PT1H
+  memory:
+    max-messages: 20
