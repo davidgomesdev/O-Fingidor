@@ -33,39 +33,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import me.davidgomesdev.ofingidor.ui.dto.ChatEvent
+import me.davidgomesdev.ofingidor.ui.model.ConversationTurn
+import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
-import me.davidgomesdev.ofingidor.ui.service.isDevMode
 import me.davidgomesdev.ofingidor.ui.widget.AiBubble
 import me.davidgomesdev.ofingidor.ui.widget.AppHeader
 import me.davidgomesdev.ofingidor.ui.widget.PersonaTab
 import me.davidgomesdev.ofingidor.ui.widget.ThinkInputCard
 import me.davidgomesdev.ofingidor.ui.widget.UserBubble
-
-data class ConversationTurn(
-    val question: String,
-    val message: String,
-    val sources: List<Source>,
-    val traceId: String,
-    val personaName: String,
-)
-
-data class OngoingConversationTurn(
-    val question: String,
-    val personaName: String,
-    val message: String = "",
-    val sources: List<Source> = emptyList(),
-    val traceId: String = "",
-) {
-    fun toConversationTurn() = ConversationTurn(
-        question = question,
-        message = message,
-        sources = sources,
-        traceId = traceId,
-        personaName = personaName,
-    )
-}
 
 @Composable
 @Preview
@@ -73,12 +50,11 @@ fun App() {
     val thinkAPI = remember { ThinkAPI() }
 
     MaterialTheme(typography = RobotoTypography()) {
-        val isDevModeEnabled = remember { isDevMode() }
         val textFieldState = remember { TextFieldState("") }
         val turns = remember { mutableStateListOf<ConversationTurn>() }
         var ongoingTurn by remember { mutableStateOf<OngoingConversationTurn?>(null) }
         var selectedPersona by remember { mutableStateOf(Persona.FERNANDO_PESSOA) }
-        var devMode by remember { mutableStateOf(false) }
+        var isDevMode by remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
 
@@ -93,8 +69,8 @@ fun App() {
         }
 
         val onDevModeToggle: () -> Unit = {
-            devMode = !devMode
-            if (!devMode && selectedPersona == Persona.O_FINGIDOR) {
+            isDevMode = !isDevMode
+            if (!isDevMode && selectedPersona == Persona.O_FINGIDOR) {
                 selectedPersona = Persona.FERNANDO_PESSOA
             }
         }
@@ -132,8 +108,7 @@ fun App() {
         ) {
             StickyHeader(
                 selectedPersona = selectedPersona,
-                devMode = devMode,
-                isDevModeEnabled = isDevModeEnabled,
+                isDevMode = isDevMode,
                 hasConversationStarted = hasConversationStarted,
                 onDevModeToggle = onDevModeToggle,
                 onPersonaSelected = { selectedPersona = it },
@@ -167,8 +142,10 @@ fun App() {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UserBubble(question = turn.question)
                             AiBubble(
-                                message = turn.message,
-                                sources = turn.sources,
+                                isDevMode,
+                                turn.message,
+                                turn.sources,
+                                turn.traceId,
                                 isLoading = false,
                             )
                         }
@@ -180,8 +157,10 @@ fun App() {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UserBubble(question = turn.question)
                             AiBubble(
-                                message = turn.message,
-                                sources = turn.sources,
+                                isDevMode,
+                                turn.message,
+                                turn.sources,
+                                turn.traceId,
                                 isLoading = true,
                             )
                         }
@@ -220,23 +199,22 @@ private suspend fun collectThinkEvents(
 @Composable
 private fun StickyHeader(
     selectedPersona: Persona,
-    devMode: Boolean,
-    isDevModeEnabled: Boolean,
+    isDevMode: Boolean,
     hasConversationStarted: Boolean,
     onDevModeToggle: () -> Unit,
     onPersonaSelected: (Persona) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AppHeader(
-            selectedPersona = selectedPersona,
-            devMode = devMode,
-            onDevModeToggle = if (isDevModeEnabled) onDevModeToggle else null,
+            selectedPersona,
+            isDevMode,
+            onDevModeToggle,
         )
         if (!hasConversationStarted) {
             PersonaTab(
-                selectedPersona = selectedPersona,
-                onPersonaSelected = onPersonaSelected,
-                devMode = devMode,
+                selectedPersona,
+                onPersonaSelected,
+                isDevMode,
             )
             HorizontalDivider(color = cardBorderColor, thickness = 1.dp)
         }
