@@ -7,9 +7,11 @@ val componentsBackgroundColor = Color(0xFF323232)
 val componentColumnBackgroundColor = Color(0xFF242424)
 val focusedIndicatorColor = Color(0xFF575757)
 
+val disableThinkButtonColor = Color(0xFF191919)
+
 // Card surfaces and borders
 val inputCardBackgroundColor = Color(0xFF1E1E1E)
-val responseCardBackgroundColor = Color(0xFF191919)
+val exampleCardBackgroundColor = Color(0xFF1A1A1A)
 val cardBorderColor = Color(0xFF2A2A2A)
 
 // --- Persona sidebar chip ---
@@ -30,3 +32,10 @@ val ninguemChipTextColor = Color(0xFF828282)
 val semiHeteronymChipColor = Color(0xFF211F2A)
 val semiHeteronymChipBorderColor = Color(0x3D7C5CBF)
 val semiHeteronymChipTextColor = Color(0xFFAD9EDC)
+
+// Chat bubble colors
+val userBubbleBorder = Color(0xFF7C5CBF)
+val aiBubbleBackgroundColor = Color(0xFF161616)
+val aiBubbleBorder = Color(0xFF3D2E5A)
+val personaLabelColor = Color(0xFF7C5CBF)
+val portraitThumbnailBackgroundColor = Color(0xFF1A1428)
