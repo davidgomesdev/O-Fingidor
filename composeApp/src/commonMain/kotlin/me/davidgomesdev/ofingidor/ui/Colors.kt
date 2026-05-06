@@ -33,6 +33,11 @@ val semiHeteronymChipColor = Color(0xFF211F2A)
 val semiHeteronymChipBorderColor = Color(0x3D7C5CBF)
 val semiHeteronymChipTextColor = Color(0xFFAD9EDC)
 
+// Error bubble colors
+val errorBubbleBackgroundColor = Color(0xFF1A1010)
+val errorBubbleBorderColor = Color(0xFF4A2020)
+val errorBubbleTextColor = Color(0xFFAA6666)
+
 // Chat bubble colors
 val userBubbleBorder = Color(0xFF7C5CBF)
 val aiBubbleBackgroundColor = Color(0xFF161616)
