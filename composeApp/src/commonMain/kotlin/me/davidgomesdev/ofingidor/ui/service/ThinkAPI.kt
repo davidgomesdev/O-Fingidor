@@ -19,6 +19,7 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readLine
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -51,14 +52,13 @@ class ThinkAPI {
     }.also { Napier.base(DebugAntilog()) }
 
     private var sessionToken: String? = null
-
     // W3C traceparent returned by the backend, echoed back on subsequent requests
     private var traceparent: String? = null
 
     fun sendThinkRequest(
         query: String,
         persona: Persona
-    ) = channelFlow {
+    ): Flow<Result<ChatEvent>> = channelFlow {
         try {
             client.preparePut("$apiUrl/pensa") {
                 accept(ContentType.Any)
@@ -75,11 +75,12 @@ class ThinkAPI {
                     if (line.isBlank()) continue
                     Napier.d("ChatEvent received: $line")
                     val event = Json.decodeFromString<ChatEvent>(line)
-                    send(event)
+                    send(Result.success(event))
                 }
             }
         } catch (e: Exception) {
             Napier.e("Request failed", e)
+            send(Result.failure(e))
         }
     }
 }

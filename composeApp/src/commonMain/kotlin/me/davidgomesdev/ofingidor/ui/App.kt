@@ -40,6 +40,7 @@ import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
 import me.davidgomesdev.ofingidor.ui.widget.AiBubble
 import me.davidgomesdev.ofingidor.ui.widget.AppHeader
+import me.davidgomesdev.ofingidor.ui.widget.ErrorBubble
 import me.davidgomesdev.ofingidor.ui.widget.PersonaTab
 import me.davidgomesdev.ofingidor.ui.widget.ThinkInputCard
 import me.davidgomesdev.ofingidor.ui.widget.UserBubble
@@ -53,12 +54,14 @@ fun App() {
         val textFieldState = remember { TextFieldState("") }
         val turns = remember { mutableStateListOf<ConversationTurn>() }
         var ongoingTurn by remember { mutableStateOf<OngoingConversationTurn?>(null) }
+        var ongoingTurnError by remember { mutableStateOf<Throwable?>(null) }
+        var conversationTraceId by remember { mutableStateOf("") }
         var selectedPersona by remember { mutableStateOf(Persona.FERNANDO_PESSOA) }
         var isDevMode by remember { mutableStateOf(false) }
         val scrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
 
-        val hasConversationStarted = turns.isNotEmpty() || ongoingTurn != null
+        val hasConversationStarted = turns.isNotEmpty() || ongoingTurn != null || ongoingTurnError != null
 
         LaunchedEffect(turns.size) {
             scrollState.animateScrollTo(scrollState.maxValue)
@@ -83,6 +86,7 @@ fun App() {
             textFieldState.edit { replace(0, length, "") }
 
             coroutineScope.launch {
+                ongoingTurnError = null
                 ongoingTurn = OngoingConversationTurn(
                     question = question,
                     personaName = selectedPersona.displayName,
@@ -93,9 +97,20 @@ fun App() {
                     persona = selectedPersona,
                     getOngoingTurn = { ongoingTurn },
                     onNewEvent = { ongoingTurn = it },
+                    onError = {
+                        ongoingTurnError = it; textFieldState.edit {
+                        replace(
+                            0,
+                            length,
+                            ongoingTurn?.question ?: ""
+                        )
+                    }
+                    },
+                    onTraceId = { if (conversationTraceId.isBlank()) conversationTraceId = it },
                 )
-                ongoingTurn?.let { turns.add(it.toConversationTurn()) }
+                if (ongoingTurnError == null) ongoingTurn?.let { turns.add(it.toConversationTurn()) }
                 ongoingTurn = null
+                // ongoingTurnError stays set until next submit so ErrorBubble remains visible
             }
         }
 
@@ -142,10 +157,8 @@ fun App() {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UserBubble(question = turn.question)
                             AiBubble(
-                                isDevMode,
-                                turn.message,
-                                turn.sources,
-                                turn.traceId,
+                                message = turn.message,
+                                sources = turn.sources,
                                 isLoading = false,
                             )
                         }
@@ -157,14 +170,16 @@ fun App() {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             UserBubble(question = turn.question)
                             AiBubble(
-                                isDevMode,
-                                turn.message,
-                                turn.sources,
-                                turn.traceId,
+                                message = turn.message,
+                                sources = turn.sources,
                                 isLoading = true,
                             )
                         }
                     }
+                }
+
+                ongoingTurnError?.let { error ->
+                    ErrorBubble(errorDetail = if (isDevMode) error.message else null)
                 }
 
                 ThinkInputCard(
@@ -174,6 +189,14 @@ fun App() {
                     onQuerySelected = { query -> textFieldState.edit { replace(0, length, query) } },
                     hasConversationStarted = hasConversationStarted,
                 )
+                if (isDevMode && conversationTraceId.isNotBlank()) {
+                    Text(
+                        "trace: $conversationTraceId",
+                        color = devChipTextColor.copy(alpha = 0.45f),
+                        fontSize = 10.sp,
+                        letterSpacing = 0.5.sp,
+                    )
+                }
             }
         }
     }
@@ -184,15 +207,27 @@ private suspend fun collectThinkEvents(
     question: String,
     persona: Persona,
     getOngoingTurn: () -> OngoingConversationTurn?,
-    onNewEvent: (OngoingConversationTurn?) -> Unit,
+    onNewEvent: (OngoingConversationTurn) -> Unit,
+    onError: (Throwable) -> Unit,
+    onTraceId: (String) -> Unit,
 ) {
-    thinkAPI.sendThinkRequest(query = question, persona = persona).collect { event ->
-        when (event) {
-            is ChatEvent.Start -> onNewEvent(getOngoingTurn()?.copy(traceId = event.traceId))
-            is ChatEvent.Token -> onNewEvent(getOngoingTurn()?.let { it.copy(message = it.message + event.value) })
-            is ChatEvent.Sources -> onNewEvent(getOngoingTurn()?.copy(sources = event.items.map(Source::from)))
-            is ChatEvent.Done -> Unit
-        }
+    thinkAPI.sendThinkRequest(query = question, persona = persona).collect { result ->
+        result.fold(
+            onSuccess = { event ->
+                val turn = getOngoingTurn() ?: return@collect
+                when (event) {
+                    is ChatEvent.Start -> {
+                        onTraceId(event.traceId)
+                        onNewEvent(turn.copy(traceId = event.traceId))
+                    }
+
+                    is ChatEvent.Token -> onNewEvent(turn.copy(message = turn.message + event.value))
+                    is ChatEvent.Sources -> onNewEvent(turn.copy(sources = event.items.map(Source::from)))
+                    is ChatEvent.Done -> Unit
+                }
+            },
+            onFailure = { onError(it) },
+        )
     }
 }
 

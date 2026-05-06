@@ -32,11 +32,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.ui.aiBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
-import me.davidgomesdev.ofingidor.ui.devChipTextColor
+import me.davidgomesdev.ofingidor.ui.errorBubbleBackgroundColor
+import me.davidgomesdev.ofingidor.ui.errorBubbleBorderColor
+import me.davidgomesdev.ofingidor.ui.errorBubbleTextColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
@@ -82,10 +85,8 @@ fun UserBubble(question: String) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiBubble(
-    isDevMode: Boolean,
     message: String,
     sources: List<Source>,
-    traceId: String,
     isLoading: Boolean,
 ) {
     val inlineContent = if (isLoading) {
@@ -129,15 +130,6 @@ fun AiBubble(
             )
         }
 
-        if (isDevMode && traceId.isNotBlank()) {
-            Text(
-                "trace: $traceId",
-                color = devChipTextColor.copy(alpha = 0.45f),
-                fontSize = 10.sp,
-                letterSpacing = 0.5.sp,
-            )
-        }
-
         if (sources.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier.widthIn(max = 560.dp),
@@ -175,4 +167,35 @@ private fun BlinkingCursor() {
             .alpha(cursorAlpha)
             .background(personaLabelColor)
     )
+}
+
+@Composable
+fun ErrorBubble(errorDetail: String? = null) {
+    Column(
+        modifier = Modifier
+            .widthIn(max = 560.dp)
+            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
+            .background(errorBubbleBackgroundColor)
+            .border(
+                width = 1.dp,
+                color = errorBubbleBorderColor,
+                shape = RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+            )
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            "Algo correu mal. Tenta de novo.",
+            color = errorBubbleTextColor,
+            fontSize = 13.sp,
+        )
+        if (errorDetail != null) {
+            Text(
+                errorDetail,
+                color = errorBubbleTextColor.copy(alpha = 0.6f),
+                fontSize = 10.sp,
+                fontFamily = FontFamily.Monospace,
+            )
+        }
+    }
 }
