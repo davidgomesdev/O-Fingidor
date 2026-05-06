@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,41 +21,74 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
 import me.davidgomesdev.ofingidor.ui.cardBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipColor
 import me.davidgomesdev.ofingidor.ui.devChipTextColor
+import me.davidgomesdev.ofingidor.ui.model.Persona
+import me.davidgomesdev.ofingidor.ui.personaLabelColor
+import me.davidgomesdev.ofingidor.ui.portraitThumbnailBackgroundColor
 import ofingidor.composeapp.generated.resources.Res
 import ofingidor.composeapp.generated.resources.logo
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
-fun AppHeader(devMode: Boolean, onDevModeToggle: (() -> Unit)?) {
+fun AppHeader(
+    selectedPersona: Persona,
+    devMode: Boolean,
+    onDevModeToggle: (() -> Unit)?,
+) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 20.dp),
+                .padding(horizontal = 24.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column {
-                Text(
-                    "O Fingidor",
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 20.sp
-                )
-                Text(
-                    "Fala com Fernando Pessoa",
-                    color = Color.White.copy(alpha = 0.35f),
-                    fontSize = 11.sp,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.padding(top = 3.dp)
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(32.dp)
+                        .height(46.dp)
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(portraitThumbnailBackgroundColor)
+                        .border(1.dp, aiBubbleBorder, RoundedCornerShape(6.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(Res.drawable.logo),
+                        contentDescription = selectedPersona.displayName,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .width(32.dp)
+                            .height(46.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                    )
+                }
+                Column {
+                    Text(
+                        "O Fingidor",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        selectedPersona.displayName.uppercase(),
+                        color = personaLabelColor,
+                        fontSize = 9.sp,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
             }
             if (onDevModeToggle != null) {
                 DevModeToggle(active = devMode, onToggle = onDevModeToggle)

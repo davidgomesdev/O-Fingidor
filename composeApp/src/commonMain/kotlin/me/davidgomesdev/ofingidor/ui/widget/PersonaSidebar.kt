@@ -6,10 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,74 +39,65 @@ import me.davidgomesdev.ofingidor.ui.semiHeteronymChipColor
 import me.davidgomesdev.ofingidor.ui.semiHeteronymChipTextColor
 
 @Composable
-fun PersonaSidebar(
+fun PersonaTab(
     selectedPersona: Persona,
     onPersonaSelected: (Persona) -> Unit,
     devMode: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.Top,
-        horizontalAlignment = Alignment.CenterHorizontally
+    val categories = PersonaCategory.entries.filter { it != PersonaCategory.DEV || devMode }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        FernandoPessoaLogo()
-
-        Spacer(Modifier.height(16.dp))
-
-        val categories = PersonaCategory.entries
-            .filter { it != PersonaCategory.DEV || devMode }
-        categories.forEachIndexed { index, category ->
-            val personasInCategory = Persona.entries.filter { it.category == category }
-
-            PersonaSection(
-                label = category.label,
-                personas = personasInCategory,
+        categories.forEach { category ->
+            val personas = Persona.entries.filter { it.category == category }
+            PersonaCategorySection(
+                category = category,
+                personas = personas,
                 selectedPersona = selectedPersona,
-                onPersonaSelected = onPersonaSelected
+                onPersonaSelected = onPersonaSelected,
             )
+        }
+    }
+}
 
-            if (index < categories.lastIndex) {
-                Spacer(Modifier.height(10.dp))
+@Composable
+private fun PersonaCategorySection(
+    category: PersonaCategory,
+    personas: List<Persona>,
+    selectedPersona: Persona,
+    onPersonaSelected: (Persona) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            category.label.uppercase(),
+            color = focusedIndicatorColor.copy(alpha = 0.5f),
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 1.sp,
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            items(personas) { persona ->
+                PersonaTabChip(
+                    persona = persona,
+                    isSelected = persona == selectedPersona,
+                    onSelected = { onPersonaSelected(persona) },
+                )
             }
         }
     }
 }
 
 @Composable
-private fun PersonaSection(
-    label: String,
-    personas: List<Persona>,
-    selectedPersona: Persona,
-    onPersonaSelected: (Persona) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            label.uppercase(),
-            color = focusedIndicatorColor.copy(alpha = 0.7f),
-            fontSize = 9.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 1.5.sp,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-        )
-        personas.forEach { persona ->
-            PersonaChip(
-                persona = persona,
-                isSelected = persona == selectedPersona,
-                onSelected = { onPersonaSelected(persona) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun PersonaChip(
+private fun PersonaTabChip(
     persona: Persona,
     isSelected: Boolean,
-    onSelected: () -> Unit
+    onSelected: () -> Unit,
 ) {
     val category = persona.category
 
@@ -136,12 +128,11 @@ private fun PersonaChip(
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(20.dp))
             .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(6.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(20.dp))
             .clickable(onClick = onSelected)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .padding(horizontal = 12.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -151,4 +142,3 @@ private fun PersonaChip(
         )
     }
 }
-

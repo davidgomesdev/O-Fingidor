@@ -10,9 +10,11 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
+import io.ktor.client.request.header
 import io.ktor.client.request.preparePut
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.ByteReadChannel
@@ -48,6 +50,8 @@ class ThinkAPI {
         }
     }.also { Napier.base(DebugAntilog()) }
 
+    private var sessionToken: String? = null
+
     fun sendThinkRequest(
         query: String,
         persona: Persona
@@ -57,19 +61,24 @@ class ThinkAPI {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(ThinkPayload(query, persona.codeName))
+                sessionToken?.let { token ->
+                    header(HttpHeaders.Authorization, "Bearer $token")
+                }
             }.execute { httpResponse ->
+                httpResponse.headers["X-Session-Token"]?.let { token ->
+                    sessionToken = token
+                }
                 val channel: ByteReadChannel = httpResponse.body()
                 while (!channel.isClosedForRead) {
                     val line = channel.readLine() ?: break
                     if (line.isBlank()) continue
-                    println(line)
+                    Napier.d("ChatEvent received: $line")
                     val event = Json.decodeFromString<ChatEvent>(line)
                     send(event)
                 }
             }
         } catch (e: Exception) {
             Napier.e("Request failed", e)
-            // todo: find a way of informing the user
         }
     }
 }

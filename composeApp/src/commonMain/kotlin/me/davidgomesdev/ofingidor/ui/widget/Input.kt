@@ -20,14 +20,13 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.ui.cardBorderColor
 import me.davidgomesdev.ofingidor.ui.componentsBackgroundColor
+import me.davidgomesdev.ofingidor.ui.disableThinkButtonColor
+import me.davidgomesdev.ofingidor.ui.exampleCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.isActionInputType
@@ -62,22 +63,37 @@ fun ThinkInputCard(
     isLoading: Boolean,
     onSubmit: () -> Unit,
     onQuerySelected: (String) -> Unit,
+    hasConversationStarted: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
     val borderColor by animateColorAsState(
-        targetValue = if (isFocused) focusedIndicatorColor else cardBorderColor
+        targetValue = when {
+            isLoading -> cardBorderColor.copy(alpha = 0.4f)
+            isFocused -> focusedIndicatorColor
+            else -> cardBorderColor
+        }
     )
-    var showExamples by remember { mutableStateOf(true) }
+    val bgColor by animateColorAsState(
+        targetValue = if (isLoading) Color(0xFF171717) else inputCardBackgroundColor
+    )
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(inputCardBackgroundColor)
+            .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
     ) {
-        ThinkInputField(state, isLoading, interactionSource, onSubmit)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            ThinkInputField(state, isLoading, interactionSource, onSubmit)
+            if (!isLoading && !hasConversationStarted) {
+                ExampleQueriesRow(
+                    onQuerySelected = onQuerySelected,
+                    modifier = Modifier.padding(start = 14.dp, end = 14.dp, bottom = 6.dp)
+                )
+            }
+        }
         HorizontalDivider(color = cardBorderColor, thickness = 1.dp)
         Row(
             modifier = Modifier
@@ -93,21 +109,7 @@ fun ThinkInputCard(
                     fontSize = 11.sp
                 )
             }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (!isLoading) {
-                    ExamplesToggleButton(showExamples) { showExamples = !showExamples }
-                }
-                ThinkButton(onSubmit, isLoading)
-            }
-        }
-        if (!isLoading && showExamples) {
-            ExampleQueriesRow(
-                onQuerySelected = onQuerySelected,
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-            )
+            ThinkButton(onSubmit, isLoading)
         }
     }
 }
@@ -116,39 +118,24 @@ fun ThinkInputCard(
 @Composable
 fun ExampleQueriesRow(onQuerySelected: (String) -> Unit, modifier: Modifier = Modifier) {
     FlowRow(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.fillMaxWidth().padding(bottom = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         exampleQueries.forEach { query ->
             Text(
                 text = query,
-                color = Color.White.copy(alpha = 0.45f),
-                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.3f),
+                fontSize = 11.sp,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(componentsBackgroundColor.copy(alpha = 0.5f))
-                    .border(1.dp, cardBorderColor, RoundedCornerShape(6.dp))
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(exampleCardBackgroundColor)
+                    .border(1.dp, cardBorderColor, RoundedCornerShape(5.dp))
                     .clickable { onQuerySelected(query) }
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
             )
         }
     }
-}
-
-@Composable
-fun ExamplesToggleButton(showExamples: Boolean, onToggle: () -> Unit) {
-    Text(
-        text = if (showExamples) "Esconder exemplos" else "Mostrar exemplos",
-        color = Color.White.copy(alpha = 0.3f),
-        fontSize = 11.sp,
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(componentsBackgroundColor)
-            .border(1.dp, cardBorderColor, RoundedCornerShape(6.dp))
-            .clickable(onClick = onToggle)
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-    )
 }
 
 @Composable
@@ -163,12 +150,12 @@ private fun ThinkInputField(
         placeholder = {
             Text(
                 "Escreve o que te inquieta a alma...",
-                color = Color.White.copy(alpha = 0.35f),
+                color = Color.White.copy(alpha = if (isLoading) 0.15f else 0.35f),
                 fontSize = 14.sp
             )
         },
         enabled = !isLoading,
-        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 3),
+        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2),
         interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()
@@ -180,6 +167,7 @@ private fun ThinkInputField(
                     false
                 }
             },
+        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
@@ -204,7 +192,7 @@ fun ThinkButton(onSubmit: () -> Unit, isLoading: Boolean) {
         colors = ButtonDefaults.buttonColors(
             containerColor = componentsBackgroundColor,
             contentColor = Color.White,
-            disabledContainerColor = inputCardBackgroundColor,
+            disabledContainerColor = disableThinkButtonColor,
             disabledContentColor = Color.White.copy(alpha = 0.3f)
         )
     ) {
