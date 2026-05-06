@@ -87,11 +87,13 @@ class ThinkingAPI(
             .startSpan()
 
         val traceId = span.spanContext.traceId
+        val spanId = span.spanContext.spanId
         log.info("Querying model with trace ID: $traceId")
 
         val multi = RestMulti
             .fromMultiData(chatService.query(body.input, span))
             .header("X-Trace-Id", traceId)
+            .header("X-Traceparent", "00-$traceId-$spanId-01")
 
         if (sessionToken != null) {
             multi.header("X-Session-Token", sessionToken)
