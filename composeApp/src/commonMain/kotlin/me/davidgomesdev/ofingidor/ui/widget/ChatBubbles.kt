@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.ui.aiBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
+import me.davidgomesdev.ofingidor.ui.devChipTextColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
@@ -78,36 +79,13 @@ fun UserBubble(question: String) {
     }
 }
 
-@Composable
-private fun BlinkingCursor() {
-    val infiniteTransition = rememberInfiniteTransition()
-    val cursorAlpha by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = keyframes {
-                durationMillis = 1000
-                1f at 0
-                1f at 499
-                0f at 500
-                0f at 999
-            },
-            repeatMode = RepeatMode.Restart,
-        )
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .alpha(cursorAlpha)
-            .background(personaLabelColor)
-    )
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiBubble(
+    isDevMode: Boolean,
     message: String,
     sources: List<Source>,
+    traceId: String,
     isLoading: Boolean,
 ) {
     val inlineContent = if (isLoading) {
@@ -151,6 +129,15 @@ fun AiBubble(
             )
         }
 
+        if (isDevMode && traceId.isNotBlank()) {
+            Text(
+                "trace: $traceId",
+                color = devChipTextColor.copy(alpha = 0.45f),
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp,
+            )
+        }
+
         if (sources.isNotEmpty()) {
             FlowRow(
                 modifier = Modifier.widthIn(max = 560.dp),
@@ -163,4 +150,29 @@ fun AiBubble(
             }
         }
     }
+}
+
+@Composable
+private fun BlinkingCursor() {
+    val infiniteTransition = rememberInfiniteTransition()
+    val cursorAlpha by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = keyframes {
+                durationMillis = 1000
+                1f at 0
+                1f at 499
+                0f at 500
+                0f at 999
+            },
+            repeatMode = RepeatMode.Restart,
+        )
+    )
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .alpha(cursorAlpha)
+            .background(personaLabelColor)
+    )
 }

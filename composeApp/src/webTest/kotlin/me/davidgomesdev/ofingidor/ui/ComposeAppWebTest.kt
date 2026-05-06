@@ -1,5 +1,6 @@
 package me.davidgomesdev.ofingidor.ui
 
+import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.Source
 import kotlin.test.Test
 import kotlin.test.assertEquals

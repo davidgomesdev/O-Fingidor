@@ -1,4 +1,6 @@
 quarkus:
+  application:
+    name: o-fingidor-backend
   devservices:
     enabled: false
   live-reload:
