@@ -52,6 +52,9 @@ class ThinkAPI {
 
     private var sessionToken: String? = null
 
+    // W3C traceparent returned by the backend, echoed back on subsequent requests
+    private var traceparent: String? = null
+
     fun sendThinkRequest(
         query: String,
         persona: Persona
@@ -61,13 +64,11 @@ class ThinkAPI {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(ThinkPayload(query, persona.codeName))
-                sessionToken?.let { token ->
-                    header(HttpHeaders.Authorization, "Bearer $token")
-                }
+                sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                traceparent?.let { header("traceparent", it) }
             }.execute { httpResponse ->
-                httpResponse.headers["X-Session-Token"]?.let { token ->
-                    sessionToken = token
-                }
+                httpResponse.headers["X-Session-Token"]?.let { sessionToken = it }
+                httpResponse.headers["X-Traceparent"]?.let { traceparent = it }
                 val channel: ByteReadChannel = httpResponse.body()
                 while (!channel.isClosedForRead) {
                     val line = channel.readLine() ?: break
