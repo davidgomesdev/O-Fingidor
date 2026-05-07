@@ -1,7 +1,6 @@
 package me.davidgomesdev.ofingidor.ui.model
 
 enum class Persona(val displayName: String, val category: PersonaCategory) {
-    NINGUEM("Ninguém", PersonaCategory.DEV),
     O_FINGIDOR("O Fingidor", PersonaCategory.DEV),
     FERNANDO_PESSOA("Fernando Pessoa", PersonaCategory.ORTONIMO),
     ALBERTO_CAEIRO("Alberto Caeiro", PersonaCategory.HETERONIMO),

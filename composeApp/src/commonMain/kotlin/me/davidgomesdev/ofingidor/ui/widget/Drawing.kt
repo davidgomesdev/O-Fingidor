@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -41,7 +40,9 @@ import org.jetbrains.compose.resources.painterResource
 fun AppHeader(
     selectedPersona: Persona,
     devMode: Boolean,
+    hasConversationStarted: Boolean,
     onDevModeToggle: (() -> Unit)?,
+    onNewConversation: (() -> Unit)?,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -90,11 +91,38 @@ fun AppHeader(
                     )
                 }
             }
-            if (onDevModeToggle != null) {
-                DevModeToggle(active = devMode, onToggle = onDevModeToggle)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                if (hasConversationStarted && onNewConversation != null) {
+                    NewConversationButton(onClick = onNewConversation)
+                }
+                if (onDevModeToggle != null) {
+                    DevModeToggle(active = devMode, onToggle = onDevModeToggle)
+                }
             }
         }
         HorizontalDivider(color = cardBorderColor, thickness = 1.dp)
+    }
+}
+
+@Composable
+private fun NewConversationButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(4.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(
+            "Nova conversa",
+            color = Color.White.copy(alpha = 0.35f),
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 1.sp
+        )
     }
 }
 
@@ -118,20 +146,6 @@ private fun DevModeToggle(active: Boolean, onToggle: () -> Unit) {
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
             letterSpacing = 1.5.sp
-        )
-    }
-}
-
-@Composable
-fun FernandoPessoaLogo(modifier: Modifier = Modifier.Companion) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Image(
-            painter = painterResource(Res.drawable.logo),
-            contentDescription = "Fernando Pessoa",
-            modifier = Modifier
-                .width(150.dp)
-                .aspectRatio(0.69f)
-                .clip(RoundedCornerShape(16.dp))
         )
     }
 }
