@@ -1,5 +1,6 @@
 package me.davidgomesdev.ofingidor.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -63,13 +64,7 @@ fun App() {
 
         val hasConversationStarted = turns.isNotEmpty() || ongoingTurn != null || ongoingTurnError != null
 
-        LaunchedEffect(turns.size) {
-            scrollState.animateScrollTo(scrollState.maxValue)
-        }
-        LaunchedEffect(Unit) {
-            snapshotFlow { scrollState.maxValue }
-                .collect { scrollState.animateScrollTo(it) }
-        }
+        AutoScrollEffect(turnCount = turns.size, scrollState = scrollState)
 
         val onDevModeToggle: () -> Unit = {
             isDevMode = !isDevMode
@@ -88,38 +83,28 @@ fun App() {
         }
 
         val onSubmit: () -> Unit = onSubmit@{
-            if (textFieldState.text.isBlank()) return@onSubmit
-            if (ongoingTurn != null) return@onSubmit
+            if (textFieldState.text.isBlank() || ongoingTurn != null) return@onSubmit
 
             val question = textFieldState.text.toString().trim()
             textFieldState.edit { replace(0, length, "") }
 
             coroutineScope.launch {
                 ongoingTurnError = null
-                ongoingTurn = OngoingConversationTurn(
+                val result = processSubmit(
                     question = question,
-                    personaName = selectedPersona.displayName,
-                )
-                collectThinkEvents(
+                    selectedPersona = selectedPersona,
                     thinkAPI = thinkAPI,
-                    question = question,
-                    persona = selectedPersona,
                     getOngoingTurn = { ongoingTurn },
-                    onNewEvent = { ongoingTurn = it },
-                    onError = {
-                        ongoingTurnError = it; textFieldState.edit {
-                        replace(
-                            0,
-                            length,
-                            ongoingTurn?.question ?: ""
-                        )
-                    }
-                    },
+                    setOngoingTurn = { ongoingTurn = it },
                     onTraceId = { if (conversationTraceId.isBlank()) conversationTraceId = it },
                 )
-                if (ongoingTurnError == null) ongoingTurn?.let { turns.add(it.toConversationTurn()) }
-                ongoingTurn = null
-                // ongoingTurnError stays set until next submit so ErrorBubble remains visible
+                result.fold(
+                    onSuccess = { turn -> turn?.let { turns.add(it) } },
+                    onFailure = {
+                        ongoingTurnError = it
+                        textFieldState.edit { replace(0, length, question) }
+                    },
+                )
             }
         }
 
@@ -147,51 +132,14 @@ fun App() {
                     .padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                if (!hasConversationStarted) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            "Começa uma conversa...",
-                            color = Color(0xFF333333),
-                            fontSize = 12.sp,
-                        )
-                    }
-                }
-
-                turns.forEach { turn ->
-                    SelectionContainer {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            UserBubble(question = turn.question)
-                            AiBubble(
-                                message = turn.message,
-                                sources = turn.sources,
-                                isLoading = false,
-                            )
-                        }
-                    }
-                }
-
-                ongoingTurn?.let { turn ->
-                    SelectionContainer {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            UserBubble(question = turn.question)
-                            AiBubble(
-                                message = turn.message,
-                                sources = turn.sources,
-                                isLoading = true,
-                            )
-                        }
-                    }
-                }
-
-                ongoingTurnError?.let { error ->
-                    ErrorBubble(errorDetail = if (isDevMode) error.message else null)
-                }
-
+                ConversationFeed(
+                    turns = turns,
+                    ongoingTurn = ongoingTurn,
+                    ongoingTurnError = ongoingTurnError,
+                    isDevMode = isDevMode,
+                    conversationTraceId = conversationTraceId,
+                    hasConversationStarted = hasConversationStarted,
+                )
                 ThinkInputCard(
                     state = textFieldState,
                     isLoading = ongoingTurn != null,
@@ -199,19 +147,38 @@ fun App() {
                     onQuerySelected = { query -> textFieldState.edit { replace(0, length, query) } },
                     hasConversationStarted = hasConversationStarted,
                 )
-                if (isDevMode && conversationTraceId.isNotBlank()) {
-                    SelectionContainer {
-                        Text(
-                            "trace: $conversationTraceId",
-                            color = devChipTextColor.copy(alpha = 0.45f),
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp,
-                        )
-                    }
-                }
             }
         }
     }
+}
+
+private suspend fun processSubmit(
+    question: String,
+    selectedPersona: Persona,
+    thinkAPI: ThinkAPI,
+    getOngoingTurn: () -> OngoingConversationTurn?,
+    setOngoingTurn: (OngoingConversationTurn?) -> Unit,
+    onTraceId: (String) -> Unit,
+): Result<ConversationTurn?> {
+    setOngoingTurn(OngoingConversationTurn(question = question, personaName = selectedPersona.displayName))
+
+    var error: Throwable? = null
+
+    collectThinkEvents(
+        thinkAPI = thinkAPI,
+        question = question,
+        persona = selectedPersona,
+        getOngoingTurn = getOngoingTurn,
+        onNewEvent = setOngoingTurn,
+        onError = { error = it },
+        onTraceId = onTraceId,
+    )
+
+    val completedTurn = getOngoingTurn()?.toConversationTurn()
+
+    setOngoingTurn(null)
+
+    return error?.let { Result.failure(it) } ?: Result.success(completedTurn)
 }
 
 private suspend fun collectThinkEvents(
@@ -227,19 +194,97 @@ private suspend fun collectThinkEvents(
         result.fold(
             onSuccess = { event ->
                 val turn = getOngoingTurn() ?: return@collect
-                when (event) {
-                    is ChatEvent.Start -> {
-                        onTraceId(event.traceId)
-                        onNewEvent(turn.copy(traceId = event.traceId))
-                    }
-
-                    is ChatEvent.Token -> onNewEvent(turn.copy(message = turn.message + event.value))
-                    is ChatEvent.Sources -> onNewEvent(turn.copy(sources = event.items.map(Source::from)))
-                    is ChatEvent.Done -> Unit
-                }
+                handleChatEvent(event, turn, onTraceId, onNewEvent)
             },
-            onFailure = { onError(it) },
+            onFailure = onError,
         )
+    }
+}
+
+private fun handleChatEvent(
+    event: ChatEvent,
+    turn: OngoingConversationTurn,
+    onTraceId: (String) -> Unit,
+    onNewEvent: (OngoingConversationTurn) -> Unit,
+) {
+    when (event) {
+        is ChatEvent.Start -> {
+            onTraceId(event.traceId)
+            onNewEvent(turn.copy(traceId = event.traceId))
+        }
+
+        is ChatEvent.Token -> onNewEvent(turn.copy(message = turn.message + event.value))
+        is ChatEvent.Sources -> onNewEvent(turn.copy(sources = event.items.map(Source::from)))
+        is ChatEvent.Done -> Unit
+    }
+}
+
+@Composable
+private fun AutoScrollEffect(turnCount: Int, scrollState: ScrollState) {
+    LaunchedEffect(turnCount) {
+        scrollState.animateScrollTo(scrollState.maxValue)
+    }
+    LaunchedEffect(Unit) {
+        snapshotFlow { scrollState.maxValue }
+            .collect { scrollState.animateScrollTo(it) }
+    }
+}
+
+@Composable
+private fun ConversationFeed(
+    turns: List<ConversationTurn>,
+    ongoingTurn: OngoingConversationTurn?,
+    ongoingTurnError: Throwable?,
+    isDevMode: Boolean,
+    conversationTraceId: String,
+    hasConversationStarted: Boolean,
+) {
+    if (!hasConversationStarted) {
+        Box(
+            modifier = Modifier.fillMaxWidth().height(100.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Começa uma conversa...", color = Color(0xFF333333), fontSize = 12.sp)
+        }
+    }
+
+    turns.forEach { turn ->
+        SelectionContainer { CompletedTurnView(turn) }
+    }
+
+    ongoingTurn?.let { turn ->
+        SelectionContainer { OngoingTurnView(turn) }
+    }
+
+    ongoingTurnError?.let { error ->
+        ErrorBubble(errorDetail = if (isDevMode) error.message else null)
+    }
+
+    if (isDevMode && conversationTraceId.isNotBlank()) {
+        SelectionContainer {
+            Text(
+                "trace: $conversationTraceId",
+                color = devChipTextColor.copy(alpha = 0.45f),
+                fontSize = 10.sp,
+                letterSpacing = 0.5.sp,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompletedTurnView(turn: ConversationTurn) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        UserBubble(question = turn.question)
+        AiBubble(message = turn.message, sources = turn.sources, isLoading = false)
+    }
+}
+
+@Composable
+private fun OngoingTurnView(turn: OngoingConversationTurn) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        UserBubble(question = turn.question)
+        AiBubble(message = turn.message, sources = turn.sources, isLoading = true)
     }
 }
 
