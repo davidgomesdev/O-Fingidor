@@ -50,7 +50,15 @@ class ChatService(
             .startSpan()
         val llmScope = llmSpan.makeCurrent()
 
-        val chatStream = assistant.chat(conversationId, input)
+        val chatStream = try {
+            assistant.chat(conversationId, input)
+        } catch (e: Exception) {
+            llmSpan.recordException(e)
+            llmScope.close()
+            llmSpan.end()
+            throw e
+        }
+
         val startTime = TimeSource.Monotonic.markNow()
         val capturedSources: MutableList<ChatEvent.Sources.Source> = mutableListOf()
 

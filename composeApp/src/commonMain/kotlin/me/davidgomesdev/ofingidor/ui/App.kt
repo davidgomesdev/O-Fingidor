@@ -311,7 +311,7 @@ private fun StickyHeader(
     onDevModeToggle: () -> Unit,
     onNewConversation: () -> Unit,
     onPersonaSelected: (Persona) -> Unit,
-    isCompact: Boolean = false,
+    isCompact: Boolean,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AppHeader(
