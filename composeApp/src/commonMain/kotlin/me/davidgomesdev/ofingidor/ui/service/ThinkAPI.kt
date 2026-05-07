@@ -68,21 +68,29 @@ class ThinkAPI {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(ThinkPayload(query, persona.codeName))
+
                 sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 traceparent?.let { header("traceparent", it) }
             }.execute { httpResponse ->
                 httpResponse.headers["X-Session-Token"]?.let { sessionToken = it }
                 httpResponse.headers["X-Traceparent"]?.let { traceparent = it }
+
                 val channel: ByteReadChannel = httpResponse.body()
+
                 while (!channel.isClosedForRead) {
                     val line = channel.readLine() ?: break
+
                     if (line.isBlank()) continue
+
                     Napier.d("ChatEvent received: $line")
+
                     val event = Json.decodeFromString<ChatEvent>(line)
+
                     send(Result.success(event))
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            if (!isNetworkException(e)) throw e
             Napier.e("Request failed", e)
             send(Result.failure(e))
         }
