@@ -6,6 +6,7 @@ import io.opentelemetry.api.trace.SpanKind
 import io.smallrye.common.annotation.Blocking
 import jakarta.ws.rs.BadRequestException
 import jakarta.ws.rs.HeaderParam
+import jakarta.ws.rs.InternalServerErrorException
 import jakarta.ws.rs.NotFoundException
 import jakarta.ws.rs.PUT
 import jakarta.ws.rs.Path
@@ -91,8 +92,15 @@ class ThinkingAPI(
         val spanId = span.spanContext.spanId
         log.info("Querying model with trace ID: $traceId")
 
+        val responseStream = try {
+            chatService.query(body.input, span)
+        } catch (e: Exception) {
+            log.error("Error in querying model", e)
+            throw InternalServerErrorException("Failed to query model")
+        }
+
         val multi = RestMulti
-            .fromMultiData(chatService.query(body.input, span))
+            .fromMultiData(responseStream)
             .header("X-Trace-Id", traceId)
             .header("X-Traceparent", "00-$traceId-$spanId-01")
 
