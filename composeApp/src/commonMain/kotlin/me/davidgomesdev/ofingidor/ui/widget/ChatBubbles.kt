@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -190,12 +191,14 @@ fun ErrorBubble(errorDetail: String? = null) {
             fontSize = 13.sp,
         )
         if (errorDetail != null) {
-            Text(
-                errorDetail,
-                color = errorBubbleTextColor.copy(alpha = 0.6f),
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace,
-            )
+            SelectionContainer {
+                Text(
+                    errorDetail,
+                    color = errorBubbleTextColor.copy(alpha = 0.6f),
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace,
+                )
+            }
         }
     }
 }

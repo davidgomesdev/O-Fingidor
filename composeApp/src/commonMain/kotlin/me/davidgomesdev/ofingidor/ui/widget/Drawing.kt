@@ -43,12 +43,14 @@ fun AppHeader(
     hasConversationStarted: Boolean,
     onDevModeToggle: (() -> Unit)?,
     onNewConversation: (() -> Unit)?,
+    isCompact: Boolean = false,
 ) {
+    val horizontalPadding = if (isCompact) 12.dp else 24.dp
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 12.dp),
+                .padding(horizontal = horizontalPadding, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -96,7 +98,10 @@ fun AppHeader(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (hasConversationStarted && onNewConversation != null) {
-                    NewConversationButton(onClick = onNewConversation)
+                    NewConversationButton(
+                        label = if (isCompact) "Nova" else "Nova conversa",
+                        onClick = onNewConversation
+                    )
                 }
                 if (onDevModeToggle != null) {
                     DevModeToggle(active = devMode, onToggle = onDevModeToggle)
@@ -108,7 +113,7 @@ fun AppHeader(
 }
 
 @Composable
-private fun NewConversationButton(onClick: () -> Unit) {
+private fun NewConversationButton(label: String, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(4.dp))
@@ -117,7 +122,7 @@ private fun NewConversationButton(onClick: () -> Unit) {
             .padding(horizontal = 10.dp, vertical = 5.dp)
     ) {
         Text(
-            "Nova conversa",
+            label,
             color = Color.White.copy(alpha = 0.35f),
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,

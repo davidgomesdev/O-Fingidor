@@ -42,7 +42,6 @@ import me.davidgomesdev.ofingidor.ui.exampleCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.isActionInputType
-import me.davidgomesdev.ofingidor.ui.service.isMobileDevice
 
 private val exampleQueries = listOf(
     "O que é o amor para ti?",
@@ -64,6 +63,7 @@ fun ThinkInputCard(
     onSubmit: () -> Unit,
     onQuerySelected: (String) -> Unit,
     hasConversationStarted: Boolean = false,
+    isCompact: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused by interactionSource.collectIsFocusedAsState()
@@ -99,10 +99,10 @@ fun ThinkInputCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = if (isMobileDevice()) Arrangement.Center else Arrangement.SpaceBetween,
+            horizontalArrangement = if (isCompact) Arrangement.Center else Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (!isMobileDevice()) {
+            if (!isCompact) {
                 Text(
                     "Control + Enter para enviar",
                     color = Color.White.copy(alpha = 0.25f),

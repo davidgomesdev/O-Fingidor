@@ -4,6 +4,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,8 +47,11 @@ import me.davidgomesdev.ofingidor.ui.widget.PersonaTab
 import me.davidgomesdev.ofingidor.ui.widget.ThinkInputCard
 import me.davidgomesdev.ofingidor.ui.widget.UserBubble
 
+private val COMPACT_BREAKPOINT = 500.dp
+
 @Composable
 @Preview
+@Suppress("kotlin:S3776")
 fun App() {
     val thinkAPI = remember { ThinkAPI() }
 
@@ -108,45 +112,56 @@ fun App() {
             }
         }
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        BoxWithConstraints(
             modifier = Modifier
                 .background(backgroundColor)
-                .fillMaxSize()
-                .sizeIn(maxWidth = 700.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            StickyHeader(
-                selectedPersona = selectedPersona,
-                isDevMode = isDevMode,
-                hasConversationStarted = hasConversationStarted,
-                onDevModeToggle = onDevModeToggle,
-                onNewConversation = onNewConversation,
-                onPersonaSelected = { selectedPersona = it },
-            )
+            val isCompact = maxWidth < COMPACT_BREAKPOINT
+            val horizontalPadding = if (isCompact) 12.dp else 24.dp
 
             Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(scrollState)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .fillMaxSize()
+                    .sizeIn(maxWidth = 700.dp)
             ) {
-                ConversationFeed(
-                    turns = turns,
-                    ongoingTurn = ongoingTurn,
-                    ongoingTurnError = ongoingTurnError,
+                StickyHeader(
+                    selectedPersona = selectedPersona,
                     isDevMode = isDevMode,
-                    conversationTraceId = conversationTraceId,
                     hasConversationStarted = hasConversationStarted,
+                    onDevModeToggle = onDevModeToggle,
+                    onNewConversation = onNewConversation,
+                    onPersonaSelected = { selectedPersona = it },
+                    isCompact = isCompact,
                 )
-                ThinkInputCard(
-                    state = textFieldState,
-                    isLoading = ongoingTurn != null,
-                    onSubmit = onSubmit,
-                    onQuerySelected = { query -> textFieldState.edit { replace(0, length, query) } },
-                    hasConversationStarted = hasConversationStarted,
-                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = horizontalPadding, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    ConversationFeed(
+                        turns = turns,
+                        ongoingTurn = ongoingTurn,
+                        ongoingTurnError = ongoingTurnError,
+                        isDevMode = isDevMode,
+                        conversationTraceId = conversationTraceId,
+                        hasConversationStarted = hasConversationStarted,
+                    )
+                    ThinkInputCard(
+                        state = textFieldState,
+                        isLoading = ongoingTurn != null,
+                        onSubmit = onSubmit,
+                        onQuerySelected = { query -> textFieldState.edit { replace(0, length, query) } },
+                        hasConversationStarted = hasConversationStarted,
+                        isCompact = isCompact,
+                    )
+                }
             }
         }
     }
@@ -296,6 +311,7 @@ private fun StickyHeader(
     onDevModeToggle: () -> Unit,
     onNewConversation: () -> Unit,
     onPersonaSelected: (Persona) -> Unit,
+    isCompact: Boolean = false,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AppHeader(
@@ -304,6 +320,7 @@ private fun StickyHeader(
             hasConversationStarted,
             onDevModeToggle,
             onNewConversation,
+            isCompact = isCompact,
         )
         if (!hasConversationStarted) {
             PersonaTab(

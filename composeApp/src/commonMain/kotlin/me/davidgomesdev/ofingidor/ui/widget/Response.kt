@@ -1,8 +1,9 @@
 package me.davidgomesdev.ofingidor.ui.widget
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -15,11 +16,16 @@ import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -29,54 +35,57 @@ import me.davidgomesdev.ofingidor.ui.cardBorderColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.model.Source
+import me.davidgomesdev.ofingidor.ui.service.isMobileDevice
 import me.davidgomesdev.ofingidor.ui.service.openUrl
 
 private val accentColorLight = Color(0xFFA07FD4)
 private const val textReaderUrl = "https://pessoa.davidgomes.blog/textReader"
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
+@Suppress("kotlin:S3776")
 internal fun SourceChip(source: Source) {
+    val isMobile = isMobileDevice()
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    var isTapped by remember { mutableStateOf(false) }
+    val showTooltip = if (isMobile) isTapped else isHovered
 
     Layout(
         content = {
             DisableSelection {
                 Text(
                     source.title,
-                    color = if (isHovered) accentColorLight else focusedIndicatorColor.copy(alpha = 0.8f),
+                    color = if (showTooltip) accentColorLight else focusedIndicatorColor.copy(alpha = 0.8f),
                     fontSize = 11.sp,
                     modifier = Modifier
                         .hoverable(interactionSource)
-                        .clickable(interactionSource = interactionSource, indication = null) {
-                            openUrl("$textReaderUrl/${source.id}")
-                        }
+                        .combinedClickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = {
+                                if (isMobile) isTapped = !isTapped
+                                else openUrl("$textReaderUrl/${source.id}")
+                            },
+                            onLongClick = if (isMobile) {
+                                { openUrl("$textReaderUrl/${source.id}") }
+                            } else null,
+                        )
                         .clip(RoundedCornerShape(4.dp))
-                        .background(if (isHovered) accentColorLight.copy(alpha = 0.15f) else inputCardBackgroundColor)
+                        .background(if (showTooltip) accentColorLight.copy(alpha = 0.15f) else inputCardBackgroundColor)
                         .border(
                             1.dp,
-                            if (isHovered) accentColorLight.copy(alpha = 0.5f) else cardBorderColor,
+                            if (showTooltip) accentColorLight.copy(alpha = 0.5f) else cardBorderColor,
                             RoundedCornerShape(4.dp)
                         )
                         .padding(horizontal = 8.dp, vertical = 3.dp)
                 )
             }
-            if (isHovered) {
+            if (showTooltip) {
                 SourcesTooltip(source)
             }
-        }
-    ) { measurables, constraints ->
-        val chipPlaceable = measurables[0].measure(constraints)
-        val tooltipPlaceable = measurables.getOrNull(1)?.measure(Constraints())
-
-        layout(chipPlaceable.width, chipPlaceable.height) {
-            chipPlaceable.place(0, 0)
-            tooltipPlaceable?.place(
-                x = (chipPlaceable.width - tooltipPlaceable.width) / 2,
-                y = -tooltipPlaceable.height - 4.dp.roundToPx()
-            )
-        }
-    }
+        }, measurePolicy = MeasureScope::centerTooltip
+    )
 }
 
 @Composable
@@ -109,6 +118,22 @@ private fun SourceTooltipRow(label: String, value: String) {
             value,
             color = focusedIndicatorColor.copy(alpha = 0.9f),
             fontSize = 10.sp
+        )
+    }
+}
+
+private fun MeasureScope.centerTooltip(
+    measurables: List<Measurable>,
+    constraints: Constraints
+): MeasureResult {
+    val chipPlaceable = measurables[0].measure(constraints)
+    val tooltipPlaceable = measurables.getOrNull(1)?.measure(Constraints())
+
+    return layout(chipPlaceable.width, chipPlaceable.height) {
+        chipPlaceable.place(0, 0)
+        tooltipPlaceable?.place(
+            x = (chipPlaceable.width - tooltipPlaceable.width) / 2,
+            y = -tooltipPlaceable.height - 4.dp.roundToPx()
         )
     }
 }
