@@ -5,7 +5,9 @@ import dev.langchain4j.rag.content.ContentMetadata
 import dev.langchain4j.service.MemoryId
 import dev.langchain4j.service.TokenStream
 import dev.langchain4j.service.UserMessage
+import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
+import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
@@ -14,7 +16,6 @@ import me.davidgomesdev.ofingidor.backend.dto.ChatEvent
 import me.davidgomesdev.ofingidor.backend.llm.ChatHistoryRepository
 import me.davidgomesdev.ofingidor.backend.llm.TextAttributes
 import me.davidgomesdev.ofingidor.backend.observability.attributes
-import me.davidgomesdev.ofingidor.backend.observability.span
 import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import org.jboss.logging.Logger
 import java.util.UUID
@@ -36,60 +37,34 @@ class ChatService(
 
     val log: Logger = Logger.getLogger(this::class.java)
 
+    private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
+
     fun query(input: String, callerSpan: Span): Multi<ChatEvent> {
         val conversationId = conversationContext.conversationId
             ?: error("conversationId not set on ConversationContext")
-        val span = span()
-        val scope = span.makeCurrent()
+
+        val callerScope = callerSpan.makeCurrent()
+
+        val llmSpan = tracer.spanBuilder("LLM inference")
+            .setSpanKind(SpanKind.INTERNAL)
+            .startSpan()
+        val llmScope = llmSpan.makeCurrent()
+
         val chatStream = assistant.chat(conversationId, input)
-        val timeSource = TimeSource.Monotonic
-        val startTime = timeSource.markNow()
-        var capturedSources: List<ChatEvent.Sources.Source> = emptyList()
+        val startTime = TimeSource.Monotonic.markNow()
+        val capturedSources: MutableList<ChatEvent.Sources.Source> = mutableListOf()
 
         return Multi.createFrom().emitter { stream ->
-            stream.emit(ChatEvent.Start(span.spanContext.traceId))
+            stream.emit(ChatEvent.Start(callerSpan.spanContext.traceId))
 
             chatStream
-                .onPartialResponse { partialResponse ->
-                    stream.emit(ChatEvent.Token(partialResponse))
-                }
-                .onCompleteResponse { response ->
-                    val timeTaken = startTime.elapsedNow().toString(DurationUnit.SECONDS, 2)
-                    val totalTokensUsed = response.tokenUsage().totalTokenCount()
-
-                    log.info("Took $timeTaken to respond (used $totalTokensUsed output tokens)")
-
-                    span.apply {
-                        addEvent(
-                            "Response complete",
-                            attributes {
-                                put("query", input)
-                                put("response", response.aiMessage().text())
-                                put("thinking", response.aiMessage().thinking())
-                                put("model", response.metadata().modelName())
-                                put("model_duration.ms", timeTaken)
-                                put("total_tokens_used", totalTokensUsed.toLong())
-                                put("input_tokens_used", response.tokenUsage().inputTokenCount().toLong())
-                                put("output_tokens_used", response.tokenUsage().outputTokenCount().toLong())
-                                put("complete_reason", response.finishReason().name)
-                            }
-                        )
-                    }
-
-                    chatHistoryRepository.persist(
-                        conversationId = UUID.fromString(conversationId),
-                        userMessage = input,
-                        aiResponse = response.aiMessage().text() ?: "",
-                        sources = capturedSources,
-                    )
-
-                    stream.emit(ChatEvent.Done(totalTokensUsed, timeTaken))
-                    stream.complete()
-                    scope.close()
-                    callerSpan.end()
-                }
                 .onRetrieved { contents ->
-                    span.apply {
+                    llmSpan.apply {
+                        if (contents.isEmpty()) {
+                            addEvent("No sources retrieved")
+                            return@apply
+                        }
+
                         val eventAttributes = attributes {
                             contents.forEachIndexed { index, content ->
                                 val score = (content.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0
@@ -103,24 +78,72 @@ class ChatService(
                             }
                         }
 
-                        addEvent("Sources Retrieved", eventAttributes)
+                        addEvent("Sources retrieved", eventAttributes)
                     }
 
                     val sources = contents.map(::toSourceItem)
-                    capturedSources = sources
+                    capturedSources.addAll(sources)
 
                     log.info("Using sources:\n${sources.joinToString("\n") { "- ${it.author}: ${it.title} (${it.score}%)" }}")
 
                     stream.emit(ChatEvent.Sources(sources))
                 }
+                .onPartialResponse { partialResponse ->
+                    stream.emit(ChatEvent.Token(partialResponse))
+                }
+                .onCompleteResponse { response ->
+                    val timeTaken = startTime.elapsedNow().toString(DurationUnit.SECONDS, 2)
+                    val totalTokensUsed = response.tokenUsage().totalTokenCount()
+
+                    log.info("Took $timeTaken to respond (used $totalTokensUsed output tokens)")
+
+                    llmSpan.apply {
+                        setAttribute("model", response.metadata().modelName() ?: "")
+                        setAttribute("total_tokens_used", totalTokensUsed.toLong())
+                        setAttribute("input_tokens_used", response.tokenUsage().inputTokenCount().toLong())
+                        setAttribute("output_tokens_used", response.tokenUsage().outputTokenCount().toLong())
+                        setAttribute("complete_reason", response.finishReason().name)
+                        setAttribute("time_taken.secs", timeTaken)
+                        llmScope.close()
+                        end()
+                    }
+
+                    callerSpan.addEvent(
+                        "Response complete",
+                        attributes {
+                            put("query", input)
+                            put("response", response.aiMessage().text())
+                            put("thinking", response.aiMessage().thinking())
+                        }
+                    )
+
+                    chatHistoryRepository.persist(
+                        conversationId = UUID.fromString(conversationId),
+                        userMessage = input,
+                        aiResponse = response.aiMessage().text() ?: "",
+                        sources = capturedSources,
+                    )
+
+                    stream.emit(ChatEvent.Done(totalTokensUsed, timeTaken))
+                    stream.complete()
+                    callerScope.close()
+                    callerSpan.end()
+                }
                 .onError { error ->
                     stream.fail(error)
-                    scope.close()
-                    callerSpan.end()
 
-                    span.apply {
+                    llmSpan.apply {
                         recordException(error)
                         setStatus(StatusCode.ERROR)
+                        llmScope.close()
+                        end()
+                    }
+
+                    callerSpan.apply {
+                        recordException(error)
+                        setStatus(StatusCode.ERROR)
+                        callerScope.close()
+                        end()
                     }
 
                     log.error("There was a problem with the assistant!", error)
