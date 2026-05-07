@@ -1,7 +1,6 @@
 package me.davidgomesdev.ofingidor.ui.service
 
-actual fun getHost(): String =
-    js("window.HOST") as? String ?: (js("window.location.hostname") as String)
+actual fun getHost(): String = js("window.location.hostname") as String
 
 actual fun isMobileDevice(): Boolean {
     val userAgent = js("navigator.userAgent") as String
