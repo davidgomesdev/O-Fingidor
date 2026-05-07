@@ -78,6 +78,15 @@ fun App() {
             }
         }
 
+        val onNewConversation: () -> Unit = {
+            turns.clear()
+            ongoingTurn = null
+            ongoingTurnError = null
+            conversationTraceId = ""
+            textFieldState.edit { replace(0, length, "") }
+            thinkAPI.resetConversation()
+        }
+
         val onSubmit: () -> Unit = onSubmit@{
             if (textFieldState.text.isBlank()) return@onSubmit
             if (ongoingTurn != null) return@onSubmit
@@ -126,6 +135,7 @@ fun App() {
                 isDevMode = isDevMode,
                 hasConversationStarted = hasConversationStarted,
                 onDevModeToggle = onDevModeToggle,
+                onNewConversation = onNewConversation,
                 onPersonaSelected = { selectedPersona = it },
             )
 
@@ -190,12 +200,14 @@ fun App() {
                     hasConversationStarted = hasConversationStarted,
                 )
                 if (isDevMode && conversationTraceId.isNotBlank()) {
-                    Text(
-                        "trace: $conversationTraceId",
-                        color = devChipTextColor.copy(alpha = 0.45f),
-                        fontSize = 10.sp,
-                        letterSpacing = 0.5.sp,
-                    )
+                    SelectionContainer {
+                        Text(
+                            "trace: $conversationTraceId",
+                            color = devChipTextColor.copy(alpha = 0.45f),
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp,
+                        )
+                    }
                 }
             }
         }
@@ -237,13 +249,16 @@ private fun StickyHeader(
     isDevMode: Boolean,
     hasConversationStarted: Boolean,
     onDevModeToggle: () -> Unit,
+    onNewConversation: () -> Unit,
     onPersonaSelected: (Persona) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         AppHeader(
             selectedPersona,
             isDevMode,
+            hasConversationStarted,
             onDevModeToggle,
+            onNewConversation,
         )
         if (!hasConversationStarted) {
             PersonaTab(

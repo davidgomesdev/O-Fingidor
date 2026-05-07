@@ -82,6 +82,7 @@ class ThinkingAPI(
                 log.info("Using persona: ${persona.displayName}")
                 setAttribute("persona", persona.codeName)
             }
+            setAttribute("conversationId", conversationContext.conversationId!!)
         }
             .setSpanKind(SpanKind.INTERNAL)
             .startSpan()

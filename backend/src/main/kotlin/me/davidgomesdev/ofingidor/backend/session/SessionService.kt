@@ -94,7 +94,7 @@ class SessionService(private val config: SessionConfig) {
     fun getPersona(conversationId: String): Either<SessionError, Persona> {
         val uuid = try {
             UUID.fromString(conversationId)
-        } catch (e: IllegalArgumentException) {
+        } catch (_: IllegalArgumentException) {
             log.warn("Session lookup failed: invalid UUID format '$conversationId'")
             return SessionError.SESSION_NOT_FOUND.left()
         }

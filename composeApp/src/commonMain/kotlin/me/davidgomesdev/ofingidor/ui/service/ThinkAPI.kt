@@ -52,8 +52,12 @@ class ThinkAPI {
     }.also { Napier.base(DebugAntilog()) }
 
     private var sessionToken: String? = null
-    // W3C traceparent returned by the backend, echoed back on subsequent requests
     private var traceparent: String? = null
+
+    fun resetConversation() {
+        sessionToken = null
+        traceparent = null
+    }
 
     fun sendThinkRequest(
         query: String,
