@@ -1,17 +1,13 @@
 package me.davidgomesdev.ofingidor.backend.llm
 
-import dev.langchain4j.data.message.SystemMessage
-import dev.langchain4j.data.message.TextContent
 import dev.langchain4j.memory.chat.MessageWindowChatMemory
 import dev.langchain4j.model.chat.StreamingChatModel
 import dev.langchain4j.observability.api.listener.AiServiceErrorListener
-import dev.langchain4j.observability.api.listener.AiServiceStartedListener
 import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.service.AiServices
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import me.davidgomesdev.ofingidor.backend.model.Persona
-import me.davidgomesdev.ofingidor.backend.observability.attributes
 import me.davidgomesdev.ofingidor.backend.observability.span
 import me.davidgomesdev.ofingidor.backend.service.Assistant
 import me.davidgomesdev.ofingidor.backend.session.SessionConfig
@@ -42,18 +38,7 @@ class AiAssistant(
                     .chatMemoryStore(postgresConversationStore)
                     .build()
             }
-            .registerListeners(AiServiceStartedListener { event ->
-                span().addEvent(
-                    "LLM query", attributes {
-                        put(
-                            "user_message",
-                            event.userMessage().contents().filterIsInstance<TextContent>()
-                                .joinToString("\n\n", transform = TextContent::text)
-                        )
-                        put(
-                            "system_message", event.systemMessage().map(SystemMessage::text).orElseGet { "" })
-                    })
-            }, AiServiceErrorListener { error ->
+            .registerListeners(AiServiceErrorListener { error ->
                 span().recordException(error.error())
             })
             .streamingChatModel(chatModel)
