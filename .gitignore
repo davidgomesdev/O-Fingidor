@@ -48,7 +48,7 @@ nb-configuration.xml
 
 .kotlin
 
-docker-compose-modified.yaml
+backend/docker-compose-modified.yaml
 ./system_message.txt
 
 docs/superpowers

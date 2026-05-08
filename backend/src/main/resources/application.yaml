@@ -61,7 +61,7 @@ model:
 rag:
   max-results: 10
   min-score: 0.75
-  expand-query: false
+  expand-query: true
   ingestion-chunk-size: 5
   expanding-query-template: |
     Gera {{n}} versões diferentes EM PORTUGUÊS DE PORTUGAL da seguinte pergunta, para recuperar textos relevantes sobre Fernando Pessoa, os seus heterónimos e obra.
