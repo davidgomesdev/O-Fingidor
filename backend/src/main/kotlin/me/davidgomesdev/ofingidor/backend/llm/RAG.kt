@@ -84,9 +84,11 @@ class RAG(
     fun augmentor(
         contentRetriever: ContentRetriever,
         queryTransformer: QueryTransformer,
-        contentInjector: TextsContentInjector
+        contentInjector: TextsContentInjector,
+        managedExecutor: ManagedExecutor
     ): RetrievalAugmentor =
         DefaultRetrievalAugmentor.builder()
+            .executor(managedExecutor)
             .queryRouter { _ ->
                 if (personaContext.persona == Persona.O_FINGIDOR) {
                     Span.current().addEvent("Skipping RAG")
