@@ -7,6 +7,7 @@ import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,11 +21,15 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
+import androidx.compose.foundation.text.selection.DisableSelection
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -45,6 +50,8 @@ import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
 import me.davidgomesdev.ofingidor.ui.userBubbleBorder
+
+private val accentColorLight = Color(0xFFA07FD4)
 
 @Composable
 fun UserBubble(question: String) {
@@ -132,16 +139,44 @@ fun AiBubble(
         }
 
         if (sources.isNotEmpty()) {
+            var expanded by remember { mutableStateOf(false) }
+            val visibleSources = if (sources.size > 3 && !expanded) sources.take(3) else sources
+
             FlowRow(
                 modifier = Modifier.widthIn(max = 560.dp),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                sources.forEach { source ->
+                visibleSources.forEach { source ->
                     key(source.id) { SourceChip(source) }
+                }
+                if (sources.size > 3) {
+                    ExpandToggleChip(
+                        expanded = expanded,
+                        hiddenCount = sources.size - 3,
+                        onClick = { expanded = !expanded },
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ExpandToggleChip(expanded: Boolean, hiddenCount: Int, onClick: () -> Unit) {
+    val label = if (expanded) "− menos" else "+$hiddenCount mais"
+    DisableSelection {
+        Text(
+            label,
+            color = accentColorLight.copy(alpha = 0.8f),
+            fontSize = 11.sp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(4.dp))
+                .background(accentColorLight.copy(alpha = 0.10f))
+                .border(1.dp, accentColorLight.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+                .padding(horizontal = 8.dp, vertical = 3.dp)
+                .clickable(onClick = onClick),
+        )
     }
 }
 
