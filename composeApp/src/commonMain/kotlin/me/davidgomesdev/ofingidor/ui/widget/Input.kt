@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -58,7 +56,8 @@ private val exampleQueries = listOf(
 
 @Composable
 fun ThinkInputCard(
-    state: TextFieldState,
+    text: String,
+    onTextChange: (String) -> Unit,
     isLoading: Boolean,
     onSubmit: () -> Unit,
     onQuerySelected: (String) -> Unit,
@@ -86,7 +85,7 @@ fun ThinkInputCard(
             .border(1.dp, borderColor, RoundedCornerShape(10.dp))
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            ThinkInputField(state, isLoading, interactionSource, onSubmit)
+            ThinkInputField(text, onTextChange, isLoading, interactionSource, onSubmit)
             if (!isLoading && !hasConversationStarted) {
                 ExampleQueriesRow(
                     onQuerySelected = onQuerySelected,
@@ -140,13 +139,15 @@ fun ExampleQueriesRow(onQuerySelected: (String) -> Unit, modifier: Modifier = Mo
 
 @Composable
 private fun ThinkInputField(
-    state: TextFieldState,
+    text: String,
+    onTextChange: (String) -> Unit,
     isLoading: Boolean,
     interactionSource: MutableInteractionSource,
     onSubmit: () -> Unit
 ) {
     TextField(
-        state = state,
+        value = text,
+        onValueChange = onTextChange,
         placeholder = {
             Text(
                 "Escreve o que te inquieta a alma...",
@@ -155,7 +156,7 @@ private fun ThinkInputField(
             )
         },
         enabled = !isLoading,
-        lineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 2),
+        minLines = 2,
         interactionSource = interactionSource,
         modifier = Modifier
             .fillMaxWidth()

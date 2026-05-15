@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -56,7 +55,7 @@ fun App() {
     val thinkAPI = remember { ThinkAPI() }
 
     MaterialTheme(typography = RobotoTypography()) {
-        val textFieldState = remember { TextFieldState("") }
+        var inputText by remember { mutableStateOf("") }
         val turns = remember { mutableStateListOf<ConversationTurn>() }
         var ongoingTurn by remember { mutableStateOf<OngoingConversationTurn?>(null) }
         var ongoingTurnError by remember { mutableStateOf<Throwable?>(null) }
@@ -82,15 +81,15 @@ fun App() {
             ongoingTurn = null
             ongoingTurnError = null
             conversationTraceId = ""
-            textFieldState.edit { replace(0, length, "") }
+            inputText = ""
             thinkAPI.resetConversation()
         }
 
         val onSubmit: () -> Unit = onSubmit@{
-            if (textFieldState.text.isBlank() || ongoingTurn != null) return@onSubmit
+            if (inputText.isBlank() || ongoingTurn != null) return@onSubmit
 
-            val question = textFieldState.text.toString().trim()
-            textFieldState.edit { replace(0, length, "") }
+            val question = inputText.trim()
+            inputText = ""
 
             coroutineScope.launch {
                 ongoingTurnError = null
@@ -106,7 +105,7 @@ fun App() {
                     onSuccess = { turn -> turn?.let { turns.add(it) } },
                     onFailure = {
                         ongoingTurnError = it
-                        textFieldState.edit { replace(0, length, question) }
+                        inputText = question
                     },
                 )
             }
@@ -153,10 +152,11 @@ fun App() {
                         hasConversationStarted = hasConversationStarted,
                     )
                     ThinkInputCard(
-                        state = textFieldState,
+                        text = inputText,
+                        onTextChange = { inputText = it },
                         isLoading = ongoingTurn != null,
                         onSubmit = onSubmit,
-                        onQuerySelected = { query -> textFieldState.edit { replace(0, length, query) } },
+                        onQuerySelected = { query -> inputText = query },
                         hasConversationStarted = hasConversationStarted,
                         isCompact = isCompact,
                     )
