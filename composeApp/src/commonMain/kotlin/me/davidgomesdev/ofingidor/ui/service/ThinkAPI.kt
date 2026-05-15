@@ -23,13 +23,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import me.davidgomesdev.ofingidor.ui.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.json
 import me.davidgomesdev.ofingidor.ui.model.Persona
 
 const val DEFAULT_HOST = "127.0.0.1"
 
 @Suppress("HttpUrlsUsage")
 val apiUrl = "http://${getHost()}:8080"
+
 
 class ThinkAPI {
     private val client = HttpClient {
@@ -84,7 +86,7 @@ class ThinkAPI {
 
                     Napier.d("ChatEvent received: $line")
 
-                    val event = Json.decodeFromString<ChatEvent>(line)
+                    val event = json.decodeFromString<ChatEvent>(line)
 
                     send(Result.success(event))
                 }

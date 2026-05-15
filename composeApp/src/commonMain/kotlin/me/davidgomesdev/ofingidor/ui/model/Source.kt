@@ -1,6 +1,6 @@
 package me.davidgomesdev.ofingidor.ui.model
 
-import me.davidgomesdev.ofingidor.ui.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 
 data class Source(
     val id: Long,

@@ -36,3 +36,4 @@ rootProject.name = "o-fingidor"
 
 include(":backend")
 include(":composeApp")
+include(":shared")
