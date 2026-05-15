@@ -124,7 +124,6 @@ fun App() {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .fillMaxSize()
                     .sizeIn(maxWidth = 700.dp)
             ) {
                 StickyHeader(

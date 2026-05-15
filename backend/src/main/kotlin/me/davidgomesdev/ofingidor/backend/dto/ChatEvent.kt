@@ -17,7 +17,6 @@ sealed class ChatEvent {
     data class Token(val value: String) : ChatEvent()
 
     data class Sources(val items: List<Source>) : ChatEvent() {
-
         data class Source(
             val id: Long,
             val title: String,
