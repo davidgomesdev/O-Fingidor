@@ -55,6 +55,7 @@ dependencies {
     implementation("io.quarkus:quarkus-flyway")
     implementation("com.github.f4b6a3:uuid-creator:6.0.0")
     implementation("io.arrow-kt:arrow-core:$arrowVersion")
+    implementation(project(":shared"))
     testImplementation("io.quarkus:quarkus-junit5")
     testImplementation("io.quarkus:quarkus-junit5-mockito")
     testImplementation("io.rest-assured:rest-assured:5.5.0")

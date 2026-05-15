@@ -13,13 +13,13 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
-import me.davidgomesdev.ofingidor.backend.dto.ChatEvent
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.model.Persona
 import me.davidgomesdev.ofingidor.backend.service.ChatService
 import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import me.davidgomesdev.ofingidor.backend.session.SessionError
 import me.davidgomesdev.ofingidor.backend.session.SessionService
+import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import org.jboss.logging.Logger
 import org.jboss.resteasy.reactive.RestMulti
 

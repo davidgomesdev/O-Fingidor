@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.f4b6a3.uuid.UuidCreator
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
-import me.davidgomesdev.ofingidor.backend.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import org.jboss.logging.Logger
 import java.time.OffsetDateTime
 import java.util.UUID

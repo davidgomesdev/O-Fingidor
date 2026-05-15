@@ -31,6 +31,7 @@ kotlin {
             implementation(libs.ktor.client.content.regotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.napier)
+            implementation(project(":shared"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -63,5 +64,11 @@ compose.desktop {
             packageName = "me.davidgomesdev.ofingidor.ui"
             packageVersion = "1.0.0"
         }
+    }
+}
+
+tasks.withType<AbstractCopyTask>().configureEach {
+    if (name.startsWith("js") || name.startsWith("composeApp")) {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     }
 }
