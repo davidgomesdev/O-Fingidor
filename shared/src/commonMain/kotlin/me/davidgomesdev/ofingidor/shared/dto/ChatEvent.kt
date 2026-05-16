@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-val json = Json { classDiscriminator = "type"; ignoreUnknownKeys = true }
+val json = Json { classDiscriminator = "type"; ignoreUnknownKeys = true; encodeDefaults = true }
 
 @Serializable
 sealed class ChatEvent {

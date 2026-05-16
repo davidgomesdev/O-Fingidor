@@ -63,7 +63,7 @@ fun PersonaTab(
 }
 
 @Composable
-private fun PersonaCategorySection(
+fun PersonaCategorySection(
     category: PersonaCategory,
     personas: List<Persona>,
     selectedPersona: Persona,

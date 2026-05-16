@@ -24,7 +24,9 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
 import me.davidgomesdev.ofingidor.shared.dto.json
+import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.Persona
 
 const val DEFAULT_HOST = "127.0.0.1"
@@ -56,9 +58,36 @@ class ThinkAPI {
     private var sessionToken: String? = null
     private var traceparent: String? = null
 
+    internal data class ConversationState(
+        val sessionToken: String?,
+        val traceparent: String?,
+    )
+
     fun resetConversation() {
-        sessionToken = null
-        traceparent = null
+        restoreConversation(sessionToken = null, traceparent = null)
+    }
+
+    internal fun restoreConversation(
+        sessionToken: String?,
+        traceparent: String?,
+    ) {
+        this.sessionToken = sessionToken
+        this.traceparent = traceparent
+    }
+
+    internal fun conversationState(): ConversationState = ConversationState(
+        sessionToken = sessionToken,
+        traceparent = traceparent,
+    )
+
+    private fun updateConversation(
+        sessionToken: String?,
+        traceparent: String?,
+    ) {
+        restoreConversation(
+            sessionToken = sessionToken ?: this.sessionToken,
+            traceparent = traceparent ?: this.traceparent,
+        )
     }
 
     fun sendThinkRequest(
@@ -74,8 +103,10 @@ class ThinkAPI {
                 sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
                 traceparent?.let { header("traceparent", it) }
             }.execute { httpResponse ->
-                httpResponse.headers["X-Session-Token"]?.let { sessionToken = it }
-                httpResponse.headers["X-Traceparent"]?.let { traceparent = it }
+                updateConversation(
+                    sessionToken = httpResponse.headers["X-Session-Token"],
+                    traceparent = httpResponse.headers["X-Traceparent"],
+                )
 
                 val channel: ByteReadChannel = httpResponse.body()
 
@@ -97,7 +128,41 @@ class ThinkAPI {
             send(Result.failure(e))
         }
     }
+
+    fun sendDebateRequest(
+        query: String,
+        pair: DebatePair,
+    ): Flow<Result<DebateEvent>> = channelFlow {
+        try {
+            client.preparePut("$apiUrl/pensa/debate") {
+                accept(ContentType.Any)
+                contentType(ContentType.Application.Json)
+                setBody(DebatePayload(query, pair.left.codeName, pair.right.codeName))
+
+                sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
+                traceparent?.let { header("traceparent", it) }
+            }.execute { httpResponse ->
+                updateConversation(
+                    sessionToken = httpResponse.headers["X-Session-Token"],
+                    traceparent = httpResponse.headers["X-Traceparent"],
+                )
+
+                val channel: ByteReadChannel = httpResponse.body()
+                while (!channel.isClosedForRead) {
+                    val line = channel.readLine() ?: break
+                    if (line.isBlank()) continue
+                    send(Result.success(json.decodeFromString<DebateEvent>(line)))
+                }
+            }
+        } catch (e: Throwable) {
+            if (!isNetworkException(e)) throw e
+            send(Result.failure(e))
+        }
+    }
 }
 
 @Serializable
 data class ThinkPayload(val input: String, val persona: String)
+
+@Serializable
+data class DebatePayload(val input: String, val personaA: String, val personaB: String)

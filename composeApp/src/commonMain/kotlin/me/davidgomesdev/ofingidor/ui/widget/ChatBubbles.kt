@@ -43,10 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.ui.aiBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
+import me.davidgomesdev.ofingidor.ui.debateBubblePalette
 import me.davidgomesdev.ofingidor.ui.errorBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.errorBubbleBorderColor
 import me.davidgomesdev.ofingidor.ui.errorBubbleTextColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
+import me.davidgomesdev.ofingidor.ui.model.DebateSide
+import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
 import me.davidgomesdev.ofingidor.ui.userBubbleBorder
@@ -80,12 +83,27 @@ fun UserBubble(question: String) {
                     )
                     .padding(horizontal = 13.dp, vertical = 9.dp)
             ) {
-                Text(
-                    question,
-                    color = Color(0xFFCCCCCC),
-                    fontSize = 14.sp,
-                )
+                BubbleText(question = question)
             }
+        }
+    }
+}
+
+@Composable
+fun CenteredUserBubble(question: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .widthIn(max = 460.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(inputCardBackgroundColor)
+                .border(2.dp, userBubbleBorder, RoundedCornerShape(10.dp))
+                .padding(horizontal = 13.dp, vertical = 9.dp),
+        ) {
+            BubbleText(question = question)
         }
     }
 }
@@ -129,35 +147,55 @@ fun AiBubble(
                 )
                 .padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
-            Text(
-                text = annotatedText,
-                color = Color(0xFFCCCCCC),
-                fontSize = 14.sp,
-                lineHeight = 22.sp,
-                inlineContent = inlineContent,
-            )
+            BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
         }
 
-        if (sources.isNotEmpty()) {
-            var expanded by remember { mutableStateOf(false) }
-            val visibleSources = if (sources.size > 3 && !expanded) sources.take(3) else sources
+        BubbleSources(sources = sources)
+    }
+}
 
-            FlowRow(
-                modifier = Modifier.widthIn(max = 560.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
+@Composable
+fun DebatePersonaBubble(
+    speaker: Persona,
+    side: DebateSide,
+    message: String,
+    sources: List<Source>,
+    isLoading: Boolean,
+) {
+    val palette = debateBubblePalette(speaker)
+    val shape = when (side) {
+        DebateSide.LEFT -> RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+        DebateSide.RIGHT -> RoundedCornerShape(topStart = 10.dp, topEnd = 2.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+    }
+    val inlineContent = loadingInlineContent(isLoading)
+    val annotatedText = loadingAnnotatedText(message, isLoading)
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = speaker.displayName,
+            color = palette.label,
+            fontSize = 10.sp,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        Column(
+            horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 560.dp)
+                    .clip(shape)
+                    .background(palette.background)
+                    .border(2.dp, palette.border, shape)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
             ) {
-                visibleSources.forEach { source ->
-                    key(source.id) { SourceChip(source) }
-                }
-                if (sources.size > 3) {
-                    ExpandToggleChip(
-                        expanded = expanded,
-                        hiddenCount = sources.size - 3,
-                        onClick = { expanded = !expanded },
-                    )
-                }
+                BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
             }
+            BubbleSources(sources = sources)
         }
     }
 }
@@ -178,6 +216,71 @@ private fun ExpandToggleChip(expanded: Boolean, hiddenCount: Int, onClick: () ->
                 .clickable(onClick = onClick),
         )
     }
+}
+
+@Composable
+private fun BubbleText(question: String) {
+    Text(
+        text = question,
+        color = Color(0xFFCCCCCC),
+        fontSize = 14.sp,
+    )
+}
+
+@Composable
+private fun BubbleMessageText(
+    text: androidx.compose.ui.text.AnnotatedString,
+    inlineContent: Map<String, InlineTextContent>,
+) {
+    Text(
+        text = text,
+        color = Color(0xFFCCCCCC),
+        fontSize = 14.sp,
+        lineHeight = 22.sp,
+        inlineContent = inlineContent,
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BubbleSources(sources: List<Source>) {
+    if (sources.isEmpty()) return
+
+    var expanded by remember { mutableStateOf(false) }
+    val visibleSources = if (sources.size > 3 && !expanded) sources.take(3) else sources
+
+    FlowRow(
+        modifier = Modifier.widthIn(max = 560.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        visibleSources.forEach { source ->
+            key(source.id) { SourceChip(source) }
+        }
+        if (sources.size > 3) {
+            ExpandToggleChip(
+                expanded = expanded,
+                hiddenCount = sources.size - 3,
+                onClick = { expanded = !expanded },
+            )
+        }
+    }
+}
+
+private fun loadingInlineContent(isLoading: Boolean): Map<String, InlineTextContent> =
+    if (isLoading) {
+        mapOf(
+            "cursor" to InlineTextContent(
+                placeholder = Placeholder(2.sp, 14.sp, PlaceholderVerticalAlign.TextCenter)
+            ) { BlinkingCursor() }
+        )
+    } else {
+        emptyMap()
+    }
+
+private fun loadingAnnotatedText(message: String, isLoading: Boolean) = buildAnnotatedString {
+    append(message)
+    if (isLoading) appendInlineContent("cursor", "|")
 }
 
 @Composable
