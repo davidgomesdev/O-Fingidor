@@ -3,6 +3,7 @@ package me.davidgomesdev.ofingidor.ui
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
@@ -14,9 +15,20 @@ import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
+import me.davidgomesdev.ofingidor.ui.widget.AvatarContentDescriptionMode
+import me.davidgomesdev.ofingidor.ui.widget.appHeaderIdentity
+import me.davidgomesdev.ofingidor.ui.widget.chatPortraitIdentity
+import me.davidgomesdev.ofingidor.ui.widget.debatePortraitIdentity
+import me.davidgomesdev.ofingidor.ui.widget.defaultAvatarSize
+import me.davidgomesdev.ofingidor.ui.widget.personaIdentityChipModel
+import me.davidgomesdev.ofingidor.ui.widget.personaPortrait
+import me.davidgomesdev.ofingidor.ui.widget.portraitChipLayout
+import me.davidgomesdev.ofingidor.ui.widget.resolveAvatarContentDescription
+import me.davidgomesdev.ofingidor.ui.widget.resolveChatAvatarSize
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -25,35 +37,170 @@ class ComposeAppWebTest {
     private val sampleSource = Source(1L, "Mensagem", "Fernando Pessoa", "Poesia", 92)
 
     @Test
+    fun personaPortraits_defineAssetForEveryPersona() {
+        val missing = Persona.entries.filter { personaPortrait(it) == null }
+        assertEquals(emptyList(), missing)
+    }
+
+    @Test
+    fun appHeaderIdentity_usesSelectedPersonaPortrait() {
+        val model = appHeaderIdentity(Persona.RICARDO_REIS)
+        assertEquals("Retrato de Ricardo Reis", model.portrait.contentDescription)
+        assertEquals("RICARDO REIS", model.personaLabel)
+    }
+
+    @Test
+    fun chatPortraitIdentity_keepsExistingFeedRhythm() {
+        val identity = chatPortraitIdentity(Persona.FERNANDO_PESSOA)
+        assertEquals("Fernando Pessoa", identity.label)
+        assertTrue(identity.compact)
+    }
+
+    @Test
+    fun chatPortraitIdentity_compactAvatarResolvesTo24dp() {
+        val identity = chatPortraitIdentity(Persona.FERNANDO_PESSOA)
+        val avatarSize = resolveChatAvatarSize(identity)
+        assertEquals(24.dp, avatarSize)
+        assertNotEquals(defaultAvatarSize, avatarSize)
+    }
+
+    @Test
+    fun debatePortraitIdentity_keepsFullNameAndAvatarScale() {
+        val identity = debatePortraitIdentity(Persona.ALBERTO_CAEIRO)
+        assertEquals("Alberto Caeiro", identity.label)
+    }
+
+    @Test
+    fun personaIdentityChipModel_preservesFullNameForLongPersona() {
+        val model = personaIdentityChipModel(Persona.BERNARDO_SOARES, isCompact = true, isSelected = true)
+        assertEquals("Bernardo Soares", model.layout.label)
+        assertEquals("Bernardo Soares", model.persona.displayName)
+    }
+
+    @Test
+    fun personaIdentityChipModel_usesDecorativeAvatarSemantics() {
+        val model = personaIdentityChipModel(Persona.ALVARO_DE_CAMPOS, isCompact = false, isSelected = false)
+        assertEquals(null, model.layout.avatarContentDescription)
+    }
+
+    @Test
+    fun chipAvatarContentDescription_resolutionKeepsAvatarDecorative() {
+        val model = personaIdentityChipModel(Persona.ALVARO_DE_CAMPOS, isCompact = false, isSelected = false)
+        val portrait = requireNotNull(personaPortrait(model.persona))
+        val resolvedContentDescription = resolveAvatarContentDescription(
+            portrait = portrait,
+            requestedContentDescription = model.layout.avatarContentDescription,
+            mode = AvatarContentDescriptionMode.DECORATIVE,
+        )
+        assertNull(resolvedContentDescription)
+    }
+
+    @Test
+    fun avatarContentDescription_resolutionUsesPortraitDescriptionForMeaningfulAvatars() {
+        val portrait = requireNotNull(personaPortrait(Persona.RICARDO_REIS))
+        val resolvedContentDescription = resolveAvatarContentDescription(
+            portrait = portrait,
+            requestedContentDescription = null,
+            mode = AvatarContentDescriptionMode.MEANINGFUL,
+        )
+        assertEquals("Retrato de Ricardo Reis", resolvedContentDescription)
+    }
+
+    @Test
+    fun personaPortraitChipLayout_keepsFullNameOnCompactScreens() {
+        val model = portraitChipLayout(persona = Persona.BERNARDO_SOARES, isCompact = true, isSelected = false)
+        assertEquals("Bernardo Soares", model.label)
+        assertTrue(model.showPortrait)
+    }
+
+    @Test
+    fun personaPortraitChipLayout_selectedStateChangesPresentation() {
+        val selected = portraitChipLayout(persona = Persona.ALBERTO_CAEIRO, isCompact = false, isSelected = true)
+        val unselected = portraitChipLayout(persona = Persona.ALBERTO_CAEIRO, isCompact = false, isSelected = false)
+
+        assertTrue(selected.selected)
+        assertEquals(false, unselected.selected)
+        assertNotEquals(selected.backgroundColor, unselected.backgroundColor)
+        assertNotEquals(selected.borderColor, unselected.borderColor)
+        assertNotEquals(selected.labelColor, unselected.labelColor)
+    }
+
+    @Test
+    fun personaPortraitChipLayout_selectedOrthonymUsesActivePalette() {
+        val selected = portraitChipLayout(persona = Persona.FERNANDO_PESSOA, isCompact = false, isSelected = true)
+
+        assertTrue(selected.selected)
+        assertEquals(orthonymChipColor, selected.backgroundColor)
+        assertEquals(orthonymChipBorderColor, selected.borderColor)
+        assertEquals(orthonymChipTextColor, selected.labelColor)
+    }
+
+    @Test
+    fun personaIdentityChipModel_preservesDebatePickerPersonaLabels() {
+        val leftModel = personaIdentityChipModel(Persona.ALVARO_DE_CAMPOS, isCompact = false, isSelected = true)
+        val rightModel = personaIdentityChipModel(Persona.BERNARDO_SOARES, isCompact = false, isSelected = false)
+        assertEquals("Álvaro de Campos", leftModel.layout.label)
+        assertEquals("Bernardo Soares", rightModel.layout.label)
+    }
+
+    @Test
     fun ongoingTurn_defaultsToEmptyMessageAndSources() {
-        val turn = OngoingConversationTurn(question = "Quem és?", personaName = "Fernando Pessoa")
+        val turn = OngoingConversationTurn(question = "Quem és?", persona = Persona.FERNANDO_PESSOA)
         assertEquals("", turn.message)
         assertTrue(turn.sources.isEmpty())
         assertEquals("", turn.traceId)
     }
 
     @Test
-    fun ongoingTurn_toConversationTurn_mapsAllFields() {
+    fun ongoingTurn_toConversationTurn_preservesSelectedPersona() {
         val ongoing = OngoingConversationTurn(
             question = "O que é o amor?",
             message = "O amor é...",
             sources = listOf(sampleSource),
             traceId = "abc123",
-            personaName = "Fernando Pessoa"
+            persona = Persona.ALVARO_DE_CAMPOS,
         )
         val completed = ongoing.toConversationTurn()
         assertEquals(ongoing.question, completed.question)
         assertEquals(ongoing.message, completed.message)
         assertEquals(ongoing.sources, completed.sources)
         assertEquals(ongoing.traceId, completed.traceId)
-        assertEquals(ongoing.personaName, completed.personaName)
+        assertEquals(ongoing.persona, completed.persona)
     }
 
     @Test
     fun ongoingTurn_appendsToken() {
-        val turn = OngoingConversationTurn(question = "Quem és?", message = "Eu sou ", personaName = "Fernando Pessoa")
+        val turn = OngoingConversationTurn(
+            question = "Quem és?",
+            message = "Eu sou ",
+            persona = Persona.FERNANDO_PESSOA,
+        )
         val updated = turn.copy(message = turn.message + "Fernando.")
         assertEquals("Eu sou Fernando.", updated.message)
+    }
+
+    @Test
+    fun processSubmit_preservesPersonaWithoutDisplayNameRemapping() = runTest {
+        var ongoingTurn: OngoingConversationTurn? = null
+        var traceId = ""
+
+        val result = processSubmit(
+            question = "Quem és?",
+            selectedPersona = Persona.ALVARO_DE_CAMPOS,
+            thinkAPI = ThinkAPI(),
+            getOngoingTurn = { ongoingTurn },
+            setOngoingTurn = { ongoingTurn = it },
+            onTraceId = { traceId = it },
+            collectEvents = { _, _, _, getCurrentTurn, onNewEvent, _, onTrace ->
+                val current = getCurrentTurn() ?: error("ongoing turn should exist")
+                onTrace("trace-123")
+                onNewEvent(current.copy(message = "Sou Álvaro de Campos.", traceId = "trace-123"))
+            },
+        )
+
+        assertEquals("trace-123", traceId)
+        assertNull(ongoingTurn)
+        assertEquals(Persona.ALVARO_DE_CAMPOS, result.getOrNull()?.persona)
     }
 
     @Test

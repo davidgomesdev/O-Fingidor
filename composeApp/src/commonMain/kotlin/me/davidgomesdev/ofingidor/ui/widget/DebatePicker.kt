@@ -3,7 +3,6 @@ package me.davidgomesdev.ofingidor.ui.widget
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,7 +50,6 @@ fun DebatePicker(
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DebatePersonaSlot(
     title: String,
@@ -82,12 +80,42 @@ private fun DebatePersonaSlot(
 
             if (personas.isEmpty()) return@forEach
 
-            PersonaCategorySection(
+            DebatePersonaCategorySection(
                 category = category,
                 personas = personas,
                 selectedPersona = selectedPersona,
                 onPersonaSelected = onPersonaSelected,
             )
+        }
+    }
+}
+
+@Composable
+private fun DebatePersonaCategorySection(
+    category: PersonaCategory,
+    personas: List<Persona>,
+    selectedPersona: Persona,
+    onPersonaSelected: (Persona) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            category.label.uppercase(),
+            color = focusedIndicatorColor.copy(alpha = 0.5f),
+            fontSize = 8.sp,
+            fontWeight = FontWeight.Medium,
+            letterSpacing = 1.sp,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            personas.forEach { persona ->
+                PersonaIdentityChip(
+                    model = personaIdentityChipModel(
+                        persona = persona,
+                        isCompact = false,
+                        isSelected = persona == selectedPersona,
+                    ),
+                    onSelected = { onPersonaSelected(persona) },
+                )
+            }
         }
     }
 }

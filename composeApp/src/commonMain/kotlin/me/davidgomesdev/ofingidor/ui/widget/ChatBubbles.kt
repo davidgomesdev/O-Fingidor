@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
@@ -111,10 +112,12 @@ fun CenteredUserBubble(question: String) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiBubble(
+    persona: Persona,
     message: String,
     sources: List<Source>,
     isLoading: Boolean,
 ) {
+    val identity = chatPortraitIdentity(persona)
     val inlineContent = if (isLoading) {
         mapOf(
             "cursor" to InlineTextContent(
@@ -130,27 +133,38 @@ fun AiBubble(
         if (isLoading) appendInlineContent("cursor", "|")
     }
 
-    Column(
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top,
     ) {
-        Column(
-            modifier = Modifier
-                .widthIn(max = 560.dp)
-                .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                .background(aiBubbleBackgroundColor)
-                .border(
-                    width = 2.dp,
-                    color = aiBubbleBorder,
-                    shape = RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
-                )
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-        ) {
-            BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
+        PersonaAvatar(
+            persona = persona,
+            modifier = Modifier.size(resolveChatAvatarSize(identity)),
+            contentDescription = identity.label,
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 560.dp)
+                    .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
+                    .background(aiBubbleBackgroundColor)
+                    .border(
+                        width = 2.dp,
+                        color = aiBubbleBorder,
+                        shape = RoundedCornerShape(
+                            topStart = 2.dp,
+                            topEnd = 10.dp,
+                            bottomStart = 10.dp,
+                            bottomEnd = 10.dp
+                        )
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            ) {
+                BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
+            }
+            BubbleSources(sources = sources)
         }
-
-        BubbleSources(sources = sources)
     }
 }
 
@@ -175,12 +189,22 @@ fun DebatePersonaBubble(
         horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            text = speaker.displayName,
-            color = palette.label,
-            fontSize = 10.sp,
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 4.dp),
-        )
+        ) {
+            val identity = debatePortraitIdentity(speaker)
+            PersonaAvatar(
+                persona = speaker,
+                contentDescriptionMode = AvatarContentDescriptionMode.DECORATIVE,
+            )
+            Text(
+                text = identity.label,
+                color = palette.label,
+                fontSize = 10.sp,
+            )
+        }
         Column(
             horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
             verticalArrangement = Arrangement.spacedBy(6.dp),

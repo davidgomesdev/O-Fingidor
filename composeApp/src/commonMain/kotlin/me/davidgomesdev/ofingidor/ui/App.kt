@@ -80,6 +80,16 @@ internal typealias DebateSubmitHandler = suspend (
     onFailure: (Throwable) -> Unit,
 ) -> Result<Unit>
 
+internal typealias ThinkEventsCollector = suspend (
+    thinkAPI: ThinkAPI,
+    question: String,
+    persona: Persona,
+    getOngoingTurn: () -> OngoingConversationTurn?,
+    onNewEvent: (OngoingConversationTurn) -> Unit,
+    onError: (Throwable) -> Unit,
+    onTraceId: (String) -> Unit,
+) -> Unit
+
 internal fun devModeDisabledState(
     selectedPersona: Persona,
     debatePair: DebatePair,
@@ -354,26 +364,27 @@ fun App() {
     }
 }
 
-private suspend fun processSubmit(
+internal suspend fun processSubmit(
     question: String,
     selectedPersona: Persona,
     thinkAPI: ThinkAPI,
     getOngoingTurn: () -> OngoingConversationTurn?,
     setOngoingTurn: (OngoingConversationTurn?) -> Unit,
     onTraceId: (String) -> Unit,
+    collectEvents: ThinkEventsCollector = ::collectThinkEvents,
 ): Result<ConversationTurn?> {
-    setOngoingTurn(OngoingConversationTurn(question = question, personaName = selectedPersona.displayName))
+    setOngoingTurn(OngoingConversationTurn(question = question, persona = selectedPersona))
 
     var error: Throwable? = null
 
-    collectThinkEvents(
-        thinkAPI = thinkAPI,
-        question = question,
-        persona = selectedPersona,
-        getOngoingTurn = getOngoingTurn,
-        onNewEvent = setOngoingTurn,
-        onError = { error = it },
-        onTraceId = onTraceId,
+    collectEvents(
+        thinkAPI,
+        question,
+        selectedPersona,
+        getOngoingTurn,
+        setOngoingTurn,
+        { error = it },
+        onTraceId,
     )
 
     val completedTurn = getOngoingTurn()?.toConversationTurn()
@@ -646,7 +657,12 @@ private fun ConversationFeed(
 private fun CompletedTurnView(turn: ConversationTurn) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         UserBubble(question = turn.question)
-        AiBubble(message = turn.message, sources = turn.sources, isLoading = false)
+        AiBubble(
+            persona = turn.persona,
+            message = turn.message,
+            sources = turn.sources,
+            isLoading = false,
+        )
     }
 }
 
@@ -654,7 +670,12 @@ private fun CompletedTurnView(turn: ConversationTurn) {
 private fun OngoingTurnView(turn: OngoingConversationTurn) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         UserBubble(question = turn.question)
-        AiBubble(message = turn.message, sources = turn.sources, isLoading = true)
+        AiBubble(
+            persona = turn.persona,
+            message = turn.message,
+            sources = turn.sources,
+            isLoading = true,
+        )
     }
 }
 

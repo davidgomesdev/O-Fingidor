@@ -1,38 +1,21 @@
 package me.davidgomesdev.ofingidor.ui.widget
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import me.davidgomesdev.ofingidor.ui.componentColumnBackgroundColor
-import me.davidgomesdev.ofingidor.ui.devChipBorderColor
-import me.davidgomesdev.ofingidor.ui.devChipColor
-import me.davidgomesdev.ofingidor.ui.devChipTextColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.PersonaCategory
-import me.davidgomesdev.ofingidor.ui.orthonymChipBorderColor
-import me.davidgomesdev.ofingidor.ui.orthonymChipColor
-import me.davidgomesdev.ofingidor.ui.orthonymChipTextColor
-import me.davidgomesdev.ofingidor.ui.semiHeteronymChipBorderColor
-import me.davidgomesdev.ofingidor.ui.semiHeteronymChipColor
-import me.davidgomesdev.ofingidor.ui.semiHeteronymChipTextColor
 
 @Composable
 fun PersonaTab(
@@ -95,43 +78,8 @@ private fun PersonaTabChip(
     isSelected: Boolean,
     onSelected: () -> Unit,
 ) {
-    val category = persona.category
-
-    val bgColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipColor
-        isSelected && category == PersonaCategory.DEV -> devChipColor
-        isSelected -> componentColumnBackgroundColor
-        else -> Color.Transparent
-    }
-    val borderColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipBorderColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipBorderColor
-        isSelected && category == PersonaCategory.DEV -> devChipBorderColor
-        isSelected -> focusedIndicatorColor
-        else -> focusedIndicatorColor.copy(alpha = 0.3f)
-    }
-    val textColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipTextColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipTextColor
-        isSelected && category == PersonaCategory.DEV -> devChipTextColor
-        isSelected -> Color.White
-        else -> Color.White.copy(alpha = 0.4f)
-    }
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(20.dp))
-            .clickable(onClick = onSelected)
-            .padding(horizontal = 12.dp, vertical = 5.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            persona.displayName,
-            color = textColor,
-            fontSize = 11.sp,
-        )
-    }
+    PersonaIdentityChip(
+        model = personaIdentityChipModel(persona = persona, isCompact = false, isSelected = isSelected),
+        onSelected = onSelected,
+    )
 }
