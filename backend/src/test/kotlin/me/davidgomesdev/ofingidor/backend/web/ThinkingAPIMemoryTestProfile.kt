@@ -18,8 +18,8 @@ import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
-import me.davidgomesdev.ofingidor.backend.debate.DebateService
 import me.davidgomesdev.ofingidor.backend.service.Assistant
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateService
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
 import org.mockito.Mockito
 import org.mockito.kotlin.any

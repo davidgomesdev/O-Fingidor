@@ -5,6 +5,7 @@ import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode
 import io.smallrye.common.annotation.Blocking
+import io.smallrye.mutiny.Multi
 import jakarta.ws.rs.BadRequestException
 import jakarta.ws.rs.HeaderParam
 import jakarta.ws.rs.InternalServerErrorException
@@ -14,9 +15,9 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
-import me.davidgomesdev.ofingidor.backend.debate.DebateService
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.service.ChatService
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateService
 import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import me.davidgomesdev.ofingidor.backend.session.ConversationType
 import me.davidgomesdev.ofingidor.backend.session.SessionError
@@ -107,16 +108,7 @@ class ThinkingAPI(
             throw InternalServerErrorException("Failed to query model")
         }
 
-        val multi = RestMulti
-            .fromMultiData(responseStream)
-            .header("X-Trace-Id", traceId)
-            .header("X-Traceparent", "00-$traceId-$spanId-01")
-
-        if (sessionToken != null) {
-            multi.header("X-Session-Token", sessionToken)
-        }
-
-        return multi.build()
+        return buildResponse(responseStream, traceId, spanId, sessionToken)
     }
 
     @PUT
@@ -192,6 +184,15 @@ class ThinkingAPI(
             throw InternalServerErrorException("Failed to query debate")
         }
 
+        return buildResponse(responseStream, traceId, spanId, sessionToken)
+    }
+
+    private fun <T> buildResponse(
+        responseStream: Multi<T>,
+        traceId: String,
+        spanId: String,
+        sessionToken: String?
+    ): RestMulti<T> {
         val multi = RestMulti
             .fromMultiData(responseStream)
             .header("X-Trace-Id", traceId)

@@ -1,4 +1,4 @@
-package me.davidgomesdev.ofingidor.backend.debate
+package me.davidgomesdev.ofingidor.backend.service.debate
 
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheCompanionBase
 import io.quarkus.hibernate.orm.panache.kotlin.PanacheEntityBase

@@ -1,4 +1,4 @@
-package me.davidgomesdev.ofingidor.backend.debate
+package me.davidgomesdev.ofingidor.backend.service.debate
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.f4b6a3.uuid.UuidCreator

@@ -1,5 +1,7 @@
 package me.davidgomesdev.ofingidor.backend.debate
 
+import me.davidgomesdev.ofingidor.backend.service.debate.DebatePromptBuilder
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateTurnEntity
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test

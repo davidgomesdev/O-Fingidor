@@ -4,20 +4,15 @@ import dev.langchain4j.memory.chat.MessageWindowChatMemory
 import dev.langchain4j.model.chat.StreamingChatModel
 import dev.langchain4j.rag.RetrievalAugmentor
 import dev.langchain4j.service.AiServices
-import dev.langchain4j.service.TokenStream
-import dev.langchain4j.service.UserMessage
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import me.davidgomesdev.ofingidor.backend.model.getSystemPromptFileName
-import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.backend.service.Assistant
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.session.SessionConfig
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.jboss.logging.Logger
 import java.io.File
-
-fun interface DebateAssistant {
-    fun chat(@UserMessage message: String): TokenStream
-}
 
 @ApplicationScoped
 class AiAssistant(

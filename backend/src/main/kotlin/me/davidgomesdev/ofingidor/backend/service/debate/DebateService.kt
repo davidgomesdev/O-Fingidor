@@ -1,7 +1,9 @@
-package me.davidgomesdev.ofingidor.backend.debate
+package me.davidgomesdev.ofingidor.backend.service.debate
 
 import dev.langchain4j.rag.content.Content
 import dev.langchain4j.rag.content.ContentMetadata
+import dev.langchain4j.service.TokenStream
+import dev.langchain4j.service.UserMessage
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
@@ -9,18 +11,20 @@ import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.arc.Arc
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
-import me.davidgomesdev.ofingidor.backend.llm.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.llm.TextAttributes
-import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.jboss.logging.Logger
 import java.util.UUID
-import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
+
+fun interface DebateAssistant {
+    fun chat(@UserMessage message: String): TokenStream
+}
 
 @ApplicationScoped
 class DebateService(

@@ -5,6 +5,8 @@ import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateTranscriptRepository
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateTurnEntity
 import me.davidgomesdev.ofingidor.backend.session.ConversationType
 import me.davidgomesdev.ofingidor.backend.session.PersonaEntity
 import me.davidgomesdev.ofingidor.backend.session.SessionEntity

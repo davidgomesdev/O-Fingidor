@@ -2,6 +2,7 @@ package me.davidgomesdev.ofingidor.backend.debate
 
 import jakarta.persistence.Column
 import jakarta.persistence.Lob
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateTurnEntity
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test

@@ -1,4 +1,4 @@
-package me.davidgomesdev.ofingidor.backend.debate
+package me.davidgomesdev.ofingidor.backend.service.debate
 
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.shared.dto.Persona
