@@ -1,6 +1,6 @@
 package me.davidgomesdev.ofingidor.backend.debate
 
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 

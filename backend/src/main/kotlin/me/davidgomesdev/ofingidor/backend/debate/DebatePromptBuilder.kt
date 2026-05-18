@@ -1,7 +1,7 @@
 package me.davidgomesdev.ofingidor.backend.debate
 
 import jakarta.enterprise.context.ApplicationScoped
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 
 @ApplicationScoped
 class DebatePromptBuilder {

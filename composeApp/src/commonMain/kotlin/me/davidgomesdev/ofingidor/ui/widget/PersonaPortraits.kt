@@ -21,13 +21,13 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import me.davidgomesdev.ofingidor.shared.dto.Persona
+import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
 import me.davidgomesdev.ofingidor.ui.componentColumnBackgroundColor
 import me.davidgomesdev.ofingidor.ui.devChipBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipColor
 import me.davidgomesdev.ofingidor.ui.devChipTextColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
-import me.davidgomesdev.ofingidor.ui.model.Persona
-import me.davidgomesdev.ofingidor.ui.model.PersonaCategory
 import me.davidgomesdev.ofingidor.ui.model.PersonaPortrait
 import me.davidgomesdev.ofingidor.ui.orthonymChipBorderColor
 import me.davidgomesdev.ofingidor.ui.orthonymChipColor

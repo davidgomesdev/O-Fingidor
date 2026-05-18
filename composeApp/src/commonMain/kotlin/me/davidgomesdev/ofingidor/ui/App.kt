@@ -37,12 +37,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.model.ConversationMode
 import me.davidgomesdev.ofingidor.ui.model.ConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.DebateTurn
 import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
-import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
 import me.davidgomesdev.ofingidor.ui.widget.AiBubble
@@ -525,7 +525,7 @@ internal fun handleDebateEvent(
     when (event) {
         is DebateEvent.Start -> onTraceId(event.traceId)
         is DebateEvent.TurnStart -> {
-            val speaker = Persona.entries.first { it.codeName == event.speaker }
+            val speaker = Persona.entries.first { it == event.speaker }
             pair.sideFor(speaker)
             setOngoingTurn(DebateTurn(turnIndex = event.turnIndex, speaker = speaker))
         }
@@ -537,7 +537,7 @@ internal fun handleDebateEvent(
 
         is DebateEvent.Sources -> {
             val current = getOngoingTurn() ?: return
-            setOngoingTurn(current.copy(sources = event.items.map(Source::from)))
+            setOngoingTurn(current.copy(sources = event.sources.items.map(Source::from)))
         }
 
         is DebateEvent.TurnDone -> {

@@ -1,7 +1,7 @@
 package me.davidgomesdev.ofingidor.ui
 
 import androidx.compose.ui.graphics.Color
-import me.davidgomesdev.ofingidor.ui.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 
 val backgroundColor = Color(0xFF111111)
 val componentsBackgroundColor = Color(0xFF323232)

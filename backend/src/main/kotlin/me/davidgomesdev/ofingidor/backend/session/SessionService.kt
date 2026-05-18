@@ -14,7 +14,7 @@ import io.quarkus.runtime.Startup
 import jakarta.annotation.PostConstruct
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.jboss.logging.Logger
 import java.time.Instant
 import java.util.Date

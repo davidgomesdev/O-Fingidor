@@ -15,10 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import me.davidgomesdev.ofingidor.shared.dto.Persona
+import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
-import me.davidgomesdev.ofingidor.ui.model.Persona
-import me.davidgomesdev.ofingidor.ui.model.PersonaCategory
 
 @Composable
 fun DebatePicker(

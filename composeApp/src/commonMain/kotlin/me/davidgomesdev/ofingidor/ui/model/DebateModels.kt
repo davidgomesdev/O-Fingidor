@@ -1,5 +1,7 @@
 package me.davidgomesdev.ofingidor.ui.model
 
+import me.davidgomesdev.ofingidor.shared.dto.Persona
+
 enum class DebateSide { LEFT, RIGHT }
 
 data class DebatePair(val left: Persona, val right: Persona) {

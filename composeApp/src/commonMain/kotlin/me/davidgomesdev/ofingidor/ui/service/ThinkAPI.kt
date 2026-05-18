@@ -25,9 +25,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.json
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
-import me.davidgomesdev.ofingidor.ui.model.Persona
 
 const val DEFAULT_HOST = "127.0.0.1"
 

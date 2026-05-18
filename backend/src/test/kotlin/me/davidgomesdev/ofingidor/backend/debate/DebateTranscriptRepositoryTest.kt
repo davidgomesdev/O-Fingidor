@@ -5,11 +5,11 @@ import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
-import me.davidgomesdev.ofingidor.backend.model.Persona
 import me.davidgomesdev.ofingidor.backend.session.ConversationType
 import me.davidgomesdev.ofingidor.backend.session.PersonaEntity
 import me.davidgomesdev.ofingidor.backend.session.SessionEntity
 import me.davidgomesdev.ofingidor.backend.session.SessionServiceTestProfile
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.OffsetDateTime

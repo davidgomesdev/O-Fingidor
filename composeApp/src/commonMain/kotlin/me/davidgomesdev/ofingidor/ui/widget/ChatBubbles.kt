@@ -42,6 +42,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.aiBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
 import me.davidgomesdev.ofingidor.ui.debateBubblePalette
@@ -50,7 +51,6 @@ import me.davidgomesdev.ofingidor.ui.errorBubbleBorderColor
 import me.davidgomesdev.ofingidor.ui.errorBubbleTextColor
 import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
 import me.davidgomesdev.ofingidor.ui.model.DebateSide
-import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
 import me.davidgomesdev.ofingidor.ui.userBubbleBorder

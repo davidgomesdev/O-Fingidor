@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.f4b6a3.uuid.UuidCreator
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
-import me.davidgomesdev.ofingidor.backend.model.Persona
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import java.time.OffsetDateTime
 import java.util.UUID
 

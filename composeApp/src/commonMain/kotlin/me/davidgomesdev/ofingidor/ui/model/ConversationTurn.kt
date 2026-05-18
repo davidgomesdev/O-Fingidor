@@ -1,5 +1,7 @@
 package me.davidgomesdev.ofingidor.ui.model
 
+import me.davidgomesdev.ofingidor.shared.dto.Persona
+
 data class ConversationTurn(
     val question: String,
     val message: String,

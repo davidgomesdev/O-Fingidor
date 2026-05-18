@@ -5,7 +5,7 @@ import io.quarkus.test.junit.TestProfile
 import jakarta.inject.Inject
 import jakarta.persistence.EntityManager
 import jakarta.transaction.Transactional
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull

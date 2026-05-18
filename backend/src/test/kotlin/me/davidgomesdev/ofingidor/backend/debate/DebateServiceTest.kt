@@ -10,8 +10,8 @@ import dev.langchain4j.service.tool.ToolExecution
 import io.opentelemetry.api.trace.Span
 import me.davidgomesdev.ofingidor.backend.llm.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
-import me.davidgomesdev.ofingidor.backend.model.Persona
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

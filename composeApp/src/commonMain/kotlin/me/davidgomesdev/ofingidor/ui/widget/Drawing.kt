@@ -22,12 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
 import me.davidgomesdev.ofingidor.ui.cardBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipColor
 import me.davidgomesdev.ofingidor.ui.devChipTextColor
-import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.PersonaPortrait
 import me.davidgomesdev.ofingidor.ui.personaLabelColor
 import me.davidgomesdev.ofingidor.ui.portraitThumbnailBackgroundColor

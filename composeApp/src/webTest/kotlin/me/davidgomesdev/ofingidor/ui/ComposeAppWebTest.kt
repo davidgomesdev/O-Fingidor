@@ -8,11 +8,11 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.DebateSide
 import me.davidgomesdev.ofingidor.ui.model.DebateTurn
 import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
-import me.davidgomesdev.ofingidor.ui.model.Persona
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
 import me.davidgomesdev.ofingidor.ui.widget.AvatarContentDescriptionMode
@@ -386,7 +386,7 @@ class ComposeAppWebTest {
             event = DebateEvent.Sources(
                 turnIndex = 0,
                 speaker = Persona.ALBERTO_CAEIRO.codeName,
-                items = listOf(eventSource),
+                sources = listOf(eventSource),
             ),
             pair = pair,
             turns = turns,

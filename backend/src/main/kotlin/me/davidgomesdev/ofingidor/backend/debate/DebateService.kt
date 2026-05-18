@@ -12,11 +12,12 @@ import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.backend.llm.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.llm.TextAttributes
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
 import org.jboss.logging.Logger
 import java.util.UUID
+import kotlin.collections.emptyList
 import kotlin.math.roundToInt
 import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
@@ -98,7 +99,7 @@ class DebateService(
                     val responseText = StringBuilder()
                     var emittedSources = false
 
-                    emitter.emit(DebateEvent.TurnStart(persistedTurnIndex, speaker.codeName))
+                    emitter.emit(DebateEvent.TurnStart(persistedTurnIndex, speaker))
 
                     val stream = try {
                         debateAssistant.chat(prompt)
@@ -117,16 +118,16 @@ class DebateService(
                             capturedSources.clear()
                             capturedSources.addAll(items)
                             emittedSources = true
-                            emitter.emit(DebateEvent.Sources(persistedTurnIndex, speaker.codeName, items))
+                            emitter.emit(DebateEvent.Sources(persistedTurnIndex, speaker, ChatEvent.Sources(items)))
                         }
                         .onPartialResponse { partialResponse ->
                             responseText.append(partialResponse)
-                            emitter.emit(DebateEvent.Token(persistedTurnIndex, speaker.codeName, partialResponse))
+                            emitter.emit(DebateEvent.Token(persistedTurnIndex, speaker, partialResponse))
                         }
                         .onCompleteResponse { response ->
                             try {
                                 if (!emittedSources) {
-                                    emitter.emit(DebateEvent.Sources(persistedTurnIndex, speaker.codeName, emptyList()))
+                                    emitter.emit(DebateEvent.Sources(persistedTurnIndex, speaker, ChatEvent.Sources()))
                                 }
 
                                 val finalText = response.aiMessage().text() ?: responseText.toString()
@@ -144,7 +145,7 @@ class DebateService(
                                 emitter.emit(
                                     DebateEvent.TurnDone(
                                         turnIndex = persistedTurnIndex,
-                                        speaker = speaker.codeName,
+                                        speaker = speaker,
                                         tokensUsed = totalTokensUsed,
                                         timeTaken = timeTaken,
                                     )

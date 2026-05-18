@@ -1,6 +1,6 @@
 package me.davidgomesdev.ofingidor.backend.session
 
-import me.davidgomesdev.ofingidor.backend.model.Persona
+import me.davidgomesdev.ofingidor.shared.dto.Persona
 
 data class ConversationParticipants(
     val type: ConversationType,
