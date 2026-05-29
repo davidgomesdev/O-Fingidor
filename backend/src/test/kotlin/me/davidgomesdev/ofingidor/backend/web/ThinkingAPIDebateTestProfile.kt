@@ -16,8 +16,8 @@ import io.quarkus.test.junit.QuarkusTestProfile
 import jakarta.enterprise.context.Dependent
 import jakarta.enterprise.inject.Produces
 import jakarta.inject.Singleton
-import me.davidgomesdev.ofingidor.backend.llm.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.service.Assistant
+import me.davidgomesdev.ofingidor.backend.service.debate.DebateAssistant
 import org.mockito.Mockito
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger

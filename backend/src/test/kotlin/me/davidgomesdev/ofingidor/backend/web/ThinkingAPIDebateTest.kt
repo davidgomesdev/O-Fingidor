@@ -108,7 +108,7 @@ class ThinkingAPIDebateTest {
             .contentType("application/json")
             .body("""{"input": "Quem és tu?", "persona": "alberto_caeiro"}""")
             .`when`()
-            .put("/pensa")
+            .put("/pensa/conversation")
             .then()
             .statusCode(200)
             .extract()

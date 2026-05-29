@@ -41,6 +41,7 @@ class ThinkingAPI(
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
     val log: Logger = Logger.getLogger(this::class.java)
 
+    @Path("/conversation")
     @PUT
     @Blocking
     @Produces("application/x-ndjson")
@@ -139,6 +140,7 @@ class ThinkingAPI(
         } else {
             val token = authorization.removePrefix("Bearer ").trim()
             val storedConversationId = extractConversationId(token)
+
             val participants = when (val result = sessionService.getConversationParticipants(storedConversationId)) {
                 is Either.Left -> throw WebApplicationException(Response.status(result.value.httpStatus).build())
                 is Either.Right -> result.value

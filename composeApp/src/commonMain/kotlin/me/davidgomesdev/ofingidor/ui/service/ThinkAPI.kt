@@ -95,7 +95,7 @@ class ThinkAPI {
         persona: Persona
     ): Flow<Result<ChatEvent>> = channelFlow {
         try {
-            client.preparePut("$apiUrl/pensa") {
+            client.preparePut("$apiUrl/pensa/conversation") {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(ThinkPayload(query, persona.codeName))
