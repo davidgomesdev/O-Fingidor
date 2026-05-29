@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
+import me.davidgomesdev.ofingidor.ui.DebateConstants
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 
@@ -34,14 +35,14 @@ fun DebatePicker(
             .padding(horizontal = 16.dp, vertical = 10.dp),
     ) {
         DebatePersonaSlot(
-            title = "Esquerda",
+            title = DebateConstants.DEBATE_POSITION_LEFT,
             selectedPersona = selectedPair.left,
             oppositePersona = selectedPair.right,
             onPersonaSelected = onLeftPersonaSelected,
             devMode = devMode,
         )
         DebatePersonaSlot(
-            title = "Direita",
+            title = DebateConstants.DEBATE_POSITION_RIGHT,
             selectedPersona = selectedPair.right,
             oppositePersona = selectedPair.left,
             onPersonaSelected = onRightPersonaSelected,

@@ -95,17 +95,17 @@ class ThinkAPI {
         persona: Persona
     ): Flow<Result<ChatEvent>> = channelFlow {
         try {
-            client.preparePut("$apiUrl/pensa/conversation") {
+            client.preparePut("$apiUrl${ApiConstants.ENDPOINT_CONVERSATION}") {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(ThinkPayload(query, persona.codeName))
 
-                sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-                traceparent?.let { header("traceparent", it) }
+                sessionToken?.let { header(HttpHeaders.Authorization, "${HttpHeaderConstants.AUTH_SCHEME_BEARER}$it") }
+                traceparent?.let { header(HttpHeaderConstants.HEADER_TRACEPARENT_ALT, it) }
             }.execute { httpResponse ->
                 updateConversation(
-                    sessionToken = httpResponse.headers["X-Session-Token"],
-                    traceparent = httpResponse.headers["X-Traceparent"],
+                    sessionToken = httpResponse.headers[HttpHeaderConstants.HEADER_SESSION_TOKEN],
+                    traceparent = httpResponse.headers[HttpHeaderConstants.HEADER_TRACEPARENT],
                 )
 
                 val channel: ByteReadChannel = httpResponse.body()
@@ -134,17 +134,17 @@ class ThinkAPI {
         pair: DebatePair,
     ): Flow<Result<DebateEvent>> = channelFlow {
         try {
-            client.preparePut("$apiUrl/pensa/debate") {
+            client.preparePut("$apiUrl${ApiConstants.ENDPOINT_DEBATE}") {
                 accept(ContentType.Any)
                 contentType(ContentType.Application.Json)
                 setBody(DebatePayload(query, pair.left.codeName, pair.right.codeName))
 
                 sessionToken?.let { header(HttpHeaders.Authorization, "Bearer $it") }
-                traceparent?.let { header("traceparent", it) }
+                traceparent?.let { header(HttpHeaderConstants.HEADER_TRACEPARENT_ALT, it) }
             }.execute { httpResponse ->
                 updateConversation(
-                    sessionToken = httpResponse.headers["X-Session-Token"],
-                    traceparent = httpResponse.headers["X-Traceparent"],
+                    sessionToken = httpResponse.headers[HttpHeaderConstants.HEADER_SESSION_TOKEN],
+                    traceparent = httpResponse.headers[HttpHeaderConstants.HEADER_TRACEPARENT],
                 )
 
                 val channel: ByteReadChannel = httpResponse.body()

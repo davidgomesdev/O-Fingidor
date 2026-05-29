@@ -15,6 +15,10 @@ import jakarta.ws.rs.Path
 import jakarta.ws.rs.Produces
 import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
+import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants
+import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants.CONTENT_TYPE_NDJSON
+import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants.CONVERSATION_ENDPOINT
+import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants.DEBATE_ENDPOINT
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.service.ChatService
 import me.davidgomesdev.ofingidor.backend.service.debate.DebateService
@@ -22,6 +26,7 @@ import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import me.davidgomesdev.ofingidor.backend.session.ConversationType
 import me.davidgomesdev.ofingidor.backend.session.SessionError
 import me.davidgomesdev.ofingidor.backend.session.SessionService
+import me.davidgomesdev.ofingidor.shared.constants.HttpConstants
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
 import me.davidgomesdev.ofingidor.shared.dto.Persona
@@ -41,10 +46,10 @@ class ThinkingAPI(
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
     val log: Logger = Logger.getLogger(this::class.java)
 
-    @Path("/conversation")
     @PUT
+    @Path(CONVERSATION_ENDPOINT)
     @Blocking
-    @Produces("application/x-ndjson")
+    @Produces(CONTENT_TYPE_NDJSON)
     fun queryModel(
         body: QueryPayload,
         @HeaderParam("Authorization") authorization: String?,
@@ -88,7 +93,7 @@ class ThinkingAPI(
             log.debug("Continuing session: conversationId=$conversationId persona=${participants.persona.codeName}")
         }
 
-        val span = tracer.spanBuilder("API QueryModel").apply {
+        val span = tracer.spanBuilder(DebateApiConstants.SPAN_NAME_QUERY_MODEL).apply {
             personaContext.persona!!.also { persona ->
                 log.info("Using persona: ${persona.displayName}")
                 setAttribute("persona", persona.codeName)
@@ -113,9 +118,9 @@ class ThinkingAPI(
     }
 
     @PUT
-    @Path("/debate")
+    @Path(DEBATE_ENDPOINT)
     @Blocking
-    @Produces("application/x-ndjson")
+    @Produces(CONTENT_TYPE_NDJSON)
     fun queryDebate(
         body: DebateQueryPayload,
         @HeaderParam("Authorization") authorization: String?,
@@ -159,7 +164,7 @@ class ThinkingAPI(
 
         conversationContext.conversationId = conversationId
 
-        val span = tracer.spanBuilder("API QueryDebate").apply {
+        val span = tracer.spanBuilder(DebateApiConstants.SPAN_NAME_QUERY_DEBATE).apply {
             setAttribute("personaA", requestedPersonaA.codeName)
             setAttribute("personaB", requestedPersonaB.codeName)
             setAttribute("conversationId", conversationId)
@@ -198,10 +203,10 @@ class ThinkingAPI(
         val multi = RestMulti
             .fromMultiData(responseStream)
             .header("X-Trace-Id", traceId)
-            .header("X-Traceparent", "00-$traceId-$spanId-01")
+            .header(HttpConstants.HEADER_TRACEPARENT, "00-$traceId-$spanId-01")
 
         if (sessionToken != null) {
-            multi.header("X-Session-Token", sessionToken)
+            multi.header(HttpConstants.HEADER_SESSION_TOKEN, sessionToken)
         }
 
         return multi.build()

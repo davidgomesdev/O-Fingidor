@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.f4b6a3.uuid.UuidCreator
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.transaction.Transactional
+import me.davidgomesdev.ofingidor.shared.constants.DebateConstants
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import java.time.OffsetDateTime
@@ -18,7 +19,7 @@ class DebateTranscriptRepository(private val objectMapper: ObjectMapper) {
             entity.id = UuidCreator.getTimeOrderedEpoch()
             entity.conversationId = conversationId
             entity.turnIndex = turnIndex
-            entity.entryType = "user_prompt"
+            entity.entryType = DebateConstants.DEBATE_ENTRY_TYPE_USER_PROMPT
             entity.text = text
             entity.createdAt = OffsetDateTime.now()
         }.persist()
@@ -36,7 +37,7 @@ class DebateTranscriptRepository(private val objectMapper: ObjectMapper) {
             entity.id = UuidCreator.getTimeOrderedEpoch()
             entity.conversationId = conversationId
             entity.turnIndex = turnIndex
-            entity.entryType = "persona_turn"
+            entity.entryType = DebateConstants.DEBATE_ENTRY_TYPE_PERSONA_TURN
             entity.speakerPersonaCode = speaker.codeName
             entity.text = text
             entity.sourcesJson = if (sources.isEmpty()) null else objectMapper.writeValueAsString(sources)

@@ -11,6 +11,7 @@ import io.opentelemetry.api.trace.StatusCode
 import io.quarkus.arc.Arc
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
+import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants
 import me.davidgomesdev.ofingidor.backend.llm.PersonaContext
 import me.davidgomesdev.ofingidor.backend.llm.TextAttributes
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
@@ -91,7 +92,7 @@ class DebateService(
                         return
                     }
 
-                    val turnSpan = tracer.spanBuilder("Debate turn")
+                    val turnSpan = tracer.spanBuilder(DebateApiConstants.SPAN_NAME_DEBATE_TURN)
                         .setSpanKind(SpanKind.INTERNAL)
                         .setAttribute("conversationId", conversationId.toString())
                         .setAttribute("speaker", speaker.codeName)

@@ -1,6 +1,7 @@
 package me.davidgomesdev.ofingidor.backend.service.debate
 
 import jakarta.enterprise.context.ApplicationScoped
+import me.davidgomesdev.ofingidor.shared.constants.DebateConstants
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 
 @ApplicationScoped
@@ -17,7 +18,7 @@ class DebatePromptBuilder {
     fun rebuttalPrompt(userInput: String, speaker: Persona, transcript: List<DebateTurnEntity>): String {
         val transcriptText = transcript.joinToString("\n") { turn ->
             when (turn.entryType) {
-                "user_prompt" -> "Utilizador: ${turn.text}"
+                DebateConstants.DEBATE_ENTRY_TYPE_USER_PROMPT -> "Utilizador: ${turn.text}"
                 else -> "${requireNotNull(turn.speakerPersonaCode) { "speakerPersonaCode is required for ${turn.entryType}" }}: ${turn.text}"
             }
         }
