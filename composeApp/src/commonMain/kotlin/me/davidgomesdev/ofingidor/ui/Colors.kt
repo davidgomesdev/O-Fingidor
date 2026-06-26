@@ -87,5 +87,5 @@ fun debateSidePalette(side: DebateSide): DebateSidePalette = when (side) {
         bubbleTop = Color(0xBF28272E),
         border = Color(0x4D9A97A3),
         glow = Color(0x809A97A3),
-    )
-}
+        )
+    }
