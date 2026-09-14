@@ -3,6 +3,7 @@
     <option name="env">
       <map>
         <entry key="PREVIEW_ONLY" value="true" />
+        <entry key="RAG_SEMANTIC_CHUNKING_ENABLED" value="false" />
       </map>
     </option>
     <module name="o-fingidor.backend.main" />
