@@ -1,7 +1,9 @@
 package me.davidgomesdev.ofingidor.backend.llm.rag
 
 import dev.langchain4j.data.segment.TextSegment
+import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel
+import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.rag.DefaultRetrievalAugmentor
 import dev.langchain4j.rag.RetrievalAugmentor as LCRetrievalAugmentor
 import dev.langchain4j.rag.content.retriever.ContentRetriever
@@ -40,9 +42,14 @@ class RetrievalAugmentor(
     val config: RAGConfig,
     val personaContext: PersonaContext,
     val retrievalIngestor: RetrievalIngestor,
+    val chatModel: ChatModel,
+    @ConfigProperty(name = "retrieval.decision-prompt.asking-for-opinion")
+    askingForOpinionPrompt: String
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
+
+    val decideToAugmentPrompt: PromptTemplate = PromptTemplate.from(askingForOpinionPrompt.trim())
 
     @Singleton
     @Suppress("unused")
@@ -55,13 +62,28 @@ class RetrievalAugmentor(
         DefaultRetrievalAugmentor
             .builder()
             .executor(managedExecutor)
-            .queryRouter { _ ->
+            .queryRouter { q ->
                 if (personaContext.persona == Persona.O_FINGIDOR) {
                     Span.current().addEvent("Skipping RAG")
                     log.info("Skipping RAG for persona ${Persona.O_FINGIDOR.codeName}")
-                    emptyList()
-                } else {
+                    return@queryRouter emptyList()
+                }
+
+                val prompt = decideToAugmentPrompt.apply(q.text()).toUserMessage()
+
+                val queryIsAboutOpinion = chatModel.chat(prompt).aiMessage().text().let { decision ->
+                    span().addEvent("Asking Opinion?", attributes {
+                        put("original_query", q.text())
+                        put("decision", decision)
+                    })
+                    log.info("From query '${q.text()}' decision about whether it's asking for opinion was: '$this'")
+                    decision.lowercase().contains("sim")
+                }
+
+                if (queryIsAboutOpinion) {
                     listOf(contentRetriever)
+                } else {
+                    emptyList()
                 }
             }.queryTransformer { originalQuery ->
                 queryTransformer
