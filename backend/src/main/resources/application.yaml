@@ -69,6 +69,13 @@ model:
     embedding-model:
       model-id: voyage-4
 
+retrieval:
+  decision-prompt:
+    asking-for-opinion: |
+      A pergunta é sobre a tua opinião em algum tópico ou tema?
+      Responde apenas com 'sim', 'talvez' ou 'não'.
+      Pergunta: {{it}}
+
 rag:
   max-results: 10
   min-score: 0.75
