@@ -6,11 +6,9 @@ import dev.langchain4j.data.embedding.Embedding
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.output.Response
-import dev.langchain4j.store.embedding.EmbeddingStore
 import me.davidgomesdev.ofingidor.backend.llm.config.RAGConfig
-import me.davidgomesdev.ofingidor.backend.llm.rag.RAG
+import me.davidgomesdev.ofingidor.backend.llm.rag.RetrievalIngestor
 import me.davidgomesdev.ofingidor.backend.llm.rag.SemanticDocumentSplitter
-import me.davidgomesdev.ofingidor.backend.web.PersonaContext
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -22,20 +20,17 @@ class RAGIntegrationTest {
     @Test
     fun `should use regex splitter when semantic chunking is disabled`() {
         val embeddingModel = mock<EmbeddingModel>()
-        val embeddingStore = mock<EmbeddingStore<TextSegment>>()
         val config = mock<RAGConfig>()
         val semanticChunkingConfig = mock<RAGConfig.SemanticChunkingConfig>()
-        val personaContext = mock<PersonaContext>()
 
         whenever(config.semanticChunking()).thenReturn(semanticChunkingConfig)
         whenever(semanticChunkingConfig.enabled()).thenReturn(false)
 
         val rag =
-            RAG(
+            RetrievalIngestor(
                 isPreviewOnly = true,
                 recreateEmbeddings = false,
                 config = config,
-                personaContext = personaContext,
                 embeddingModel = embeddingModel,
             )
 
@@ -46,10 +41,8 @@ class RAGIntegrationTest {
     @Test
     fun `should use semantic splitter when semantic chunking is enabled`() {
         val embeddingModel = mock<EmbeddingModel>()
-        val embeddingStore = mock<EmbeddingStore<TextSegment>>()
         val config = mock<RAGConfig>()
         val semanticChunkingConfig = mock<RAGConfig.SemanticChunkingConfig>()
-        val personaContext = mock<PersonaContext>()
 
         whenever(config.semanticChunking()).thenReturn(semanticChunkingConfig)
         whenever(semanticChunkingConfig.enabled()).thenReturn(true)
@@ -58,11 +51,10 @@ class RAGIntegrationTest {
         whenever(semanticChunkingConfig.similarityThreshold()).thenReturn(0.7)
 
         val rag =
-            RAG(
+            RetrievalIngestor(
                 isPreviewOnly = true,
                 recreateEmbeddings = false,
                 config = config,
-                personaContext = personaContext,
                 embeddingModel = embeddingModel,
             )
 
@@ -73,10 +65,8 @@ class RAGIntegrationTest {
     @Test
     fun `semantic splitter should merge similar paragraphs when enabled`() {
         val embeddingModel = mock<EmbeddingModel>()
-        val embeddingStore = mock<EmbeddingStore<TextSegment>>()
         val config = mock<RAGConfig>()
         val semanticChunkingConfig = mock<RAGConfig.SemanticChunkingConfig>()
-        val personaContext = mock<PersonaContext>()
 
         whenever(config.semanticChunking()).thenReturn(semanticChunkingConfig)
         whenever(semanticChunkingConfig.enabled()).thenReturn(true)
@@ -95,11 +85,10 @@ class RAGIntegrationTest {
         )
 
         val rag =
-            RAG(
+            RetrievalIngestor(
                 isPreviewOnly = true,
                 recreateEmbeddings = false,
                 config = config,
-                personaContext = personaContext,
                 embeddingModel = embeddingModel,
             )
 
