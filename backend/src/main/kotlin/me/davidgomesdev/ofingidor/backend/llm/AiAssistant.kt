@@ -1,6 +1,5 @@
 package me.davidgomesdev.ofingidor.backend.llm
 
-import dev.langchain4j.agent.tool.Tool
 import dev.langchain4j.memory.chat.MessageWindowChatMemory
 import dev.langchain4j.model.chat.StreamingChatModel
 import dev.langchain4j.rag.RetrievalAugmentor
@@ -8,6 +7,7 @@ import dev.langchain4j.service.AiServices
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import me.davidgomesdev.ofingidor.backend.llm.persistance.PostgresConversationStore
+import me.davidgomesdev.ofingidor.backend.llm.tool.DateTool
 import me.davidgomesdev.ofingidor.backend.model.getSystemPromptFileName
 import me.davidgomesdev.ofingidor.backend.service.Assistant
 import me.davidgomesdev.ofingidor.backend.service.debate.DebateAssistant
@@ -46,6 +46,7 @@ class AiAssistant(
                     .build()
             }.streamingChatModel(chatModel)
             .retrievalAugmentor(retrievalAugmentor)
+            .tools(listOf(DateTool()))
             .build()
     }
 
@@ -61,11 +62,6 @@ class AiAssistant(
             .streamingChatModel(streamingChatModel)
             .retrievalAugmentor(retrievalAugmentor)
             .build()
-
-    @Tool("Fetch text")
-    fun fetchText(textId: Int) {
-        log.info("Fetching text with ID: $textId")
-    }
 
     private fun getPersonaSystemMessages(): Map<String, String> =
         buildMap {
