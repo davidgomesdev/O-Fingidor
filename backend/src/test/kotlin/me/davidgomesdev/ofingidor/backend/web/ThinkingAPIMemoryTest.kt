@@ -5,11 +5,30 @@ import io.quarkus.test.junit.TestProfile
 import io.restassured.RestAssured.given
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @QuarkusTest
 @TestProfile(ThinkingAPIMemoryTestProfile::class)
 class ThinkingAPIMemoryTest {
+    @Test
+    fun `conversation response contains assistant text`() {
+        val responseText =
+            given()
+                .contentType("application/json")
+                .body("""{"input": "Quem és tu?", "persona": "alberto_caeiro"}""")
+                .`when`()
+                .put("/pensa/conversation")
+                .then()
+                .statusCode(200)
+                .extract()
+                .body()
+                .asString()
+
+        assertTrue(responseText.isNotBlank())
+        // Add the expected response-text assertion here.
+    }
+
     @Test
     fun `first request with no Authorization returns X-Session-Token header`() {
         val response =

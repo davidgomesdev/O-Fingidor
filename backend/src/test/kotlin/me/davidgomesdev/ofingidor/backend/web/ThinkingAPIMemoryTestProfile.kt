@@ -93,10 +93,14 @@ class ThinkingAPIMemoryTestProfile : QuarkusTestProfile {
 
         private fun respondingTokenStream(text: String): TokenStream =
             object : TokenStream {
+                private var onPartialResponse: Consumer<String>? = null
                 private var onComplete: Consumer<ChatResponse>? = null
                 private var onError: Consumer<Throwable>? = null
 
-                override fun onPartialResponse(consumer: Consumer<String>): TokenStream = this
+                override fun onPartialResponse(consumer: Consumer<String>): TokenStream {
+                    onPartialResponse = consumer
+                    return this
+                }
 
                 override fun onRetrieved(consumer: Consumer<List<Content>>): TokenStream = this
 
@@ -115,6 +119,7 @@ class ThinkingAPIMemoryTestProfile : QuarkusTestProfile {
                 override fun ignoreErrors(): TokenStream = this
 
                 override fun start() {
+                    onPartialResponse?.accept(text)
                     val response =
                         ChatResponse
                             .builder()
