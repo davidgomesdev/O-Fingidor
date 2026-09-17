@@ -1,9 +1,11 @@
 package me.davidgomesdev.ofingidor.backend.llm.tool
 
 import dev.langchain4j.agent.tool.Tool
+import jakarta.inject.Singleton
 import java.time.LocalDate
 import java.time.Month
 
+@Singleton
 class DateTool {
     @Tool("Diz a data do dia de hoje")
     fun todayDate(): String =
