@@ -288,4 +288,15 @@ data class PessoaText(
                 ),
             ),
         )
+
+    companion object {
+        fun from(text: String, metadata: Metadata) = PessoaText(
+            metadata.getString(TextAttributes.TITLE) ?: "",
+            metadata.getString(TextAttributes.AUTHOR) ?: "",
+            text,
+            metadata.getLong(TextAttributes.TEXT_ID)?.toInt() ?: 0,
+            metadata.getLong(TextAttributes.CATEGORY_ID)?.toInt() ?: 0,
+            metadata.getString(TextAttributes.CATEGORY_NAME) ?: "",
+        )
+    }
 }
