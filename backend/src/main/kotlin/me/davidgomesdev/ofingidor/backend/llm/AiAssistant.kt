@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import me.davidgomesdev.ofingidor.backend.llm.persistance.PostgresConversationStore
 import me.davidgomesdev.ofingidor.backend.llm.tool.DateTool
+import me.davidgomesdev.ofingidor.backend.llm.tool.PoemRetrievalTool
 import me.davidgomesdev.ofingidor.backend.model.getSystemPromptFileName
 import me.davidgomesdev.ofingidor.backend.service.Assistant
 import me.davidgomesdev.ofingidor.backend.service.debate.DebateAssistant
@@ -22,6 +23,8 @@ class AiAssistant(
     val personaContext: PersonaContext,
     val postgresConversationStore: PostgresConversationStore,
     val sessionConfig: SessionConfig,
+    val poemRetrievalTool: PoemRetrievalTool,
+    val dateTool: DateTool,
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val systemMessages: Map<String, String> = getPersonaSystemMessages()
@@ -46,7 +49,7 @@ class AiAssistant(
                     .build()
             }.streamingChatModel(chatModel)
             .retrievalAugmentor(retrievalAugmentor)
-            .tools(listOf(DateTool()))
+            .tools(listOf(dateTool, poemRetrievalTool))
             .build()
     }
 

@@ -80,6 +80,17 @@ class ChatService(
             stream.emit(ChatEvent.Start(callerSpan.spanContext.traceId))
 
             chatStream
+                .onToolExecuted { toolExecution ->
+                    llmSpan.apply {
+                        addEvent(
+                            "Tool '${toolExecution.request().name()}' executed",
+                            attributes {
+                                put("tool_input", toolExecution.request().arguments())
+                                put("tool_output", toolExecution.result())
+                            },
+                        )
+                    }
+                }
                 .onRetrieved { contents ->
                     llmSpan.apply {
                         if (contents.isEmpty()) {
