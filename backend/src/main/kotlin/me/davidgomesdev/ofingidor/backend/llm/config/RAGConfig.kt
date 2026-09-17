@@ -22,6 +22,9 @@ interface RAGConfig {
 
     fun semanticChunking(): SemanticChunkingConfig
 
+
+    fun identification(): IdentificationConfig
+
     interface QdrantConfig {
         fun host(): String
 
@@ -43,6 +46,13 @@ interface RAGConfig {
         fun minChunkSize(): Int
 
         fun maxChunkSize(): Int
+    }
+
+    interface IdentificationConfig {
+        fun minScore(): Double
+        fun maxCandidates(): Int
+        fun overFetch(): Int
+        fun maxChars(): Int
     }
 }
 

@@ -111,9 +111,15 @@ rag:
     similarity-threshold: 0.7
     min-chunk-size: 100
     max-chunk-size: 1000
-
+  identification:
+    min-score: 0.5
+    max-candidates: 3
+    # Used paired with max-candidates, as the results could be multiple segments of the same text
+    over-fetch: 20
+    max-chars: 400
 pessoa:
   url: http://127.0.0.1:8080
+  text-reader-base-url: https://pessoa.davidgomes.blog/textReader
 
 session:
   jwt:
