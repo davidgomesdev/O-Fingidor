@@ -59,6 +59,7 @@ src/main/kotlin/me/davidgomesdev/pessoafaladora/backend/
       LanguageModel.kt     ← Interface for language model abstraction
       OllamaLanguageModel.kt  ← Ollama implementation
       AnthropicLanguageModel.kt← Anthropic Claude implementation
+      BedrockLanguageModel.kt  ← Amazon Bedrock implementation
       ModelsProducer.kt    ← CDI producer that selects LLM based on config
   observability/
     TracingUtils.kt        ← Helpers: span(), attributes { } builder DSL
@@ -148,7 +149,7 @@ Start with: `docker compose up -d`
 
 | Key                                          | Default                  | Notes                                                              |
 |----------------------------------------------|--------------------------|--------------------------------------------------------------------|
-| `model.name`                                 | `ollama`                 | LLM provider: `ollama` or `anthropic`                              |
+| `model.name`                                 | `ollama`                 | LLM provider: `ollama`, `anthropic`, `bedrock`                       |
 | `model.ollama.base-url`                      | `http://127.0.0.1:11434` | Ollama server URL                                                  |
 | `model.ollama.timeout`                       | `600s`                   | Ollama request timeout                                             |
 | `model.ollama.chat-model.model-id`           | `qwen3:1.7b`             | Ollama LLM model for chat                                          |
@@ -161,6 +162,10 @@ Start with: `docker compose up -d`
 | `model.anthropic.chat-model.temperature`     | `0.7`                    | Temperature for Anthropic chat model                               |
 | `model.anthropic.chat-model.thinking`        | `true`                   | Enable extended thinking for Claude                                |
 | `model.anthropic.chat-model.max-tokens`      | `50000`                  | Max output tokens for Anthropic                                    |
+| `model.bedrock.region`                       | `us-east-1`              | AWS region; credentials come from the default AWS provider chain   |
+| `model.bedrock.chat-model.model-id`          | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model / inference profile ID          |
+| `model.bedrock.chat-model.thinking`          | `false`                  | Enable reasoning (Claude needs temperature 1)                      |
+| `model.bedrock.chat-model.thinking-budget-tokens` | `2048`              | Reasoning token budget when thinking is enabled                    |
 | `quarkus.otel.exporter.otlp.endpoint`        | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                        |
 | `rag.max-results`                            | `6`                      | Max retrieved chunks per query                                     |
 | `rag.min-score`                              | `0.75`                   | Minimum cosine similarity score                                    |
@@ -237,8 +242,8 @@ Builds the JS bundle and copies it to `src/main/resources/web/static/` and `uiRe
 - **CDI `@Singleton` factory methods in `@ApplicationScoped` beans**: LangChain4j components (`Assistant`,
   `RetrievalAugmentor`, `ContentRetriever`, etc.) are produced via `@Singleton`-annotated functions inside
   `@ApplicationScoped` classes (`AiAssistant`, `RAG`). Follow this pattern when adding new LangChain4j beans.
-- **LLM provider abstraction**: The `LanguageModel` interface allows switching between Ollama and Anthropic.
-  `ModelsProducer` creates the appropriate implementation based on `model.name` config. Both implementations
+- **LLM provider abstraction**: The `LanguageModel` interface allows switching between Ollama, Anthropic and Amazon Bedrock.
+  `ModelsProducer` creates the appropriate implementation based on `model.name` config. All implementations
   support streaming, temperature, and thinking/reasoning modes.
 - **OTel tracing**: Use `span()` to get the current span and `attributes { }` to build `Attributes`. Always close
   scopes in a `finally` block. Spans created manually must be ended with `span.end()`.

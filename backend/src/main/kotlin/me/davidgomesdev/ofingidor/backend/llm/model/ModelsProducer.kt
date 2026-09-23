@@ -12,6 +12,7 @@ import org.jboss.logging.Logger
 class ModelsProducer(
     private val ollama: OllamaLanguageModel,
     private val anthropic: AnthropicLanguageModel,
+    private val bedrock: BedrockLanguageModel,
     private val voyage: VoyageEmbeddingChatModel,
     @param:ConfigProperty(name = "model.chat-name")
     private val chatModelName: String,
@@ -29,6 +30,7 @@ class ModelsProducer(
         when (chatModelName) {
             "ollama" -> ollama
             "anthropic" -> anthropic
+            "bedrock" -> bedrock
             else -> throw IllegalArgumentException("Unknown chat model '$chatModelName'")
         }.chatModel()
 
@@ -37,6 +39,7 @@ class ModelsProducer(
         when (chatModelName) {
             "ollama" -> ollama
             "anthropic" -> anthropic
+            "bedrock" -> bedrock
             else -> throw IllegalArgumentException("Unknown chat model '$chatModelName'")
         }.streamingChatModel()
 
