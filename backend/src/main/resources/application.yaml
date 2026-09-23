@@ -100,6 +100,7 @@ retrieval:
 
 rag:
   max-results: 25
+  max-scored-results: 3
   min-score: 0.70
   ingestion-chunk-size: 50
   expand-query: true

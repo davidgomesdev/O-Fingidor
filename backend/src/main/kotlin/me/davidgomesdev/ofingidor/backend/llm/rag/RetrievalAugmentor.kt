@@ -7,7 +7,6 @@ import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.model.scoring.ScoringModel
 import dev.langchain4j.rag.DefaultRetrievalAugmentor
-import dev.langchain4j.rag.RetrievalAugmentor as LCRetrievalAugmentor
 import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator
 import dev.langchain4j.rag.content.retriever.ContentRetriever
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
@@ -36,6 +35,7 @@ import me.davidgomesdev.ofingidor.shared.dto.Persona
 import org.eclipse.microprofile.config.inject.ConfigProperty
 import org.eclipse.microprofile.context.ManagedExecutor
 import org.jboss.logging.Logger
+import dev.langchain4j.rag.RetrievalAugmentor as LCRetrievalAugmentor
 
 @ApplicationScoped
 class RetrievalAugmentor(
@@ -104,24 +104,6 @@ class RetrievalAugmentor(
                 }
             }
             .contentInjector(contentInjector)
-            .build()
-
-    // Re-ranks against the original user question, since query expansion produces several queries
-    private fun reRankingAggregator(scoringModel: ScoringModel) =
-        ReRankingContentAggregator
-            .builder()
-            .scoringModel(scoringModel)
-            .querySelector { queryToContents ->
-                val query = queryToContents.keys.first()
-                val userMessage = query.metadata()?.chatMessage() as? UserMessage
-
-                if (userMessage != null && userMessage.hasSingleText()) {
-                    Query.from(userMessage.singleText(), query.metadata())
-                } else {
-                    query
-                }
-            }
-            .maxResults(config.maxResults())
             .build()
 
     @Singleton
@@ -198,6 +180,24 @@ class RetrievalAugmentor(
             .dynamicFilter(::filterPersona)
             .build()
     }
+
+    // Re-ranks against only the original user question, since query expansion produces several queries
+    private fun reRankingAggregator(scoringModel: ScoringModel) =
+        ReRankingContentAggregator
+            .builder()
+            .scoringModel(scoringModel)
+            .querySelector { queryToContents ->
+                val query = queryToContents.keys.first()
+                val userMessage = query.metadata()?.chatMessage() as? UserMessage
+
+                if (userMessage != null && userMessage.hasSingleText()) {
+                    Query.from(userMessage.singleText(), query.metadata())
+                } else {
+                    query
+                }
+            }
+            .maxResults(config.maxScoredResults())
+            .build()
 
     @Singleton
     @Suppress("unused")
