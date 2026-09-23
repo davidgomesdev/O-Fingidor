@@ -3,6 +3,8 @@ package me.davidgomesdev.ofingidor.backend.llm.model
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel
+import dev.langchain4j.model.scoring.ScoringModel
+import io.quarkus.arc.lookup.LookupUnlessProperty
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Singleton
 import org.eclipse.microprofile.config.inject.ConfigProperty
@@ -14,10 +16,13 @@ class ModelsProducer(
     private val anthropic: AnthropicLanguageModel,
     private val bedrock: BedrockLanguageModel,
     private val voyage: VoyageEmbeddingChatModel,
+    private val voyageScoring: VoyageScoringChatModel,
     @param:ConfigProperty(name = "model.chat-name")
     private val chatModelName: String,
     @param:ConfigProperty(name = "model.embedding-name")
     private val embeddingModelName: String,
+    @param:ConfigProperty(name = "model.scoring-name", defaultValue = "none")
+    private val scoringModelName: String,
 ) : LanguageModel {
     val logger: Logger = Logger.getLogger(this::class.java)
 
@@ -50,4 +55,13 @@ class ModelsProducer(
             "voyage" -> voyage
             else -> throw IllegalArgumentException("Unknown embedding model '$embeddingModelName'")
         }.embeddingModel()
+
+    // Only resolvable (via Instance<ScoringModel>) when a scoring model is configured
+    @Singleton
+    @LookupUnlessProperty(name = "model.scoring-name", stringValue = "none")
+    fun scoringModel(): ScoringModel =
+        when (scoringModelName) {
+            "voyage" -> voyageScoring
+            else -> throw IllegalArgumentException("Unknown scoring model '$scoringModelName'")
+        }.scoringModel()
 }
