@@ -49,13 +49,13 @@ class RetrievalAugmentor(
     val personaContext: PersonaContext,
     val retrievalIngestor: RetrievalIngestor,
     val chatModel: ChatModel,
-    @ConfigProperty(name = "retrieval.decision-prompt.asking-for-opinion")
-    askingForOpinionPrompt: String
+    @ConfigProperty(name = "retrieval.decision-prompt.skip-retrieval")
+    skipRetrievalPrompt: String
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
 
-    val decideToAugmentPrompt: PromptTemplate = PromptTemplate.from(askingForOpinionPrompt.trim())
+    val skipRetrievalTemplate: PromptTemplate = PromptTemplate.from(skipRetrievalPrompt.trim())
 
     @Singleton
     @Suppress("unused")
@@ -76,21 +76,21 @@ class RetrievalAugmentor(
                     return@queryRouter emptyList()
                 }
 
-                val prompt = decideToAugmentPrompt.apply(q.text()).toUserMessage()
+                val prompt = skipRetrievalTemplate.apply(q.text()).toUserMessage()
 
-                val queryIsAboutOpinion = chatModel.chat(prompt).aiMessage().text().let { decision ->
-                    span().addEvent("Asking Opinion?", attributes {
+                val skipRetrieval = chatModel.chat(prompt).aiMessage().text().let { decision ->
+                    span().addEvent("Skip Retrieval?", attributes {
                         put("original_query", q.text())
                         put("decision", decision)
                     })
-                    log.info("From query '${q.text()}' decision about whether it's asking for opinion was: '$this'")
-                    decision.lowercase().contains("sim")
+                    log.info("From query '${q.text()}' decision about whether to skip retrieval was: '$decision'")
+                    decision.trim().trimStart('\'', '"').lowercase().startsWith("sim")
                 }
 
-                if (queryIsAboutOpinion) {
-                    listOf(contentRetriever)
-                } else {
+                if (skipRetrieval) {
                     emptyList()
+                } else {
+                    listOf(contentRetriever)
                 }
             }.queryTransformer { originalQuery ->
                 queryTransformer
@@ -281,15 +281,17 @@ class RetrievalAugmentor(
             "Contents Retrieved (before re-ranking)",
             attributes {
                 put("contents_count", retrieved.size.toLong())
-                retrieved.forEachIndexed { index, (query, content) ->
+                retrieved.forEachIndexed { index, (_, content) ->
                     val metadata = content.textSegment().metadata()
 
                     TextAttributes.run {
                         put("${index}_title", metadata.getString(TITLE))
                         put("${index}_category", metadata.getString(CATEGORY_NAME))
                     }
-                    put("${index}_score", String.format("%.2f", content.score()))
-                    put("${index}_query", query.text())
+                }
+                retrieved.forEachIndexed { index, (query, content) ->
+                    put("score_${index}", String.format("%.2f", content.score()))
+                    put("query_${index}", query.text())
                 }
             },
         )

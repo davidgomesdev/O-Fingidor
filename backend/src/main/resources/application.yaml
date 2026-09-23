@@ -93,9 +93,10 @@ model:
 
 retrieval:
   decision-prompt:
-    asking-for-opinion: |
-      A pergunta é sobre a tua opinião em algum tópico ou tema?
-      Responde apenas com 'sim', 'talvez' ou 'não'.
+    # Retrieval is skipped only when the answer is 'sim'
+    skip-retrieval: |
+      A pergunta pede apenas um facto biográfico simples (idade, data ou local de nascimento, nome, profissão) ou é um cumprimento/conversa trivial?
+      Responde apenas com 'sim' ou 'não'.
       Pergunta: {{it}}
 
 rag:
