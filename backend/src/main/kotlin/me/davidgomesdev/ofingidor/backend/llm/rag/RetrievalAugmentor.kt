@@ -1,11 +1,14 @@
 package me.davidgomesdev.ofingidor.backend.llm.rag
 
+import dev.langchain4j.data.message.UserMessage
 import dev.langchain4j.data.segment.TextSegment
 import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.input.PromptTemplate
+import dev.langchain4j.model.scoring.ScoringModel
 import dev.langchain4j.rag.DefaultRetrievalAugmentor
 import dev.langchain4j.rag.RetrievalAugmentor as LCRetrievalAugmentor
+import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator
 import dev.langchain4j.rag.content.retriever.ContentRetriever
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
 import dev.langchain4j.rag.query.Query
@@ -23,6 +26,7 @@ import io.qdrant.client.QdrantClient
 import io.qdrant.client.grpc.Collections.Distance
 import io.qdrant.client.grpc.Collections.VectorParams
 import jakarta.enterprise.context.ApplicationScoped
+import jakarta.enterprise.inject.Instance
 import jakarta.inject.Singleton
 import me.davidgomesdev.ofingidor.backend.llm.config.RAGConfig
 import me.davidgomesdev.ofingidor.backend.observability.attributes
@@ -58,6 +62,7 @@ class RetrievalAugmentor(
         queryTransformer: QueryTransformer,
         contentInjector: TextsContentInjector,
         managedExecutor: ManagedExecutor,
+        scoringModel: Instance<ScoringModel>,
     ): LCRetrievalAugmentor =
         DefaultRetrievalAugmentor
             .builder()
@@ -92,7 +97,31 @@ class RetrievalAugmentor(
                         traceQueryExpansion(transformedQuery, originalQuery)
                     }
             }
+            .apply {
+                if (scoringModel.isResolvable) {
+                    log.info("Re-ranking retrieved content")
+                    contentAggregator(reRankingAggregator(scoringModel.get()))
+                }
+            }
             .contentInjector(contentInjector)
+            .build()
+
+    // Re-ranks against the original user question, since query expansion produces several queries
+    private fun reRankingAggregator(scoringModel: ScoringModel) =
+        ReRankingContentAggregator
+            .builder()
+            .scoringModel(scoringModel)
+            .querySelector { queryToContents ->
+                val query = queryToContents.keys.first()
+                val userMessage = query.metadata()?.chatMessage() as? UserMessage
+
+                if (userMessage != null && userMessage.hasSingleText()) {
+                    Query.from(userMessage.singleText(), query.metadata())
+                } else {
+                    query
+                }
+            }
+            .maxResults(config.maxResults())
             .build()
 
     @Singleton
