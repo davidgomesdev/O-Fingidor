@@ -88,7 +88,7 @@ model:
       model-id: voyage-4
     scoring-model:
       # options: https://docs.voyageai.com/docs/reranker
-      model-id: rerank-2.5-lite
+      model-id: rerank-3
 
 retrieval:
   decision-prompt:
