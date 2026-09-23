@@ -11,7 +11,7 @@ Pessoa.
 - **`:composeApp`** — Kotlin Multiplatform + Compose Multiplatform UI: targets JS (web) and JVM (desktop dev). Builds to
   a JS bundle deployed into the backend's static resources.
 
-**Stack:** Quarkus 3.32.2, Kotlin 2.3.0/JVM 21, Gradle 9.1, LangChain4j (`quarkus-langchain4j`), Qdrant (vector
+**Stack:** Quarkus 3.32.2, Kotlin 2.3.0/JVM 21, Gradle 9.7.1, LangChain4j (`quarkus-langchain4j`), Qdrant (vector
 store), Ollama or Anthropic Claude (LLM), OpenTelemetry (traces via Jaeger), Compose Multiplatform 1.10.0, Ktor 3.4.0.
 
 ---
