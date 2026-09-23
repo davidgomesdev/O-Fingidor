@@ -7,6 +7,8 @@ import dev.langchain4j.model.embedding.EmbeddingModel
 import dev.langchain4j.model.input.PromptTemplate
 import dev.langchain4j.model.scoring.ScoringModel
 import dev.langchain4j.rag.DefaultRetrievalAugmentor
+import dev.langchain4j.rag.content.Content
+import dev.langchain4j.rag.content.aggregator.ContentAggregator
 import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator
 import dev.langchain4j.rag.content.retriever.ContentRetriever
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever
@@ -182,8 +184,8 @@ class RetrievalAugmentor(
     }
 
     // Re-ranks against only the original user question, since query expansion produces several queries
-    private fun reRankingAggregator(scoringModel: ScoringModel) =
-        ReRankingContentAggregator
+    private fun reRankingAggregator(scoringModel: ScoringModel): ContentAggregator {
+        val reRanker = ReRankingContentAggregator
             .builder()
             .scoringModel(scoringModel)
             .querySelector { queryToContents ->
@@ -198,6 +200,12 @@ class RetrievalAugmentor(
             }
             .maxResults(config.maxScoredResults())
             .build()
+
+        return ContentAggregator { queryToContents ->
+            traceRetrievedContents(queryToContents)
+            reRanker.aggregate(queryToContents)
+        }
+    }
 
     @Singleton
     @Suppress("unused")
@@ -257,6 +265,32 @@ class RetrievalAugmentor(
                 put("original_query", originalQuery.text())
                 put("transformed_queries", transformedQueries)
                 put("transform_queries_count", transformedQuery.size.toLong())
+            },
+        )
+    }
+
+    private fun traceRetrievedContents(queryToContents: Map<Query, Collection<List<Content>>>) {
+        val retrieved =
+            queryToContents.flatMap { (query, contents) ->
+                contents.flatten().map { query to it }
+            }
+
+        log.info("Retrieved ${retrieved.size} contents (before re-ranking)")
+
+        span().addEvent(
+            "Contents Retrieved (before re-ranking)",
+            attributes {
+                put("contents_count", retrieved.size.toLong())
+                retrieved.forEachIndexed { index, (query, content) ->
+                    val metadata = content.textSegment().metadata()
+
+                    TextAttributes.run {
+                        put("${index}_title", metadata.getString(TITLE))
+                        put("${index}_category", metadata.getString(CATEGORY_NAME))
+                    }
+                    put("${index}_score", String.format("%.2f", content.score()))
+                    put("${index}_query", query.text())
+                }
             },
         )
     }
