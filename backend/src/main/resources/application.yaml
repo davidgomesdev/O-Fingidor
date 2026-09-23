@@ -64,8 +64,10 @@ model:
       thinking: true
       max-tokens: 50000
   bedrock:
-    # Bedrock API key: https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html
-    api-key: REPLACE_ME
+    # Optional Bedrock API key: https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys.html
+    # When unset, AWS credentials are read from the default chain (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
+    # AWS_SESSION_TOKEN env vars, ~/.aws profile, …)
+    # api-key: REPLACE_ME
     region: us-east-1
     timeout: 60s
     chat-model:
