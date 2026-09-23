@@ -12,7 +12,8 @@ import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.backend.llm.persistance.ChatHistoryRepository
-import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes import me.davidgomesdev.ofingidor.backend.llm.rag.score
+import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes
+import me.davidgomesdev.ofingidor.backend.llm.rag.score
 import me.davidgomesdev.ofingidor.backend.observability.attributes
 import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import me.davidgomesdev.ofingidor.backend.web.PersonaContext
@@ -97,21 +98,22 @@ class ChatService(
                             return@apply
                         }
 
-                        val eventAttributes =
-                            attributes {
-                                contents.forEachIndexed { index, content ->
-                                    val score = content.score()
-                                    val metadata = content.textSegment().metadata()
-
-                                    TextAttributes.run {
-                                        put("${index}_title", metadata.getString(TITLE))
-                                        put("${index}_category", metadata.getString(CATEGORY_NAME))
-                                    }
-                                    put("${index}_score", String.format("%.2f", score))
-                                }
+                        contents.groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
+                            .forEach { (category, contents) ->
+                                addEvent(
+                                    "${contents.size} Sources used on category: '$category'",
+                                    attributes {
+                                        contents.forEachIndexed { index, content ->
+                                            put(
+                                                "${String.format("%02d", index)}_title",
+                                                "(${String.format("%.2f", content.score())}) ${
+                                                    content.textSegment().metadata().getString(TextAttributes.TITLE)
+                                                }"
+                                            )
+                                        }
+                                    },
+                                )
                             }
-
-                        addEvent("Sources retrieved", eventAttributes)
                     }
 
                     val sources = contents.map(::toSourceItem)
