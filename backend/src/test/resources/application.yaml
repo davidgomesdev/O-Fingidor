@@ -28,6 +28,7 @@ model:
       thinking: true
       max-tokens: 50000
   bedrock:
+    api-key: test-key
     region: us-east-1
     timeout: 60s
     chat-model:

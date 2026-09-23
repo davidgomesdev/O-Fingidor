@@ -162,7 +162,8 @@ Start with: `docker compose up -d`
 | `model.anthropic.chat-model.temperature`     | `0.7`                    | Temperature for Anthropic chat model                               |
 | `model.anthropic.chat-model.thinking`        | `true`                   | Enable extended thinking for Claude                                |
 | `model.anthropic.chat-model.max-tokens`      | `50000`                  | Max output tokens for Anthropic                                    |
-| `model.bedrock.region`                       | `us-east-1`              | AWS region; credentials come from the default AWS provider chain   |
+| `model.bedrock.api-key`                      | `REPLACE_ME`             | Amazon Bedrock API key (sent as bearer token)                      |
+| `model.bedrock.region`                       | `us-east-1`              | AWS region                                                         |
 | `model.bedrock.chat-model.model-id`          | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model / inference profile ID          |
 | `model.bedrock.chat-model.thinking`          | `false`                  | Enable reasoning (Claude needs temperature 1)                      |
 | `model.bedrock.chat-model.thinking-budget-tokens` | `2048`              | Reasoning token budget when thinking is enabled                    |
