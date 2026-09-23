@@ -13,6 +13,7 @@ interface RAGConfig {
     fun expandingQueryTemplate(): String
 
     fun maxResults(): Int
+    fun maxScoredResults(): Int
 
     fun minScore(): Double
 
