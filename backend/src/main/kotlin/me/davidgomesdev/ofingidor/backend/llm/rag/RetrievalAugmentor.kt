@@ -282,7 +282,7 @@ class RetrievalAugmentor(
             .forEach { (query, retrieved) ->
                 retrieved.groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
                     .forEach { (category, contents) ->
-                        val eventHeadline = "${contents.size} Sources Retrieved on: $category"
+                        val eventHeadline = "${contents.size} Sources retrieved on: '$category'"
 
                         span().addEvent(eventHeadline, attributes {
                             put("query", query.text())
