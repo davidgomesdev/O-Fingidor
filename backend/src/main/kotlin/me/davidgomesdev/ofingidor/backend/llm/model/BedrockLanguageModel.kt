@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.bedrockruntime.auth.scheme.BedrockRuntime
 class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
     override fun chatModel(): ChatModel =
         BedrockChatModel.builder()
-            .client(BedrockRuntimeClient.builder().withApiKey().build())
+            .client(BedrockRuntimeClient.builder().withAuth().build())
             .modelId(config.chatModel().modelId())
             .returnThinking(config.chatModel().thinking())
             .defaultRequestParameters(requestParameters())
@@ -26,18 +26,22 @@ class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
 
     override fun streamingChatModel(): StreamingChatModel =
         BedrockStreamingChatModel.builder()
-            .client(BedrockRuntimeAsyncClient.builder().withApiKey().build())
+            .client(BedrockRuntimeAsyncClient.builder().withAuth().build())
             .modelId(config.chatModel().modelId())
             .returnThinking(config.chatModel().thinking())
             .defaultRequestParameters(requestParameters())
             .build()
 
-    // Bedrock API keys are sent as bearer tokens instead of SigV4-signed AWS credentials
-    private fun <B : BedrockRuntimeBaseClientBuilder<B, *>> B.withApiKey(): B =
+    // Bedrock API keys are sent as bearer tokens; without one, SigV4 with the default AWS credentials chain is used
+    private fun <B : BedrockRuntimeBaseClientBuilder<B, *>> B.withAuth(): B =
         region(Region.of(config.region()))
-            .tokenProvider(StaticTokenProvider.create { config.apiKey() })
-            .authSchemeProvider(BedrockRuntimeAuthSchemeProvider.defaultProvider(listOf("smithy.api#httpBearerAuth")))
             .overrideConfiguration { it.apiCallTimeout(config.timeout()) }
+            .apply {
+                config.apiKey().ifPresent { apiKey ->
+                    tokenProvider(StaticTokenProvider.create { apiKey })
+                    authSchemeProvider(BedrockRuntimeAuthSchemeProvider.defaultProvider(listOf("smithy.api#httpBearerAuth")))
+                }
+            }
 
     private fun requestParameters(): BedrockChatRequestParameters =
         config.chatModel().let { config ->
