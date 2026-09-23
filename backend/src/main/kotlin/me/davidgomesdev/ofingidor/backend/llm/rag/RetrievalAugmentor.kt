@@ -277,23 +277,27 @@ class RetrievalAugmentor(
 
         log.info("Retrieved ${retrieved.size} contents (before re-ranking)")
 
-        span().addEvent(
-            "Contents Retrieved (before re-ranking)",
-            attributes {
-                put("contents_count", retrieved.size.toLong())
-                retrieved.forEachIndexed { index, (_, content) ->
-                    val metadata = content.textSegment().metadata()
+        queryToContents
+            .mapValues { it.value.flatten() }
+            .forEach { (query, retrieved) ->
+                retrieved.groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
+                    .forEach { (category, contents) ->
+                        val eventHeadline = "${contents.size} Sources Retrieved on: $category"
 
-                    TextAttributes.run {
-                        put("${index}_title", metadata.getString(TITLE))
-                        put("${index}_category", metadata.getString(CATEGORY_NAME))
+                        span().addEvent(eventHeadline, attributes {
+                            put("query", query.text())
+                            contents.forEachIndexed { index, content ->
+                                val metadata = content.textSegment().metadata()
+
+                                TextAttributes.run {
+                                    put(
+                                        "${String.format("%02d", index)}_title",
+                                        "(${String.format("%.2f", content.score())}) ${metadata.getString(TITLE)}"
+                                    )
+                                }
+                            }
+                        })
                     }
-                }
-                retrieved.forEachIndexed { index, (query, content) ->
-                    put("score_${index}", String.format("%.2f", content.score()))
-                    put("query_${index}", query.text())
-                }
-            },
-        )
+            }
     }
 }
