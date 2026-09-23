@@ -45,6 +45,8 @@ model:
   chat-name: ollama
   # options: ollama, voyage
   embedding-name: ollama
+  # re-ranks retrieved content; options: none, voyage
+  scoring-name: none
   ollama:
     base-url: http://127.0.0.1:11434
     timeout: 600s
@@ -84,6 +86,9 @@ model:
     api-key: REPLACE_ME
     embedding-model:
       model-id: voyage-4
+    scoring-model:
+      # options: https://docs.voyageai.com/docs/reranker
+      model-id: rerank-2.5-lite
 
 retrieval:
   decision-prompt:

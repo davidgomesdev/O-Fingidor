@@ -11,8 +11,15 @@ interface VoyageConfig {
 
     fun embeddingModel(): EmbeddingChatModelConfig
 
+    fun scoringModel(): ScoringModelConfig
+
     @Suppress("kotlin:S6517")
     interface EmbeddingChatModelConfig {
+        fun modelId(): String
+    }
+
+    @Suppress("kotlin:S6517")
+    interface ScoringModelConfig {
         fun modelId(): String
     }
 }

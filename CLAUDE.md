@@ -169,6 +169,8 @@ Start with: `docker compose up -d`
 | `model.bedrock.chat-model.model-id`               | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model / inference profile ID                               |
 | `model.bedrock.chat-model.thinking`               | `false`                                       | Enable reasoning (Claude needs temperature 1)                      |
 | `model.bedrock.chat-model.thinking-budget-tokens` | `2048`                                        | Reasoning token budget when thinking is enabled                    |
+| `model.scoring-name`                              | `none`                                        | Re-ranks retrieved content: `none`, `voyage`                       |
+| `model.voyage.scoring-model.model-id`             | `rerank-2.5-lite`                             | Voyage AI rerank model                                             |
 | `quarkus.otel.exporter.otlp.endpoint`             | `http://localhost:14317`                      | OTLP gRPC endpoint (Jaeger)                                        |
 | `rag.max-results`                                 | `6`                                           | Max retrieved chunks per query                                     |
 | `rag.min-score`                                   | `0.75`                                        | Minimum cosine similarity score                                    |

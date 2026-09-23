@@ -1,7 +1,6 @@
 package me.davidgomesdev.ofingidor.backend.service
 
 import dev.langchain4j.rag.content.Content
-import dev.langchain4j.rag.content.ContentMetadata
 import dev.langchain4j.service.MemoryId
 import dev.langchain4j.service.TokenStream
 import dev.langchain4j.service.UserMessage
@@ -13,7 +12,7 @@ import io.quarkus.runtime.Startup
 import io.smallrye.mutiny.Multi
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.backend.llm.persistance.ChatHistoryRepository
-import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes
+import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes import me.davidgomesdev.ofingidor.backend.llm.rag.score
 import me.davidgomesdev.ofingidor.backend.observability.attributes
 import me.davidgomesdev.ofingidor.backend.session.ConversationContext
 import me.davidgomesdev.ofingidor.backend.web.PersonaContext
@@ -101,7 +100,7 @@ class ChatService(
                         val eventAttributes =
                             attributes {
                                 contents.forEachIndexed { index, content ->
-                                    val score = (content.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0
+                                    val score = content.score()
                                     val metadata = content.textSegment().metadata()
 
                                     TextAttributes.run {
@@ -184,7 +183,7 @@ class ChatService(
     }
 
     private fun toSourceItem(source: Content): ChatEvent.Sources.Source {
-        val score = ((source.metadata()[ContentMetadata.SCORE] as Double) * 100).roundToInt()
+        val score = (source.score() * 100).roundToInt()
         val metadata = source.textSegment().metadata()
 
         val id = metadata.getLong(TextAttributes.TEXT_ID) ?: 0

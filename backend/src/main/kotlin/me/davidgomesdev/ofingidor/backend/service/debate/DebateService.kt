@@ -1,7 +1,6 @@
 package me.davidgomesdev.ofingidor.backend.service.debate
 
 import dev.langchain4j.rag.content.Content
-import dev.langchain4j.rag.content.ContentMetadata
 import dev.langchain4j.service.TokenStream
 import dev.langchain4j.service.UserMessage
 import io.opentelemetry.api.GlobalOpenTelemetry
@@ -14,7 +13,7 @@ import io.smallrye.mutiny.Multi
 import io.smallrye.mutiny.subscription.MultiEmitter
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.backend.constants.DebateApiConstants
-import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes
+import me.davidgomesdev.ofingidor.backend.llm.rag.TextAttributes import me.davidgomesdev.ofingidor.backend.llm.rag.score
 import me.davidgomesdev.ofingidor.backend.web.PersonaContext
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
@@ -221,7 +220,7 @@ class DebateService(
     }
 
     private fun toSourceItem(source: Content): ChatEvent.Sources.Source {
-        val score = ((source.metadata()[ContentMetadata.SCORE] as? Double) ?: 0.0) * 100
+        val score = source.score() * 100
         val metadata = source.textSegment().metadata()
 
         return ChatEvent.Sources.Source(
