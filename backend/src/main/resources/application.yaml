@@ -85,6 +85,7 @@ model:
     timeout: 60s
     api-key: REPLACE_ME
     embedding-model:
+      # options: https://docs.voyageai.com/docs/embeddings
       model-id: voyage-4
     scoring-model:
       # options: https://docs.voyageai.com/docs/reranker
@@ -98,8 +99,8 @@ retrieval:
       Pergunta: {{it}}
 
 rag:
-  max-results: 10
-  min-score: 0.75
+  max-results: 25
+  min-score: 0.70
   ingestion-chunk-size: 50
   expand-query: true
   expanding-query-template: |
