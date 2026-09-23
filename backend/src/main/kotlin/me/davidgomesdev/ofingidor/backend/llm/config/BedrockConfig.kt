@@ -5,6 +5,8 @@ import java.time.Duration
 
 @ConfigMapping(prefix = "model.bedrock")
 interface BedrockConfig {
+    fun apiKey(): String
+
     fun region(): String
 
     fun timeout(): Duration
