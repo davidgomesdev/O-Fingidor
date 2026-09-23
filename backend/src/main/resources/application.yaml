@@ -68,14 +68,15 @@ model:
     # When unset, AWS credentials are read from the default chain (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY,
     # AWS_SESSION_TOKEN env vars, ~/.aws profile, …)
     # api-key: REPLACE_ME
-    region: us-east-1
+    # Optional AWS profile from ~/.aws (AWS_PROFILE in .env isn't seen by the AWS SDK, use MODEL_BEDROCK_PROFILE)
+    # profile: my-profile
+    region: eu-central-1
     timeout: 60s
     chat-model:
       # options (inference profile IDs): https://docs.aws.amazon.com/bedrock/latest/userguide/inference-profiles-support.html
-      model-id: us.anthropic.claude-haiku-4-5-20251001-v1:0
-      temperature: 0.7
+      model-id: eu.anthropic.claude-sonnet-4-6
       # Claude requires temperature 1 when reasoning is enabled
-      thinking: false
+      thinking: true
       thinking-budget-tokens: 2048
       max-tokens: 8192
   voyage:

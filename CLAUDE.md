@@ -147,43 +147,44 @@ Start with: `docker compose up -d`
 
 ## Configuration (`application.yaml` / env overrides)
 
-| Key                                          | Default                  | Notes                                                              |
-|----------------------------------------------|--------------------------|--------------------------------------------------------------------|
-| `model.name`                                 | `ollama`                 | LLM provider: `ollama`, `anthropic`, `bedrock`                       |
-| `model.ollama.base-url`                      | `http://127.0.0.1:11434` | Ollama server URL                                                  |
-| `model.ollama.timeout`                       | `600s`                   | Ollama request timeout                                             |
-| `model.ollama.chat-model.model-id`           | `qwen3:1.7b`             | Ollama LLM model for chat                                          |
-| `model.ollama.chat-model.temperature`        | `0.7`                    | Temperature for Ollama chat model                                  |
-| `model.ollama.chat-model.thinking`           | `false`                  | Enable thinking/reasoning for Ollama                               |
-| `model.ollama.embedding-model.model-id`      | `qwen3-embedding:8b`     | Ollama embedding model for RAG                                     |
-| `model.anthropic.api-key`                    | `REPLACE_ME`             | Anthropic API key                                                  |
-| `model.anthropic.timeout`                    | `60s`                    | Anthropic request timeout                                          |
-| `model.anthropic.chat-model.model-id`        | `claude-haiku-4-5`       | Anthropic model ID (e.g. `claude-haiku-4-5`, `claude-sonnet-4-6`)  |
-| `model.anthropic.chat-model.temperature`     | `0.7`                    | Temperature for Anthropic chat model                               |
-| `model.anthropic.chat-model.thinking`        | `true`                   | Enable extended thinking for Claude                                |
-| `model.anthropic.chat-model.max-tokens`      | `50000`                  | Max output tokens for Anthropic                                    |
-| `model.bedrock.api-key`                      | (unset)                  | Optional Bedrock API key; when unset, uses default AWS credentials |
-| `model.bedrock.region`                       | `us-east-1`              | AWS region                                                         |
-| `model.bedrock.chat-model.model-id`          | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model / inference profile ID          |
-| `model.bedrock.chat-model.thinking`          | `false`                  | Enable reasoning (Claude needs temperature 1)                      |
-| `model.bedrock.chat-model.thinking-budget-tokens` | `2048`              | Reasoning token budget when thinking is enabled                    |
-| `quarkus.otel.exporter.otlp.endpoint`        | `http://localhost:14317` | OTLP gRPC endpoint (Jaeger)                                        |
-| `rag.max-results`                            | `6`                      | Max retrieved chunks per query                                     |
-| `rag.min-score`                              | `0.75`                   | Minimum cosine similarity score                                    |
-| `rag.expand-query`                           | `false`                  | Enable `ExpandingQueryTransformer`                                 |
-| `rag.ingestion-chunk-size`                   | `25`                     | Number of documents to ingest in parallel                          |
-| `rag.expanding-query-template`               | (see yaml)               | Portuguese prompt template for query expansion                     |
-| `rag.semantic-chunking.enabled`              | `false`                  | Use semantic chunking instead of regex splitting                   |
-| `rag.semantic-chunking.similarity-threshold` | `0.7`                    | Cosine similarity threshold for merging adjacent chunks (0.0-1.0)  |
-| `rag.semantic-chunking.min-chunk-size`       | `100`                    | Minimum chunk size in chars, force merge below this                |
-| `rag.semantic-chunking.max-chunk-size`       | `1000`                   | Maximum chunk size in chars, fallback to sentence split above      |
-| `rag.qdrant.host`                            | `127.0.0.1`              | Qdrant host                                                        |
-| `rag.qdrant.api-key`                         | (see yaml)               | Qdrant API key (matches docker-compose config)                     |
-| `rag.qdrant.collection.name`                 | `pessoa_texts`           | Qdrant collection name; `_preview` suffix when `preview-only=true` |
-| `pessoa.url`                                 | `http://127.0.0.1:8080`  | Injected into the HTML template as `window.PESSOA_URL`             |
-| `preview-only`                               | `false`                  | Limits corpus to preview subset (uses `preview_texts.json`)        |
-| `recreate.embeddings`                        | `false`                  | Drop and re-ingest the Qdrant collection on startup                |
-| `QUARKUS_HTTP_CORS_ORIGINS`                  | (see yaml)               | Allowed CORS origins (env override)                                |
+| Key                                               | Default                                       | Notes                                                              |
+|---------------------------------------------------|-----------------------------------------------|--------------------------------------------------------------------|
+| `model.name`                                      | `ollama`                                      | LLM provider: `ollama`, `anthropic`, `bedrock`                     |
+| `model.ollama.base-url`                           | `http://127.0.0.1:11434`                      | Ollama server URL                                                  |
+| `model.ollama.timeout`                            | `600s`                                        | Ollama request timeout                                             |
+| `model.ollama.chat-model.model-id`                | `qwen3:1.7b`                                  | Ollama LLM model for chat                                          |
+| `model.ollama.chat-model.temperature`             | `0.7`                                         | Temperature for Ollama chat model                                  |
+| `model.ollama.chat-model.thinking`                | `false`                                       | Enable thinking/reasoning for Ollama                               |
+| `model.ollama.embedding-model.model-id`           | `qwen3-embedding:8b`                          | Ollama embedding model for RAG                                     |
+| `model.anthropic.api-key`                         | `REPLACE_ME`                                  | Anthropic API key                                                  |
+| `model.anthropic.timeout`                         | `60s`                                         | Anthropic request timeout                                          |
+| `model.anthropic.chat-model.model-id`             | `claude-haiku-4-5`                            | Anthropic model ID (e.g. `claude-haiku-4-5`, `claude-sonnet-4-6`)  |
+| `model.anthropic.chat-model.temperature`          | `0.7`                                         | Temperature for Anthropic chat model                               |
+| `model.anthropic.chat-model.thinking`             | `true`                                        | Enable extended thinking for Claude                                |
+| `model.anthropic.chat-model.max-tokens`           | `50000`                                       | Max output tokens for Anthropic                                    |
+| `model.bedrock.api-key`                           | (unset)                                       | Optional Bedrock API key; when unset, uses default AWS credentials |
+| `model.bedrock.profile`                           | (unset)                                       | Optional AWS profile from `~/.aws` used when no API key is set     |
+| `model.bedrock.region`                            | `us-east-1`                                   | AWS region                                                         |
+| `model.bedrock.chat-model.model-id`               | `us.anthropic.claude-haiku-4-5-20251001-v1:0` | Bedrock model / inference profile ID                               |
+| `model.bedrock.chat-model.thinking`               | `false`                                       | Enable reasoning (Claude needs temperature 1)                      |
+| `model.bedrock.chat-model.thinking-budget-tokens` | `2048`                                        | Reasoning token budget when thinking is enabled                    |
+| `quarkus.otel.exporter.otlp.endpoint`             | `http://localhost:14317`                      | OTLP gRPC endpoint (Jaeger)                                        |
+| `rag.max-results`                                 | `6`                                           | Max retrieved chunks per query                                     |
+| `rag.min-score`                                   | `0.75`                                        | Minimum cosine similarity score                                    |
+| `rag.expand-query`                                | `false`                                       | Enable `ExpandingQueryTransformer`                                 |
+| `rag.ingestion-chunk-size`                        | `25`                                          | Number of documents to ingest in parallel                          |
+| `rag.expanding-query-template`                    | (see yaml)                                    | Portuguese prompt template for query expansion                     |
+| `rag.semantic-chunking.enabled`                   | `false`                                       | Use semantic chunking instead of regex splitting                   |
+| `rag.semantic-chunking.similarity-threshold`      | `0.7`                                         | Cosine similarity threshold for merging adjacent chunks (0.0-1.0)  |
+| `rag.semantic-chunking.min-chunk-size`            | `100`                                         | Minimum chunk size in chars, force merge below this                |
+| `rag.semantic-chunking.max-chunk-size`            | `1000`                                        | Maximum chunk size in chars, fallback to sentence split above      |
+| `rag.qdrant.host`                                 | `127.0.0.1`                                   | Qdrant host                                                        |
+| `rag.qdrant.api-key`                              | (see yaml)                                    | Qdrant API key (matches docker-compose config)                     |
+| `rag.qdrant.collection.name`                      | `pessoa_texts`                                | Qdrant collection name; `_preview` suffix when `preview-only=true` |
+| `pessoa.url`                                      | `http://127.0.0.1:8080`                       | Injected into the HTML template as `window.PESSOA_URL`             |
+| `preview-only`                                    | `false`                                       | Limits corpus to preview subset (uses `preview_texts.json`)        |
+| `recreate.embeddings`                             | `false`                                       | Drop and re-ingest the Qdrant collection on startup                |
+| `QUARKUS_HTTP_CORS_ORIGINS`                       | (see yaml)                                    | Allowed CORS origins (env override)                                |
 
 ---
 
