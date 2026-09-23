@@ -9,6 +9,9 @@ interface BedrockConfig {
     /** When absent, the default AWS credentials provider chain is used instead. */
     fun apiKey(): Optional<String>
 
+    /** AWS profile from ~/.aws; when absent (and no API key), the default AWS credentials provider chain is used. */
+    fun profile(): Optional<String>
+
     fun region(): String
 
     fun timeout(): Duration
@@ -17,8 +20,6 @@ interface BedrockConfig {
 
     interface ChatModelConfig {
         fun modelId(): String
-
-        fun temperature(): Double
 
         fun thinking(): Boolean
 

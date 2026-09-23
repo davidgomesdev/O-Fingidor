@@ -7,6 +7,7 @@ import dev.langchain4j.model.chat.ChatModel
 import dev.langchain4j.model.chat.StreamingChatModel
 import jakarta.enterprise.context.ApplicationScoped
 import me.davidgomesdev.ofingidor.backend.llm.config.BedrockConfig
+import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
 import software.amazon.awssdk.auth.token.credentials.StaticTokenProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient
@@ -32,7 +33,7 @@ class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
             .defaultRequestParameters(requestParameters())
             .build()
 
-    // Bedrock API keys are sent as bearer tokens; without one, SigV4 with the default AWS credentials chain is used
+    // Bedrock API keys are sent as bearer tokens; without one, requests are SigV4-signed with AWS credentials
     private fun <B : BedrockRuntimeBaseClientBuilder<B, *>> B.withAuth(): B =
         region(Region.of(config.region()))
             .overrideConfiguration { it.apiCallTimeout(config.timeout()) }
@@ -41,12 +42,14 @@ class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
                     tokenProvider(StaticTokenProvider.create { apiKey })
                     authSchemeProvider(BedrockRuntimeAuthSchemeProvider.defaultProvider(listOf("smithy.api#httpBearerAuth")))
                 }
+                config.profile().ifPresent { profile ->
+                    credentialsProvider(ProfileCredentialsProvider.create(profile))
+                }
             }
 
     private fun requestParameters(): BedrockChatRequestParameters =
         config.chatModel().let { config ->
             BedrockChatRequestParameters.builder()
-                .temperature(config.temperature())
                 .maxOutputTokens(config.maxTokens())
                 .apply { if (config.thinking()) enableReasoning(config.thinkingBudgetTokens()) }
                 .build()
