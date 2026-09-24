@@ -39,8 +39,12 @@ model:
       max-tokens: 8192
 
 rag:
-  max-results: 6
-  min-score: 0.75
+  results:
+    max: 6
+    min-score: 0.75
+  scored-results:
+    max: 3
+    min-score: 0.7
   expand-query: false
   ingestion-chunk-size: 25
   expanding-query-template: |

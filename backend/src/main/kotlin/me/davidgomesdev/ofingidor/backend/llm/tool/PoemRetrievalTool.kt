@@ -32,27 +32,27 @@ class PoemRetrievalTool(
                     "as palavras originais são o que permite encontrar o texto. " +
                     "Exemplo: de 'Há um poema do Pessoa que fala sobre Deus querer e o Homem sonhar, qual é?' " +
                     "passa apenas 'Deus quer, o homem sonha'."
-        )
-        description: String
+        ) description: String
     ): String {
         log.info("Searching for poem with description: $description")
 
         val embed = embeddingModel.embed(description).content()
         val searchResult = config.identification().run {
             embeddingStore.search(
-                EmbeddingSearchRequest.builder()
-                    .maxResults(maxCandidates())
-                    .minScore(minScore())
-                    .queryEmbedding(embed)
+                EmbeddingSearchRequest.builder().maxResults(overFetch()).minScore(minScore()).queryEmbedding(embed)
                     .build()
             )
         }
-        val sortedTexts = sortTextsByScore(searchResult)
+        val sortedTexts = sortTextsByScore(searchResult).take(config.identification().maxCandidates())
 
         val bestMatch = sortedTexts.first().pessoaText
-
+        val text = bestMatch.content.let {
+            if (it.length > config.identification().maxChars()) it.substring(
+                0, config.identification().maxChars()
+            ) + "..." else it
+        }
         if (sortedTexts.size == 1) {
-            return "Texto '${bestMatch.title}' da coleção '${bestMatch.categoryTitle}' escrito pelo autor '${bestMatch.author}'. Link: '${
+            return "Texto '${bestMatch.title}' da coleção " + "'${bestMatch.categoryTitle}' escrito pelo autor '${bestMatch.author}'.\n" + "${text}Link: '${
                 toLink(
                     bestMatch.id
                 )
@@ -60,7 +60,7 @@ class PoemRetrievalTool(
         }
 
         val bestMatchText =
-            "O texto mais próximo do que procuras é '${bestMatch.title}' da coleção '${bestMatch.categoryTitle}' escrito pelo autor '${bestMatch.author}'. Link: '${
+            "O texto mais próximo do que procuras é '${bestMatch.title}' da coleção '${bestMatch.categoryTitle}' escrito pelo autor '${bestMatch.author}'.\n\nTexto: $text\n\nLink: '${
                 toLink(
                     bestMatch.id
                 )
@@ -81,9 +81,7 @@ class PoemRetrievalTool(
     private fun sortTextsByScore(searchResult: EmbeddingSearchResult<TextSegment>): List<RetrievedText> =
         searchResult.matches()
             .map { RetrievedText(it.score(), it.embedded().run { PessoaText.from(text(), metadata()) }) }
-            .groupBy { it.pessoaText.id }
-            .mapValues { it.value.maxByOrNull(RetrievedText::score)!! }
-            .values.toList()
+            .groupBy { it.pessoaText.id }.mapValues { it.value.maxByOrNull(RetrievedText::score)!! }.values.toList()
 }
 
 data class RetrievedText(val score: Double, val pessoaText: PessoaText)
