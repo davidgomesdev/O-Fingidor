@@ -2,6 +2,7 @@ package me.davidgomesdev.ofingidor.ui.widget
 
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -394,33 +395,14 @@ private fun ConstellationNode(
         NodeRole.SECOND_VOICE -> silverColor.copy(alpha = 0.5f)
         null -> Color.Transparent
     }
-    val lift = if (isHovered) (-4).dp else 0.dp
+    val lift by animateDpAsState(if (isHovered) (-4).dp else 0.dp)
 
+    // The hover and click area stays put; only the drawn portrait lifts. If the hit area moved
+    // with the lift, a pointer near the bottom edge would leave it, drop it back, and flicker forever.
     Box(
         Modifier
-            .offset((center.x - size / 2f).dp, (center.y - size / 2f).dp + lift)
+            .offset((center.x - size / 2f).dp, (center.y - size / 2f).dp)
             .size(size.dp)
-            .drawBehind {
-                if (role != null) {
-                    val radius = this.size.width / 2f
-                    drawCircle(
-                        Brush.radialGradient(
-                            0f to glowColor,
-                            1f to Color.Transparent,
-                            radius = radius * 1.9f,
-                        ),
-                        radius = radius * 1.9f,
-                    )
-                    drawCircle(ringColor.copy(alpha = 0.18f), radius = radius + 5.dp.toPx())
-                    drawCircle(
-                        ringColor.copy(alpha = 0.75f * (1f - halo)),
-                        radius = (radius + 6.dp.toPx()) * (1f + 0.55f * halo),
-                        style = Stroke(1.dp.toPx()),
-                    )
-                }
-            }
-            .clip(CircleShape)
-            .border(if (role != null) 2.dp else 1.dp, ringColor, CircleShape)
             .hoverable(interactionSource)
             .clickable(interactionSource = interactionSource, indication = null, onClick = onClick)
             .semantics {
@@ -429,21 +411,48 @@ private fun ConstellationNode(
                 contentDescription = actionLabel
             }
     ) {
-        Image(
-            painter = painterResource(portrait.resource),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            alignment = Alignment.TopCenter,
-            colorFilter = when {
-                role != null -> null
-                isHovered -> grayscaleFilter(0.95f)
-                else -> grayscaleFilter(0.6f)
-            },
-            modifier = Modifier.fillMaxSize().portraitZoom(),
-        )
-        if (isCentre) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                BrandSigil((size * 0.5f).dp, if (role != null) amberColor else silverColor)
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { translationY = lift.toPx() }
+                .drawBehind {
+                    if (role != null) {
+                        val radius = this.size.width / 2f
+                        drawCircle(
+                            Brush.radialGradient(
+                                0f to glowColor,
+                                1f to Color.Transparent,
+                                radius = radius * 1.9f,
+                            ),
+                            radius = radius * 1.9f,
+                        )
+                        drawCircle(ringColor.copy(alpha = 0.18f), radius = radius + 5.dp.toPx())
+                        drawCircle(
+                            ringColor.copy(alpha = 0.75f * (1f - halo)),
+                            radius = (radius + 6.dp.toPx()) * (1f + 0.55f * halo),
+                            style = Stroke(1.dp.toPx()),
+                        )
+                    }
+                }
+                .clip(CircleShape)
+                .border(if (role != null) 2.dp else 1.dp, ringColor, CircleShape)
+        ) {
+            Image(
+                painter = painterResource(portrait.resource),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
+                colorFilter = when {
+                    role != null -> null
+                    isHovered -> grayscaleFilter(0.95f)
+                    else -> grayscaleFilter(0.6f)
+                },
+                modifier = Modifier.fillMaxSize().portraitZoom(),
+            )
+            if (isCentre) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    BrandSigil((size * 0.5f).dp, if (role != null) amberColor else silverColor)
+                }
             }
         }
     }
