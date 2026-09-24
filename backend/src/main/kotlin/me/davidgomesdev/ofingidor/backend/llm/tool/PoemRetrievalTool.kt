@@ -64,22 +64,23 @@ class PoemRetrievalTool(
             }
         if (sortedTexts.size == 1) {
             return "Texto '${bestMatch.title}' da coleção '${bestMatch.categoryTitle}' escrito pelo autor '${bestMatch.author}'.\n" +
-                "${text}Link: '${toLink(bestMatch.id)}'"
+                "${text}Link: ${toLink(bestMatch)}"
         }
 
         val bestMatchText =
             "O texto mais próximo do que procuras é '${bestMatch.title}' da coleção '${bestMatch.categoryTitle}' " +
-                "escrito pelo autor '${bestMatch.author}'.\n\nTexto: $text\n\nLink: '${toLink(bestMatch.id)}'."
+                "escrito pelo autor '${bestMatch.author}'.\n\nTexto: $text\n\nLink: ${toLink(bestMatch)}."
         val remainingTextsText =
             sortedTexts.drop(1).joinToString("\n") { text ->
                 "- '${text.pessoaText.title}' da coleção '${text.pessoaText.categoryTitle}' " +
-                    "escrito pelo autor '${text.pessoaText.author}'. Link: '${toLink(text.pessoaText.id)}'"
+                    "escrito pelo autor '${text.pessoaText.author}'. Link: ${toLink(text.pessoaText)}"
             }
 
         return "$bestMatchText\n\nOutros textos que podem ser relevantes:\n$remainingTextsText"
     }
 
-    private fun toLink(id: Int): String = "$readerBaseUrl/$id"
+    // Markdown link, so the UI can show the title instead of the URL
+    private fun toLink(text: PessoaText): String = "[${text.title.filter { it !in "[]" }}]($readerBaseUrl/${text.id})"
 
     private fun sortTextsByScore(searchResult: EmbeddingSearchResult<TextSegment>): List<RetrievedText> =
         searchResult
