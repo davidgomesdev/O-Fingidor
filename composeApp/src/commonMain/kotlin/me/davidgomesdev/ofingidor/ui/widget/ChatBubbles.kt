@@ -75,7 +75,8 @@ import me.davidgomesdev.ofingidor.ui.textBodyColor
 import me.davidgomesdev.ofingidor.ui.textMutedColor
 import me.davidgomesdev.ofingidor.ui.textPrimaryColor
 
-private val userBubbleShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp)
+private val userBubbleShape =
+    RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp)
 
 private fun personaAccent(persona: Persona): Color = if (persona == Persona.O_FINGIDOR) amberColor else purpleColor
 
@@ -114,14 +115,20 @@ fun CenteredUserBubble(question: String) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             DisableSelection {
-                Text("PERGUNTA", color = textMutedColor, fontFamily = fonts.mono, fontSize = 10.sp, letterSpacing = 2.6.sp)
+                Text(
+                    "PERGUNTA",
+                    color = textMutedColor,
+                    fontFamily = fonts.mono,
+                    fontSize = 10.sp,
+                    letterSpacing = 2.6.sp
+                )
             }
             Text(
                 question,
                 color = textPrimaryColor,
                 fontFamily = fonts.serif,
                 fontStyle = FontStyle.Italic,
-                fontSize = 21.sp,
+                fontSize = 18.sp,
                 textAlign = TextAlign.Center,
             )
         }
@@ -139,7 +146,7 @@ private fun PersonaSpeakerRow(
     val fonts = LocalAppFonts.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(21.dp),
     ) {
         val avatar: @Composable () -> Unit = { GlowingAvatar(persona, accent, pulsing = isLoading) }
         if (!alignEnd) avatar()
@@ -155,7 +162,13 @@ private fun PersonaSpeakerRow(
             )
             if (!alignEnd) {
                 DisableSelection {
-                    Text(categoryCaption(persona), color = textMutedColor, fontFamily = fonts.mono, fontSize = 10.sp, letterSpacing = 2.4.sp)
+                    Text(
+                        categoryCaption(persona),
+                        color = textMutedColor,
+                        fontFamily = fonts.mono,
+                        fontSize = 10.sp,
+                        letterSpacing = 2.4.sp
+                    )
                 }
             }
         }
@@ -171,7 +184,10 @@ private fun GlowingAvatar(persona: Persona, accent: Color, pulsing: Boolean, siz
             .size(size)
             .drawBehind {
                 drawCircle(
-                    Brush.radialGradient(listOf(accent.copy(alpha = 0.45f), Color.Transparent), radius = this.size.width),
+                    Brush.radialGradient(
+                        listOf(accent.copy(alpha = 0.45f), Color.Transparent),
+                        radius = this.size.width
+                    ),
                     radius = this.size.width,
                 )
                 if (pulsing) {
@@ -225,7 +241,14 @@ fun AiBubble(
             Box(
                 Modifier
                     .widthIn(max = 760.dp)
-                    .background(Brush.linearGradient(listOf(surfaceRaisedColor.copy(alpha = 0.92f), surfaceDeepColor.copy(alpha = 0.92f))), shape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                surfaceRaisedColor.copy(alpha = 0.92f),
+                                surfaceDeepColor.copy(alpha = 0.92f)
+                            )
+                        ), shape
+                    )
                     .border(1.dp, hairlineColor, shape)
                     .padding(horizontal = 28.dp, vertical = 24.dp)
             ) {
