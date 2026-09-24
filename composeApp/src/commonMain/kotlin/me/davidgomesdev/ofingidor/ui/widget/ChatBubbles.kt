@@ -332,7 +332,7 @@ private fun StreamingText(
         }
     val text: AnnotatedString =
         buildAnnotatedString {
-            append(message)
+            appendWithReaderLinks(message)
             if (isLoading) appendInlineContent("cursor", "|")
         }
     Text(
