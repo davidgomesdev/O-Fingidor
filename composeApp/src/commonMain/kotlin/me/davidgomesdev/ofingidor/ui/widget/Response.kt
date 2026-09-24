@@ -1,7 +1,6 @@
 package me.davidgomesdev.ofingidor.ui.widget
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
@@ -58,7 +57,6 @@ import me.davidgomesdev.ofingidor.ui.textSecondaryColor
 private const val textReaderUrl = "https://pessoa.davidgomes.blog/textReader"
 
 /** A retrieved text: document icon, title and a small relevance bar. Hover (or tap on phones) shows details. */
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 internal fun SourceChip(
     source: Source,
@@ -111,7 +109,7 @@ internal fun SourceChip(
                         fontSize = 13.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.widthIn(max = 260.dp),
+                        modifier = Modifier.widthIn(max = 200.dp),
                     )
                     RelevanceBar(source.score, accent)
                     Text("${source.score}%", color = accent, fontFamily = fonts.mono, fontSize = 11.sp)
