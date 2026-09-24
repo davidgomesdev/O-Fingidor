@@ -12,10 +12,9 @@ interface RAGConfig {
 
     fun expandingQueryTemplate(): String
 
-    fun maxResults(): Int
-    fun maxScoredResults(): Int
+    fun results(): ResultsConfig
 
-    fun minScore(): Double
+    fun scoredResults(): ResultsConfig
 
     fun ingestionChunkSize(): Int
 
@@ -25,6 +24,12 @@ interface RAGConfig {
 
 
     fun identification(): IdentificationConfig
+
+    interface ResultsConfig {
+        fun max(): Int
+
+        fun minScore(): Double
+    }
 
     interface QdrantConfig {
         fun host(): String

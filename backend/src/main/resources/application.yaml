@@ -100,9 +100,12 @@ retrieval:
       Pergunta: {{it}}
 
 rag:
-  max-results: 25
-  max-scored-results: 3
-  min-score: 0.70
+  results:
+    max: 25
+    min-score: 0.75
+  scored-results:
+    max: 3
+    min-score: 0.7
   ingestion-chunk-size: 50
   expand-query: true
   expanding-query-template: |
@@ -138,4 +141,3 @@ session:
     ttl: PT1H
   memory:
     max-messages: 20
-

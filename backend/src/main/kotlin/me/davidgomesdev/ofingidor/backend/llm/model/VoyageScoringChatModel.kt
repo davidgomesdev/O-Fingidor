@@ -14,6 +14,7 @@ class VoyageScoringChatModel(
             .builder()
             .apiKey(config.apiKey())
             .modelName(config.scoringModel().modelId())
+            .maxRetries(3)
             .timeout(config.timeout())
             .build()
 }

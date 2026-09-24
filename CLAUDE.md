@@ -172,8 +172,10 @@ Start with: `docker compose up -d`
 | `model.scoring-name`                              | `none`                                        | Re-ranks retrieved content: `none`, `voyage`                       |
 | `model.voyage.scoring-model.model-id`             | `rerank-3`                                    | Voyage AI rerank model                                             |
 | `quarkus.otel.exporter.otlp.endpoint`             | `http://localhost:14317`                      | OTLP gRPC endpoint (Jaeger)                                        |
-| `rag.max-results`                                 | `6`                                           | Max retrieved chunks per query                                     |
-| `rag.min-score`                                   | `0.75`                                        | Minimum cosine similarity score                                    |
+| `rag.results.max`                                 | `25`                                          | Max retrieved chunks per query                                     |
+| `rag.results.min-score`                           | `0.7`                                         | Minimum cosine similarity score                                    |
+| `rag.scored-results.max`                          | `3`                                           | Max chunks kept after re-ranking (`model.scoring-name` ≠ `none`)   |
+| `rag.scored-results.min-score`                    | `0.7`                                         | Minimum re-ranking score                                           |
 | `rag.expand-query`                                | `false`                                       | Enable `ExpandingQueryTransformer`                                 |
 | `rag.ingestion-chunk-size`                        | `25`                                          | Number of documents to ingest in parallel                          |
 | `rag.expanding-query-template`                    | (see yaml)                                    | Portuguese prompt template for query expansion                     |

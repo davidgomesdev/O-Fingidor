@@ -126,8 +126,8 @@ class RetrievalAugmentor(
                 .apply {
                     setAttribute("mode", if (isPreviewOnly) "preview" else "full")
                     setAttribute("recreate-embeddings", recreateEmbeddings)
-                    setAttribute("min-score", config.minScore())
-                    setAttribute("max-results", config.maxResults().toLong())
+                    setAttribute("min-score", config.results().minScore())
+                    setAttribute("max-results", config.results().max().toLong())
                 }.startSpan()
 
         val qdrantConfig = config.qdrant()
@@ -177,8 +177,8 @@ class RetrievalAugmentor(
             .builder()
             .embeddingStore(embeddingStore)
             .embeddingModel(embeddingModel)
-            .maxResults(config.maxResults())
-            .minScore(config.minScore())
+            .maxResults(config.results().max())
+            .minScore(config.results().minScore())
             .dynamicFilter(::filterPersona)
             .build()
     }
@@ -198,7 +198,8 @@ class RetrievalAugmentor(
                     query
                 }
             }
-            .maxResults(config.maxScoredResults())
+            .minScore(config.scoredResults().minScore())
+            .maxResults(config.scoredResults().max())
             .build()
 
         return ContentAggregator { queryToContents ->

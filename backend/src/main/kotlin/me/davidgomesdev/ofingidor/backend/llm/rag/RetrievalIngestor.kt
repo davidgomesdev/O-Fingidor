@@ -127,8 +127,8 @@ class RetrievalIngestor(
                 .apply {
                     setAttribute("mode", if (isPreviewOnly) "preview" else "full")
                     setAttribute("recreate-embeddings", recreateEmbeddings)
-                    setAttribute("min-score", config.minScore())
-                    setAttribute("max-results", config.maxResults().toLong())
+                    setAttribute("min-score", config.results().minScore())
+                    setAttribute("max-results", config.results().max().toLong())
                 }.startSpan()
         val ingestedDocumentIds = getIngestedDocumentIDs(qdrantClient, collectionName).toSet()
 
