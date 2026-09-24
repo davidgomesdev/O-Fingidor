@@ -18,7 +18,7 @@ class ThinkingAPIDebateTest {
                 .contentType("application/json")
                 .body(
                     """
-                    {"input": "Debatam a poesia.", "personaA": "fernando_pessoa", "personaB": "alberto_caeiro"}
+                    {"input": "Debatam a poesia.", "persona": "fernando_pessoa", "opponentPersona": "alberto_caeiro"}
                     """.trimIndent(),
                 ).`when`()
                 .put("/pensa/debate")
@@ -39,7 +39,7 @@ class ThinkingAPIDebateTest {
                 .contentType("application/json")
                 .body(
                     """
-                    {"input": "Debatam a poesia.", "personaA": "fernando_pessoa", "personaB": "alberto_caeiro"}
+                    {"input": "Debatam a poesia.", "persona": "fernando_pessoa", "opponentPersona": "alberto_caeiro"}
                     """.trimIndent(),
                 ).`when`()
                 .put("/pensa/debate")
@@ -59,7 +59,7 @@ class ThinkingAPIDebateTest {
             .contentType("application/json")
             .body(
                 """
-                {"input": "Debatam a poesia.", "personaA": "fernando_pessoa", "personaB": "fernando_pessoa"}
+                {"input": "Debatam a poesia.", "persona": "fernando_pessoa", "opponentPersona": "fernando_pessoa"}
                 """.trimIndent(),
             ).`when`()
             .put("/pensa/debate")
@@ -74,7 +74,7 @@ class ThinkingAPIDebateTest {
                 .contentType("application/json")
                 .body(
                     """
-                    {"input": "Debatam a poesia.", "personaA": "fernando_pessoa", "personaB": "alberto_caeiro"}
+                    {"input": "Debatam a poesia.", "persona": "fernando_pessoa", "opponentPersona": "alberto_caeiro"}
                     """.trimIndent(),
                 ).`when`()
                 .put("/pensa/debate")
@@ -91,7 +91,7 @@ class ThinkingAPIDebateTest {
             .header("Authorization", "Bearer $token")
             .body(
                 """
-                {"input": "Continuem.", "personaA": "fernando_pessoa", "personaB": "ricardo_reis"}
+                {"input": "Continuem.", "persona": "fernando_pessoa", "opponentPersona": "ricardo_reis"}
                 """.trimIndent(),
             ).`when`()
             .put("/pensa/debate")
@@ -120,7 +120,7 @@ class ThinkingAPIDebateTest {
             .header("Authorization", "Bearer $token")
             .body(
                 """
-                {"input": "Agora debatam.", "personaA": "fernando_pessoa", "personaB": "alberto_caeiro"}
+                {"input": "Agora debatam.", "persona": "fernando_pessoa", "opponentPersona": "alberto_caeiro"}
                 """.trimIndent(),
             ).`when`()
             .put("/pensa/debate")

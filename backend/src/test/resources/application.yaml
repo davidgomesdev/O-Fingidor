@@ -33,7 +33,6 @@ model:
     timeout: 60s
     chat-model:
       model-id: us.anthropic.claude-haiku-4-5-20251001-v1:0
-      temperature: 0.7
       thinking: false
       thinking-budget-tokens: 2048
       max-tokens: 8192
@@ -59,6 +58,11 @@ rag:
     similarity-threshold: 0.7
     min-chunk-size: 100
     max-chunk-size: 1000
+  identification:
+    min-score: 0.5
+    max-candidates: 3
+    over-fetch: 20
+    max-chars: 400
 
 pessoa:
   url: http://127.0.0.1:8080
