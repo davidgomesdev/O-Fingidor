@@ -44,10 +44,9 @@ class MigrationScriptsIdempotencyTest {
     private companion object {
         fun migrationResources(): List<String> {
             val migrationDirectory =
-                listOf(
-                    Path.of("backend", "src", "main", "resources", "db", "migration"),
-                    Path.of("src", "main", "resources", "db", "migration"),
-                ).firstOrNull(Files::exists)
+                MigrationScriptsIdempotencyTest::class.java.classLoader
+                    .getResource("db/migration")
+                    ?.let { Path.of(it.toURI()) }
                     ?: error("Could not locate db/migration directory")
 
             return Files.list(migrationDirectory).use { paths ->

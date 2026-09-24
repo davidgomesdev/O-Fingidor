@@ -76,6 +76,12 @@ java {
 tasks.withType<Test> {
     systemProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager")
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
+
+    // Keeps tests off the local .env (read from the working directory) and exported config overrides
+    val testWorkingDir = layout.buildDirectory.dir("test-workdir").get().asFile
+    workingDir = testWorkingDir
+    doFirst { testWorkingDir.mkdirs() }
+    environment.keys.removeAll { it.startsWith("RAG_") || it.startsWith("MODEL_") }
 }
 
 allOpen {

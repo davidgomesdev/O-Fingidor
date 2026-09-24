@@ -8,6 +8,9 @@ import dev.langchain4j.rag.content.Content
 import dev.langchain4j.service.TokenStream
 import dev.langchain4j.service.tool.ToolExecution
 import io.opentelemetry.api.trace.Span
+import io.quarkus.arc.Arc
+import io.quarkus.arc.ArcContainer
+import io.quarkus.arc.ManagedContext
 import me.davidgomesdev.ofingidor.backend.service.debate.DebateAssistant
 import me.davidgomesdev.ofingidor.backend.service.debate.DebatePromptBuilder
 import me.davidgomesdev.ofingidor.backend.service.debate.DebateService
@@ -16,9 +19,13 @@ import me.davidgomesdev.ofingidor.backend.service.debate.DebateTurnEntity
 import me.davidgomesdev.ofingidor.backend.web.PersonaContext
 import me.davidgomesdev.ofingidor.shared.dto.DebateEvent
 import me.davidgomesdev.ofingidor.shared.dto.Persona
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.MockedStatic
+import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.mock
@@ -36,6 +43,22 @@ class DebateServiceTest {
     private val promptBuilder = DebatePromptBuilder()
     private val transcriptRepository = mock<DebateTranscriptRepository>()
     private val service = DebateService(debateAssistant, personaContext, promptBuilder, transcriptRepository)
+
+    // DebateService drives the request context through Arc, which only exists inside a running Quarkus app
+    private lateinit var arc: MockedStatic<Arc>
+
+    @BeforeEach
+    fun mockArcContainer() {
+        val container = mock<ArcContainer>()
+        whenever(container.requestContext()).thenReturn(mock<ManagedContext>())
+        arc = Mockito.mockStatic(Arc::class.java)
+        arc.`when`<ArcContainer> { Arc.container() }.thenReturn(container)
+    }
+
+    @AfterEach
+    fun closeArcMock() {
+        arc.close()
+    }
 
     @Test
     fun `query emits speakers in fixed A B A B order`() {

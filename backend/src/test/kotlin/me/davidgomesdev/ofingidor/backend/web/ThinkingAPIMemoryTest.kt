@@ -93,7 +93,7 @@ class ThinkingAPIMemoryTest {
                 .contentType("application/json")
                 .body(
                     """
-                    {"input": "Debatam a poesia.", "personaA": "fernando_pessoa", "personaB": "alberto_caeiro"}
+                    {"input": "Debatam a poesia.", "persona": "fernando_pessoa", "opponentPersona": "alberto_caeiro"}
                     """.trimIndent(),
                 ).`when`()
                 .put("/pensa/debate")
