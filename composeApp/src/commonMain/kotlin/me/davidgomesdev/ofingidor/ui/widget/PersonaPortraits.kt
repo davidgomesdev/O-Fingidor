@@ -1,33 +1,30 @@
 package me.davidgomesdev.ofingidor.ui.widget
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
-import me.davidgomesdev.ofingidor.ui.componentColumnBackgroundColor
 import me.davidgomesdev.ofingidor.ui.devChipBorderColor
 import me.davidgomesdev.ofingidor.ui.devChipColor
 import me.davidgomesdev.ofingidor.ui.devChipTextColor
 import me.davidgomesdev.ofingidor.ui.focusedIndicatorColor
+import me.davidgomesdev.ofingidor.ui.heteronymChipColor
 import me.davidgomesdev.ofingidor.ui.model.PersonaPortrait
 import me.davidgomesdev.ofingidor.ui.orthonymChipBorderColor
 import me.davidgomesdev.ofingidor.ui.orthonymChipColor
@@ -122,7 +119,7 @@ fun portraitChipLayout(persona: Persona, isCompact: Boolean, isSelected: Boolean
         isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipColor
         isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipColor
         isSelected && category == PersonaCategory.DEV -> devChipColor
-        isSelected -> componentColumnBackgroundColor
+        isSelected -> heteronymChipColor
         else -> Color.Transparent
     }
     val borderColor = when {
@@ -164,72 +161,42 @@ fun debatePortraitIdentity(persona: Persona): DebatePortraitIdentity =
     DebatePortraitIdentity(label = persona.displayName)
 
 @Composable
-fun PersonaPortraitThumbnail(persona: Persona, modifier: Modifier = Modifier) {
-    val portrait = requireNotNull(personaPortrait(persona)) { "Missing portrait for $persona" }
-    PersonaPortraitThumbnail(portrait = portrait, modifier = modifier)
-}
-
-@Composable
-fun PersonaPortraitThumbnail(portrait: PersonaPortrait, modifier: Modifier = Modifier) {
-    Image(
-        painter = painterResource(portrait.resource),
-        contentDescription = portrait.contentDescription,
-        contentScale = ContentScale.Crop,
-        modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(Color.Black.copy(alpha = 0.1f))
-            .border(1.dp, Color.White.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
-    )
-}
-
-@Composable
 fun PersonaAvatar(
     persona: Persona,
     modifier: Modifier = Modifier.size(defaultAvatarSize),
     contentDescription: String? = null,
     contentDescriptionMode: AvatarContentDescriptionMode = AvatarContentDescriptionMode.MEANINGFUL,
+    colorFilter: ColorFilter? = null,
 ) {
     val portrait = requireNotNull(personaPortrait(persona)) { "Missing portrait for $persona" }
-    Image(
-        painter = painterResource(portrait.resource),
-        contentDescription = resolveAvatarContentDescription(
-            portrait = portrait,
-            requestedContentDescription = contentDescription,
-            mode = contentDescriptionMode,
-        ),
-        contentScale = ContentScale.Crop,
-        modifier = modifier
+    Box(
+        modifier
             .clip(CircleShape)
             .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
-    )
+    ) {
+        Image(
+            painter = painterResource(portrait.resource),
+            contentDescription = resolveAvatarContentDescription(
+                portrait = portrait,
+                requestedContentDescription = contentDescription,
+                mode = contentDescriptionMode,
+            ),
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            colorFilter = colorFilter,
+            modifier = Modifier.fillMaxSize().portraitZoom(),
+        )
+    }
 }
 
-@Composable
-fun PersonaIdentityChip(
-    model: PersonaIdentityChipModel,
-    onSelected: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(model.layout.backgroundColor)
-            .border(1.dp, model.layout.borderColor, RoundedCornerShape(20.dp))
-            .semantics { selected = model.layout.selected }
-            .clickable(onClick = onSelected)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (model.layout.showPortrait) {
-            PersonaAvatar(
-                persona = model.persona,
-                contentDescription = model.layout.avatarContentDescription,
-                contentDescriptionMode = AvatarContentDescriptionMode.DECORATIVE,
-            )
-        }
-        Text(model.layout.label, color = model.layout.labelColor)
-    }
+/**
+ * The portraits carry the persona's name printed under the face. Zooming in on the face keeps
+ * that text out of small circular crops.
+ */
+fun Modifier.portraitZoom(): Modifier = graphicsLayer {
+    scaleX = 1.85f
+    scaleY = 1.85f
+    transformOrigin = TransformOrigin(0.5f, 0.36f)
 }
 
 fun personaPortrait(persona: Persona): PersonaPortrait? = portraits[persona]
