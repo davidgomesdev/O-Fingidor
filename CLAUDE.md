@@ -30,8 +30,9 @@ composeApp/src/
 ```
 
 Key UI files: `App.kt` (root composable + state), `service/ThinkAPI.kt` (Ktor streaming client),
-`service/Config.kt` (expect/actual for platform URL), `widget/Drawing.kt` (AppHeader, FernandoPessoaLogo),
-`widget/PersonaSidebar.kt`, `Colors.kt`, `Theme.kt`.
+`service/Config.kt` (expect/actual for platform URL), `Screens.kt` (landing and conversation layouts),
+`widget/Constellation.kt` (zodiac wheel + persona picker), `widget/Drawing.kt` (AppHeader), `widget/Input.kt`,
+`widget/ChatBubbles.kt`, `Colors.kt`, `Theme.kt` (`MysticTheme`, fonts via `LocalAppFonts`).
 
 UI strings are in **Portuguese**. Colors from `Colors.kt` only — no hardcoded hex. Access resources via
 `ofingidor.composeapp.generated.resources.Res`.
