@@ -21,13 +21,16 @@ class ChatMemoryEntity : PanacheEntityBase {
     @Column(name = "message_json", nullable = false, columnDefinition = "TEXT")
     lateinit var messageJson: String
 
+    @Column(name = "position", nullable = false)
+    var position: Int = 0
+
     @Column(name = "created_at", nullable = false)
     lateinit var createdAt: OffsetDateTime
 
     companion object : PanacheCompanionBase<ChatMemoryEntity, UUID> {
         fun findByConversationIdOrdered(conversationId: UUID): List<ChatMemoryEntity> =
             find(
-                "FROM ChatMemoryEntity WHERE conversationId = :cid ORDER BY createdAt ASC",
+                "FROM ChatMemoryEntity WHERE conversationId = :cid ORDER BY position ASC",
                 mapOf("cid" to conversationId),
             ).list()
 

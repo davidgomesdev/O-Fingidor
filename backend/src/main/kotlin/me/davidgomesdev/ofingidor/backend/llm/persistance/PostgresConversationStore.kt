@@ -39,12 +39,13 @@ class PostgresConversationStore : ChatMemoryStore {
 
         val now = OffsetDateTime.now()
 
-        messages.forEach { message ->
+        messages.forEachIndexed { index, message ->
             val entity = ChatMemoryEntity()
 
             entity.id = UuidCreator.getTimeOrderedEpoch()
             entity.conversationId = conversationId
             entity.messageJson = ChatMessageSerializer.messageToJson(message)
+            entity.position = index
             entity.createdAt = now
 
             entity.persist()
