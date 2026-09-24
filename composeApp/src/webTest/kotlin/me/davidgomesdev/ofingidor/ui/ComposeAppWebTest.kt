@@ -11,11 +11,11 @@ import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.DebateSide
 import me.davidgomesdev.ofingidor.ui.model.DebateTurn
+import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
+import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.model.debateHeroQuotes
 import me.davidgomesdev.ofingidor.ui.model.nextQuoteIndex
 import me.davidgomesdev.ofingidor.ui.model.pick
-import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
-import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
 import me.davidgomesdev.ofingidor.ui.widget.AvatarContentDescriptionMode
 import me.davidgomesdev.ofingidor.ui.widget.appHeaderIdentity

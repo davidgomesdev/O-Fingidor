@@ -31,24 +31,28 @@ data class AppFonts(
 val LocalAppFonts = staticCompositionLocalOf { AppFonts(FontFamily.Serif, FontFamily.SansSerif, FontFamily.Monospace) }
 
 @Composable
-private fun rememberAppFonts(): AppFonts = AppFonts(
-    serif = FontFamily(
-        Font(Res.font.cormorant_400, FontWeight.Normal),
-        Font(Res.font.cormorant_500, FontWeight.Medium),
-        Font(Res.font.cormorant_600, FontWeight.SemiBold),
-        Font(Res.font.cormorant_400_italic, FontWeight.Normal, FontStyle.Italic),
-        Font(Res.font.cormorant_500_italic, FontWeight.Medium, FontStyle.Italic),
-    ),
-    sans = FontFamily(
-        Font(Res.font.geist_400, FontWeight.Normal),
-        Font(Res.font.geist_500, FontWeight.Medium),
-        Font(Res.font.geist_600, FontWeight.SemiBold),
-    ),
-    mono = FontFamily(
-        Font(Res.font.geist_mono_400, FontWeight.Normal),
-        Font(Res.font.geist_mono_500, FontWeight.Medium),
-    ),
-)
+private fun rememberAppFonts(): AppFonts =
+    AppFonts(
+        serif =
+            FontFamily(
+                Font(Res.font.cormorant_400, FontWeight.Normal),
+                Font(Res.font.cormorant_500, FontWeight.Medium),
+                Font(Res.font.cormorant_600, FontWeight.SemiBold),
+                Font(Res.font.cormorant_400_italic, FontWeight.Normal, FontStyle.Italic),
+                Font(Res.font.cormorant_500_italic, FontWeight.Medium, FontStyle.Italic),
+            ),
+        sans =
+            FontFamily(
+                Font(Res.font.geist_400, FontWeight.Normal),
+                Font(Res.font.geist_500, FontWeight.Medium),
+                Font(Res.font.geist_600, FontWeight.SemiBold),
+            ),
+        mono =
+            FontFamily(
+                Font(Res.font.geist_mono_400, FontWeight.Normal),
+                Font(Res.font.geist_mono_500, FontWeight.Medium),
+            ),
+    )
 
 private fun sansTypography(sans: FontFamily): Typography {
     val defaults = Typography()

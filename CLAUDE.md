@@ -41,7 +41,7 @@ UI strings are in **Portuguese**. Colors from `Colors.kt` only — no hardcoded 
 
 ```
 src/main/kotlin/me/davidgomesdev/pessoafaladora/backend/
-  Main.kt                  ← @QuarkusMain entry point
+  JavaMain.kt              ← @QuarkusMain entry point
   web/
     IndexResource.kt       ← GET / — serves the Qute HTML shell, injects PESSOA_URL
     ThinkingAPI.kt         ← PUT /pensa — streaming chat endpoint (NDJSON ChatEvent)

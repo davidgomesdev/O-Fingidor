@@ -78,7 +78,11 @@ tasks.withType<Test> {
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")
 
     // Keeps tests off the local .env (read from the working directory) and exported config overrides
-    val testWorkingDir = layout.buildDirectory.dir("test-workdir").get().asFile
+    val testWorkingDir =
+        layout.buildDirectory
+            .dir("test-workdir")
+            .get()
+            .asFile
     workingDir = testWorkingDir
     doFirst { testWorkingDir.mkdirs() }
     environment.keys.removeAll { it.startsWith("RAG_") || it.startsWith("MODEL_") }

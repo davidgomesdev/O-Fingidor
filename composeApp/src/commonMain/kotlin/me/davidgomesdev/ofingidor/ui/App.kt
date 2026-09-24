@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
@@ -53,6 +52,7 @@ import me.davidgomesdev.ofingidor.ui.widget.CenteredUserBubble
 import me.davidgomesdev.ofingidor.ui.widget.DebatePersonaBubble
 import me.davidgomesdev.ofingidor.ui.widget.ErrorBubble
 import me.davidgomesdev.ofingidor.ui.widget.UserBubble
+import kotlin.random.Random
 
 private val COMPACT_BREAKPOINT = 600.dp
 private val WIDE_BREAKPOINT = 1080.dp
@@ -314,7 +314,10 @@ fun App() {
 
         val onPersonaPicked: (Persona) -> Unit = { persona ->
             when (conversationMode) {
-                ConversationMode.CHAT -> selectedPersona = persona
+                ConversationMode.CHAT -> {
+                    selectedPersona = persona
+                }
+
                 ConversationMode.DEBATE -> {
                     val pick = debatePair.pick(persona, debateNextSlot)
                     debatePair = pick.pair
@@ -340,26 +343,29 @@ fun App() {
                     isCompact = isCompact,
                 )
 
-                val inputState = InputState(
-                    text = inputText,
-                    onTextChange = { inputText = it },
-                    isLoading = isLoading,
-                    onSubmit = onSubmit,
-                    placeholder = when (conversationMode) {
-                        ConversationMode.CHAT -> "Escreve o que te inquieta a alma…"
-                        ConversationMode.DEBATE -> "Lança uma pergunta aos dois…"
-                    },
-                )
-                val voices = VoicesState(
-                    mode = conversationMode,
-                    selectedPersona = selectedPersona,
-                    debatePair = debatePair,
-                    debateNextSlot = debateNextSlot,
-                    devMode = isDevMode,
-                    onPersonaPicked = onPersonaPicked,
-                    onSlotSelected = { debateNextSlot = it },
-                    onSwap = { debatePair = debatePair.swapped() },
-                )
+                val inputState =
+                    InputState(
+                        text = inputText,
+                        onTextChange = { inputText = it },
+                        isLoading = isLoading,
+                        onSubmit = onSubmit,
+                        placeholder =
+                            when (conversationMode) {
+                                ConversationMode.CHAT -> "Escreve o que te inquieta a alma…"
+                                ConversationMode.DEBATE -> "Lança uma pergunta aos dois…"
+                            },
+                    )
+                val voices =
+                    VoicesState(
+                        mode = conversationMode,
+                        selectedPersona = selectedPersona,
+                        debatePair = debatePair,
+                        debateNextSlot = debateNextSlot,
+                        devMode = isDevMode,
+                        onPersonaPicked = onPersonaPicked,
+                        onSlotSelected = { debateNextSlot = it },
+                        onSwap = { debatePair = debatePair.swapped() },
+                    )
 
                 if (!hasConversationStarted) {
                     LandingScreen(

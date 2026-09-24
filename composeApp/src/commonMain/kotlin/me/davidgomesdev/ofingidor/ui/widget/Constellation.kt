@@ -58,9 +58,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
 import me.davidgomesdev.ofingidor.ui.LocalAppFonts
@@ -81,6 +78,9 @@ import me.davidgomesdev.ofingidor.ui.textMutedColor
 import me.davidgomesdev.ofingidor.ui.textPrimaryColor
 import me.davidgomesdev.ofingidor.ui.textSecondaryColor
 import org.jetbrains.compose.resources.painterResource
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 /** All geometry is authored on a 620-unit square and scaled to the rendered size. */
 private const val DESIGN_SIZE = 620f
@@ -89,23 +89,24 @@ private const val NODE_RADIUS = 236f
 private val nodeAngles = listOf(-90f, -18f, 54f, 126f, 198f)
 
 /** The twelve zodiac signs, Aries to Pisces, drawn on a ±8 unit grid. Gemini (index 2) was Pessoa's sign. */
-private val zodiacGlyphs = listOf(
-    "M0 7 L0 -1 C0 -7 -7 -8 -7 -2.5 M0 -1 C0 -7 7 -8 7 -2.5",
-    "M-4.2 3 a4.2 4.2 0 1 0 8.4 0 a4.2 4.2 0 1 0 -8.4 0 M-7 -7 C-6 -1.5 6 -1.5 7 -7",
-    "M-6 -7 C-2 -5.2 2 -5.2 6 -7 M-6 7 C-2 5.2 2 5.2 6 7 M-3 -5.6 L-3 5.6 M3 -5.6 L3 5.6",
-    "M-6.4 -2.2 a2.2 2.2 0 1 0 4.4 0 a2.2 2.2 0 1 0 -4.4 0 M-4.2 -4.4 C-1 -7 5 -6.5 7 -3 " +
-        "M2 2.2 a2.2 2.2 0 1 0 4.4 0 a2.2 2.2 0 1 0 -4.4 0 M4.2 4.4 C1 7 -5 6.5 -7 3",
-    "M-7 3 a2.6 2.6 0 1 0 5.2 0 a2.6 2.6 0 1 0 -5.2 0 M-1.8 3 C-1.8 -2 -2 -7 2 -7 C6 -7 6 -2 3 2 C1 5 3 8 6.5 6",
-    "M-7 -5 L-7 6 M-7 -3 C-7 -6 -3.5 -6 -3.5 -3 L-3.5 6 M-3.5 -3 C-3.5 -6 0 -6 0 -3 L0 4 C0 7 4 7 5.5 2 " +
-        "C6.5 -1 4 -1 2.5 2 L0.5 7",
-    "M-7 6 L7 6 M-7 2 L-3 2 C-5 -6 5 -6 3 2 L7 2",
-    "M-7 -5 L-7 5 M-7 -3 C-7 -6 -3.5 -6 -3.5 -3 L-3.5 5 M-3.5 -3 C-3.5 -6 0 -6 0 -3 L0 4 C0 6 2 6.5 4 6.5 " +
-        "L7 6.5 M5 4.5 L7 6.5 L5 8.5",
-    "M-6 6 L6 -6 M0.5 -6 L6 -6 L6 -0.5 M-5 -1 L1 5",
-    "M-7 -6 L-4 5 L-1 -3 C0 -6.5 3.5 -6 3.5 -2 L3.5 4 C3.5 7 7 7 7 4 C7 1.5 4 1.5 3.5 4 C3 7 0 8 -2 7",
-    "M-7 -1 L-4.5 -3.5 L-2 -1 L0.5 -3.5 L3 -1 L5.5 -3.5 L7 -2 M-7 5 L-4.5 2.5 L-2 5 L0.5 2.5 L3 5 L5.5 2.5 L7 4",
-    "M-6 -7 C-2 -3 -2 3 -6 7 M6 -7 C2 -3 2 3 6 7 M-4 0 L4 0",
-)
+private val zodiacGlyphs =
+    listOf(
+        "M0 7 L0 -1 C0 -7 -7 -8 -7 -2.5 M0 -1 C0 -7 7 -8 7 -2.5",
+        "M-4.2 3 a4.2 4.2 0 1 0 8.4 0 a4.2 4.2 0 1 0 -8.4 0 M-7 -7 C-6 -1.5 6 -1.5 7 -7",
+        "M-6 -7 C-2 -5.2 2 -5.2 6 -7 M-6 7 C-2 5.2 2 5.2 6 7 M-3 -5.6 L-3 5.6 M3 -5.6 L3 5.6",
+        "M-6.4 -2.2 a2.2 2.2 0 1 0 4.4 0 a2.2 2.2 0 1 0 -4.4 0 M-4.2 -4.4 C-1 -7 5 -6.5 7 -3 " +
+            "M2 2.2 a2.2 2.2 0 1 0 4.4 0 a2.2 2.2 0 1 0 -4.4 0 M4.2 4.4 C1 7 -5 6.5 -7 3",
+        "M-7 3 a2.6 2.6 0 1 0 5.2 0 a2.6 2.6 0 1 0 -5.2 0 M-1.8 3 C-1.8 -2 -2 -7 2 -7 C6 -7 6 -2 3 2 C1 5 3 8 6.5 6",
+        "M-7 -5 L-7 6 M-7 -3 C-7 -6 -3.5 -6 -3.5 -3 L-3.5 6 M-3.5 -3 C-3.5 -6 0 -6 0 -3 L0 4 C0 7 4 7 5.5 2 " +
+            "C6.5 -1 4 -1 2.5 2 L0.5 7",
+        "M-7 6 L7 6 M-7 2 L-3 2 C-5 -6 5 -6 3 2 L7 2",
+        "M-7 -5 L-7 5 M-7 -3 C-7 -6 -3.5 -6 -3.5 -3 L-3.5 5 M-3.5 -3 C-3.5 -6 0 -6 0 -3 L0 4 C0 6 2 6.5 4 6.5 " +
+            "L7 6.5 M5 4.5 L7 6.5 L5 8.5",
+        "M-6 6 L6 -6 M0.5 -6 L6 -6 L6 -0.5 M-5 -1 L1 5",
+        "M-7 -6 L-4 5 L-1 -3 C0 -6.5 3.5 -6 3.5 -2 L3.5 4 C3.5 7 7 7 7 4 C7 1.5 4 1.5 3.5 4 C3 7 0 8 -2 7",
+        "M-7 -1 L-4.5 -3.5 L-2 -1 L0.5 -3.5 L3 -1 L5.5 -3.5 L7 -2 M-7 5 L-4.5 2.5 L-2 5 L0.5 2.5 L3 5 L5.5 2.5 L7 4",
+        "M-6 -7 C-2 -3 -2 3 -6 7 M6 -7 C2 -3 2 3 6 7 M-4 0 L4 0",
+    )
 private const val GEMINI_INDEX = 2
 
 private enum class NodeRole { SELECTED, FIRST_VOICE, SECOND_VOICE }
@@ -116,7 +117,10 @@ private fun nodeCenter(index: Int): Offset {
 }
 
 /** A point on a circle, measured clockwise from the top. */
-private fun polar(degreesFromTop: Float, radius: Float): Offset {
+private fun polar(
+    degreesFromTop: Float,
+    radius: Float,
+): Offset {
     val angle = (degreesFromTop - 90f) * PI.toFloat() / 180f
     return Offset(CENTER + radius * cos(angle), CENTER + radius * sin(angle))
 }
@@ -133,12 +137,28 @@ private fun grayscaleFilter(brightness: Float): ColorFilter {
     return ColorFilter.colorMatrix(
         ColorMatrix(
             floatArrayOf(
-                r, g, b, 0f, 0f,
-                r, g, b, 0f, 0f,
-                r, g, b, 0f, 0f,
-                0f, 0f, 0f, 1f, 0f,
-            )
-        )
+                r,
+                g,
+                b,
+                0f,
+                0f,
+                r,
+                g,
+                b,
+                0f,
+                0f,
+                r,
+                g,
+                b,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+            ),
+        ),
     )
 }
 
@@ -160,15 +180,16 @@ fun Constellation(
     val fonts = LocalAppFonts.current
     val scale = size.value / DESIGN_SIZE
     val glyphPaths = remember { zodiacGlyphs.map { PathParser().parsePathString(it).toPath() } }
-    val pentagram = remember {
-        Path().apply {
-            listOf(0, 2, 4, 1, 3).forEachIndexed { i, index ->
-                val point = nodeCenter(index)
-                if (i == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+    val pentagram =
+        remember {
+            Path().apply {
+                listOf(0, 2, 4, 1, 3).forEachIndexed { i, index ->
+                    val point = nodeCenter(index)
+                    if (i == 0) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                }
+                close()
             }
-            close()
         }
-    }
 
     val transition = rememberInfiniteTransition()
     val wheel by transition.animateFloat(0f, 360f, infiniteRepeatable(tween(160_000, easing = LinearEasing)))
@@ -185,11 +206,12 @@ fun Constellation(
             else -> null
         }
     }
-    val spokes: List<Pair<Offset, Color>> = if (isChat) {
-        listOf(personaCenter(selectedPersona) to purpleColor)
-    } else {
-        listOf(personaCenter(debatePair.left) to purpleColor, personaCenter(debatePair.right) to silverLightColor)
-    }
+    val spokes: List<Pair<Offset, Color>> =
+        if (isChat) {
+            listOf(personaCenter(selectedPersona) to purpleColor)
+        } else {
+            listOf(personaCenter(debatePair.left) to purpleColor, personaCenter(debatePair.right) to silverLightColor)
+        }
 
     Box(Modifier.size(size).semantics { contentDescription = "Constelação de vozes" }) {
         Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = wheel }) {
@@ -239,8 +261,10 @@ fun Constellation(
             Modifier
                 .offset(((CENTER - 110f) * scale).dp, ((CENTER - 110f) * scale).dp)
                 .size(orbSize.dp)
-                .graphicsLayer { scaleX = breathe; scaleY = breathe }
-                .drawBehind {
+                .graphicsLayer {
+                    scaleX = breathe
+                    scaleY = breathe
+                }.drawBehind {
                     drawCircle(
                         Brush.radialGradient(
                             0f to purpleColor.copy(alpha = 0.34f),
@@ -248,10 +272,10 @@ fun Constellation(
                             0.72f to Color.Transparent,
                             center = Offset(this.size.width / 2f, this.size.height * 0.38f),
                             radius = this.size.width / 2f,
-                        )
+                        ),
                     )
                     drawCircle(purpleColor.copy(alpha = 0.22f), style = Stroke(1.dp.toPx()))
-                }
+                },
         )
         if (!devMode) {
             Box(
@@ -291,7 +315,13 @@ fun Constellation(
                             fontSize = nameSize,
                             textAlign = TextAlign.Center,
                         )
-                        Text("vs", color = textMutedColor, fontFamily = fonts.serif, fontStyle = FontStyle.Italic, fontSize = (20f * scale).coerceAtLeast(15f).sp)
+                        Text(
+                            "vs",
+                            color = textMutedColor,
+                            fontFamily = fonts.serif,
+                            fontStyle = FontStyle.Italic,
+                            fontSize = (20f * scale).coerceAtLeast(15f).sp,
+                        )
                         Text(
                             if (showLabels) debatePair.right.displayName else debatePair.right.voice().shortName,
                             color = silverPaleColor,
@@ -305,8 +335,9 @@ fun Constellation(
             }
         }
 
-        val nodes = constellationPersonas.mapIndexed { index, persona -> persona to nodeCenter(index) } +
-            if (devMode) listOf(Persona.O_FINGIDOR to Offset(CENTER, CENTER)) else emptyList()
+        val nodes =
+            constellationPersonas.mapIndexed { index, persona -> persona to nodeCenter(index) } +
+                if (devMode) listOf(Persona.O_FINGIDOR to Offset(CENTER, CENTER)) else emptyList()
         nodes.forEach { (persona, center) ->
             val nodeSize = (if (persona == Persona.O_FINGIDOR) 96f else 88f) * scale
             ConstellationNode(
@@ -324,12 +355,16 @@ fun Constellation(
     }
 }
 
-private fun categoryLabel(persona: Persona): String = when (persona.category) {
-    PersonaCategory.HETERONIMO -> "HETERÓNIMO"
-    else -> persona.category.label.uppercase()
-}
+private fun categoryLabel(persona: Persona): String =
+    when (persona.category) {
+        PersonaCategory.HETERONIMO -> "HETERÓNIMO"
+        else -> persona.category.label.uppercase()
+    }
 
-private fun DrawScope.drawZodiac(k: Float, glyphPaths: List<Path>) {
+private fun DrawScope.drawZodiac(
+    k: Float,
+    glyphPaths: List<Path>,
+) {
     val hairline = density / k
     scale(k, pivot = Offset.Zero) {
         val center = Offset(CENTER, CENTER)
@@ -356,11 +391,12 @@ private fun DrawScope.drawZodiac(k: Float, glyphPaths: List<Path>) {
                         drawPath(
                             path,
                             color = if (isGemini) purpleSoftColor else silverColor,
-                            style = Stroke(
-                                width = strokeOnScreen / (glyphScale * k),
-                                cap = StrokeCap.Round,
-                                join = StrokeJoin.Round,
-                            ),
+                            style =
+                                Stroke(
+                                    width = strokeOnScreen / (glyphScale * k),
+                                    cap = StrokeCap.Round,
+                                    join = StrokeJoin.Round,
+                                ),
                         )
                     }
                 }
@@ -383,18 +419,20 @@ private fun ConstellationNode(
     val isHovered by interactionSource.collectIsHoveredAsState()
     val halo by rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(2_800, easing = LinearEasing)))
     val isCentre = persona == Persona.O_FINGIDOR
-    val ringColor = when (role) {
-        NodeRole.SELECTED -> if (isCentre) amberColor else purpleColor
-        NodeRole.FIRST_VOICE -> purpleColor
-        NodeRole.SECOND_VOICE -> silverLightColor
-        null -> silverColor.copy(alpha = 0.35f)
-    }
-    val glowColor = when (role) {
-        NodeRole.SELECTED -> if (isCentre) amberColor.copy(alpha = 0.5f) else purpleDeepColor.copy(alpha = 0.65f)
-        NodeRole.FIRST_VOICE -> purpleDeepColor.copy(alpha = 0.65f)
-        NodeRole.SECOND_VOICE -> silverColor.copy(alpha = 0.5f)
-        null -> Color.Transparent
-    }
+    val ringColor =
+        when (role) {
+            NodeRole.SELECTED -> if (isCentre) amberColor else purpleColor
+            NodeRole.FIRST_VOICE -> purpleColor
+            NodeRole.SECOND_VOICE -> silverLightColor
+            null -> silverColor.copy(alpha = 0.35f)
+        }
+    val glowColor =
+        when (role) {
+            NodeRole.SELECTED -> if (isCentre) amberColor.copy(alpha = 0.5f) else purpleDeepColor.copy(alpha = 0.65f)
+            NodeRole.FIRST_VOICE -> purpleDeepColor.copy(alpha = 0.65f)
+            NodeRole.SECOND_VOICE -> silverColor.copy(alpha = 0.5f)
+            null -> Color.Transparent
+        }
     val lift by animateDpAsState(if (isHovered) (-4).dp else 0.dp)
 
     // The hover and click area stays put; only the drawn portrait lifts. If the hit area moved
@@ -409,7 +447,7 @@ private fun ConstellationNode(
                 this.role = Role.Button
                 this.selected = role != null
                 contentDescription = actionLabel
-            }
+            },
     ) {
         Box(
             Modifier
@@ -433,20 +471,20 @@ private fun ConstellationNode(
                             style = Stroke(1.dp.toPx()),
                         )
                     }
-                }
-                .clip(CircleShape)
-                .border(if (role != null) 2.dp else 1.dp, ringColor, CircleShape)
+                }.clip(CircleShape)
+                .border(if (role != null) 2.dp else 1.dp, ringColor, CircleShape),
         ) {
             Image(
                 painter = painterResource(portrait.resource),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 alignment = Alignment.TopCenter,
-                colorFilter = when {
-                    role != null -> null
-                    isHovered -> grayscaleFilter(0.95f)
-                    else -> grayscaleFilter(0.6f)
-                },
+                colorFilter =
+                    when {
+                        role != null -> null
+                        isHovered -> grayscaleFilter(0.95f)
+                        else -> grayscaleFilter(0.6f)
+                    },
                 modifier = Modifier.fillMaxSize().portraitZoom(),
             )
             if (isCentre) {
@@ -459,13 +497,18 @@ private fun ConstellationNode(
 }
 
 @Composable
-private fun NodeLabel(persona: Persona, role: NodeRole?, topCenter: Offset) {
+private fun NodeLabel(
+    persona: Persona,
+    role: NodeRole?,
+    topCenter: Offset,
+) {
     val fonts = LocalAppFonts.current
-    val (sub, subColor) = when (role) {
-        NodeRole.FIRST_VOICE -> "PRIMEIRA VOZ" to purpleColor
-        NodeRole.SECOND_VOICE -> "SEGUNDA VOZ" to silverSoftColor
-        else -> categoryLabel(persona) to if (persona == Persona.O_FINGIDOR) amberColor else textMutedColor
-    }
+    val (sub, subColor) =
+        when (role) {
+            NodeRole.FIRST_VOICE -> "PRIMEIRA VOZ" to purpleColor
+            NodeRole.SECOND_VOICE -> "SEGUNDA VOZ" to silverSoftColor
+            else -> categoryLabel(persona) to if (persona == Persona.O_FINGIDOR) amberColor else textMutedColor
+        }
     Column(
         Modifier
             .offset((topCenter.x - 90f).dp, topCenter.y.dp)

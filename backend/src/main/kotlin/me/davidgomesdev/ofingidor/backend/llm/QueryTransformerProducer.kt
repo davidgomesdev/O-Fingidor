@@ -11,7 +11,9 @@ import me.davidgomesdev.ofingidor.backend.llm.config.RAGConfig
 import org.jboss.logging.Logger
 
 @ApplicationScoped
-class QueryTransformerProducer(val config: RAGConfig) {
+class QueryTransformerProducer(
+    val config: RAGConfig,
+) {
     val log: Logger = Logger.getLogger(this::class.java)
 
     @Singleton

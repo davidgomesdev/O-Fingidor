@@ -90,15 +90,15 @@ class ChatService(
                             },
                         )
                     }
-                }
-                .onRetrieved { contents ->
+                }.onRetrieved { contents ->
                     llmSpan.apply {
                         if (contents.isEmpty()) {
                             addEvent("No sources retrieved")
                             return@apply
                         }
 
-                        contents.groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
+                        contents
+                            .groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
                             .forEach { (category, contents) ->
                                 addEvent(
                                     "${contents.size} Sources used on category: '$category'",
@@ -108,7 +108,7 @@ class ChatService(
                                                 "${String.format("%02d", index)}_title",
                                                 "(${String.format("%.2f", content.score())}) ${
                                                     content.textSegment().metadata().getString(TextAttributes.TITLE)
-                                                }"
+                                                }",
                                             )
                                         }
                                     },

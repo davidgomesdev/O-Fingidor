@@ -54,7 +54,7 @@ import me.davidgomesdev.ofingidor.ui.silverSoftColor
 import me.davidgomesdev.ofingidor.ui.textMutedColor
 import me.davidgomesdev.ofingidor.ui.textSecondaryColor
 
-private const val textReaderUrl = "https://pessoa.davidgomes.blog/textReader"
+private const val TEXT_READER_URL = "https://pessoa.davidgomes.blog/textReader"
 
 /** A retrieved text: document icon, title and a small relevance bar. Hover (or tap on phones) shows details. */
 @Composable
@@ -76,29 +76,33 @@ internal fun SourceChip(
         content = {
             DisableSelection {
                 Row(
-                    modifier = Modifier
-                        .height(36.dp)
-                        .hoverable(interactionSource)
-                        .combinedClickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = {
-                                if (isMobile) {
-                                    onTap(if (isTapped) null else source.id)
-                                } else {
-                                    openUrl("$textReaderUrl/${source.id}")
-                                }
-                            },
-                            onLongClick = if (isMobile) {
-                                { openUrl("$textReaderUrl/${source.id}") }
-                            } else {
-                                null
-                            },
-                        )
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(if (showTooltip) purpleDeepColor.copy(alpha = 0.12f) else panelColor.copy(alpha = 0.6f))
-                        .border(1.dp, if (showTooltip) purpleColor.copy(alpha = 0.5f) else hairlineStrongColor, RoundedCornerShape(10.dp))
-                        .padding(horizontal = 12.dp),
+                    modifier =
+                        Modifier
+                            .height(36.dp)
+                            .hoverable(interactionSource)
+                            .combinedClickable(
+                                interactionSource = interactionSource,
+                                indication = null,
+                                onClick = {
+                                    if (isMobile) {
+                                        onTap(if (isTapped) null else source.id)
+                                    } else {
+                                        openUrl("$TEXT_READER_URL/${source.id}")
+                                    }
+                                },
+                                onLongClick =
+                                    if (isMobile) {
+                                        { openUrl("$TEXT_READER_URL/${source.id}") }
+                                    } else {
+                                        null
+                                    },
+                            ).clip(RoundedCornerShape(10.dp))
+                            .background(if (showTooltip) purpleDeepColor.copy(alpha = 0.12f) else panelColor.copy(alpha = 0.6f))
+                            .border(
+                                1.dp,
+                                if (showTooltip) purpleColor.copy(alpha = 0.5f) else hairlineStrongColor,
+                                RoundedCornerShape(10.dp),
+                            ).padding(horizontal = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -128,14 +132,15 @@ private fun DocumentIcon(color: Color) {
     Canvas(Modifier.size(14.dp)) {
         val u = size.width / 16f
         val stroke = Stroke(1.4.dp.toPx())
-        val page = Path().apply {
-            moveTo(3 * u, 2 * u)
-            lineTo(10 * u, 2 * u)
-            lineTo(13 * u, 5 * u)
-            lineTo(13 * u, 14 * u)
-            lineTo(3 * u, 14 * u)
-            close()
-        }
+        val page =
+            Path().apply {
+                moveTo(3 * u, 2 * u)
+                lineTo(10 * u, 2 * u)
+                lineTo(13 * u, 5 * u)
+                lineTo(13 * u, 14 * u)
+                lineTo(3 * u, 14 * u)
+                close()
+            }
         drawPath(page, color, style = stroke)
         drawLine(color, Offset(6 * u, 8 * u), Offset(10 * u, 8 * u), stroke.width)
         drawLine(color, Offset(6 * u, 11 * u), Offset(10 * u, 11 * u), stroke.width)
@@ -143,19 +148,22 @@ private fun DocumentIcon(color: Color) {
 }
 
 @Composable
-private fun RelevanceBar(score: Int, color: Color) {
+private fun RelevanceBar(
+    score: Int,
+    color: Color,
+) {
     Box(
         Modifier
             .width(34.dp)
             .height(3.dp)
             .clip(RoundedCornerShape(2.dp))
-            .background(silverColor.copy(alpha = 0.2f))
+            .background(silverColor.copy(alpha = 0.2f)),
     ) {
         Box(
             Modifier
                 .fillMaxHeight()
                 .width((34f * score.coerceIn(0, 100) / 100f).dp)
-                .background(color)
+                .background(color),
         )
     }
 }
@@ -163,11 +171,12 @@ private fun RelevanceBar(score: Int, color: Color) {
 @Composable
 private fun SourcesTooltip(source: Source) {
     Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(10.dp))
-            .background(inkColor)
-            .border(1.dp, hairlineColor, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(inkColor)
+                .border(1.dp, hairlineColor, RoundedCornerShape(10.dp))
+                .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         SourceTooltipRow("Autor", source.author)
@@ -177,7 +186,10 @@ private fun SourcesTooltip(source: Source) {
 }
 
 @Composable
-private fun SourceTooltipRow(label: String, value: String) {
+private fun SourceTooltipRow(
+    label: String,
+    value: String,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(label, color = textMutedColor, fontSize = 11.sp, fontWeight = FontWeight.Medium)
         Text(value, color = textSecondaryColor, fontSize = 11.sp)

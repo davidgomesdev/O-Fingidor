@@ -40,7 +40,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.LocalAppFonts
@@ -53,16 +52,18 @@ import me.davidgomesdev.ofingidor.ui.switchOffColor
 import me.davidgomesdev.ofingidor.ui.textMutedColor
 import me.davidgomesdev.ofingidor.ui.textPrimaryColor
 import me.davidgomesdev.ofingidor.ui.textSecondaryColor
+import kotlin.time.Duration.Companion.milliseconds
 
 data class AppHeaderIdentity(
     val portrait: PersonaPortrait,
     val personaLabel: String,
 )
 
-fun appHeaderIdentity(persona: Persona): AppHeaderIdentity = AppHeaderIdentity(
-    portrait = requireNotNull(personaPortrait(persona)) { "Missing portrait for $persona" },
-    personaLabel = persona.displayName.uppercase(),
-)
+fun appHeaderIdentity(persona: Persona): AppHeaderIdentity =
+    AppHeaderIdentity(
+        portrait = requireNotNull(personaPortrait(persona)) { "Missing portrait for $persona" },
+        personaLabel = persona.displayName.uppercase(),
+    )
 
 @Composable
 fun AppHeader(
@@ -78,10 +79,11 @@ fun AppHeader(
     val fonts = LocalAppFonts.current
     Column(Modifier.fillMaxWidth()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(if (isCompact) 64.dp else 88.dp)
-                .padding(horizontal = if (isCompact) 14.dp else 48.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(if (isCompact) 64.dp else 88.dp)
+                    .padding(horizontal = if (isCompact) 14.dp else 48.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
@@ -153,13 +155,14 @@ private fun HeaderButton(
 ) {
     val fonts = LocalAppFonts.current
     Row(
-        modifier = Modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, hairlineStrongColor, RoundedCornerShape(12.dp))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics { if (iconOnly) contentDescription = label }
-            .padding(horizontal = if (iconOnly) 13.dp else 16.dp),
+        modifier =
+            Modifier
+                .height(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, hairlineStrongColor, RoundedCornerShape(12.dp))
+                .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+                .semantics { if (iconOnly) contentDescription = label }
+                .padding(horizontal = if (iconOnly) 13.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -171,7 +174,10 @@ private fun HeaderButton(
 }
 
 @Composable
-private fun PlusIcon(color: Color = textSecondaryColor, size: Dp = 16.dp) {
+private fun PlusIcon(
+    color: Color = textSecondaryColor,
+    size: Dp = 16.dp,
+) {
     Canvas(Modifier.size(size)) {
         val stroke = 1.5.dp.toPx()
         val w = this.size.width
@@ -181,7 +187,10 @@ private fun PlusIcon(color: Color = textSecondaryColor, size: Dp = 16.dp) {
 }
 
 @Composable
-private fun ShareIcon(color: Color = textSecondaryColor, size: Dp = 16.dp) {
+private fun ShareIcon(
+    color: Color = textSecondaryColor,
+    size: Dp = 16.dp,
+) {
     Canvas(Modifier.size(size)) {
         val stroke = 1.5.dp.toPx()
         val u = this.size.width / 16f
@@ -195,20 +204,24 @@ private fun ShareIcon(color: Color = textSecondaryColor, size: Dp = 16.dp) {
 }
 
 @Composable
-private fun DevModeToggle(active: Boolean, onToggle: () -> Unit, isCompact: Boolean) {
+private fun DevModeToggle(
+    active: Boolean,
+    onToggle: () -> Unit,
+    isCompact: Boolean,
+) {
     val fonts = LocalAppFonts.current
     val knobOffset by animateDpAsState(if (active) 16.dp else 0.dp)
     val knobColor by animateColorAsState(if (active) amberColor else switchOffColor)
     Row(
-        modifier = Modifier
-            .height(44.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(role = Role.Switch, onClick = onToggle)
-            .semantics {
-                contentDescription = "Modo DEV"
-                stateDescription = if (active) "Ligado" else "Desligado"
-            }
-            .padding(horizontal = if (isCompact) 8.dp else 14.dp),
+        modifier =
+            Modifier
+                .height(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .clickable(role = Role.Switch, onClick = onToggle)
+                .semantics {
+                    contentDescription = "Modo DEV"
+                    stateDescription = if (active) "Ligado" else "Desligado"
+                }.padding(horizontal = if (isCompact) 8.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -233,14 +246,17 @@ private fun DevModeToggle(active: Boolean, onToggle: () -> Unit, isCompact: Bool
                     .offset(x = knobOffset)
                     .size(12.dp)
                     .clip(CircleShape)
-                    .background(knobColor)
+                    .background(knobColor),
             )
         }
     }
 }
 
 @Composable
-private fun ShareButton(onClick: () -> Unit, isCompact: Boolean) {
+private fun ShareButton(
+    onClick: () -> Unit,
+    isCompact: Boolean,
+) {
     var shared by remember { mutableStateOf(false) }
 
     LaunchedEffect(shared) {

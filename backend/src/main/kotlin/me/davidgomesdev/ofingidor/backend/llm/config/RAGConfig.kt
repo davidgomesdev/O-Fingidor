@@ -22,7 +22,6 @@ interface RAGConfig {
 
     fun semanticChunking(): SemanticChunkingConfig
 
-
     fun identification(): IdentificationConfig
 
     interface ResultsConfig {
@@ -56,14 +55,19 @@ interface RAGConfig {
 
     interface IdentificationConfig {
         fun minScore(): Double
+
         fun maxCandidates(): Int
+
         fun overFetch(): Int
+
         fun maxChars(): Int
     }
 }
 
 @ApplicationScoped
-class RAGConfigProducer(val config: RAGConfig) {
+class RAGConfigProducer(
+    val config: RAGConfig,
+) {
     @Singleton
     @Suppress("unused")
     fun qdrantClient(): QdrantClient =

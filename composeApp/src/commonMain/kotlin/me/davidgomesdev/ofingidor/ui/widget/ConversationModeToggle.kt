@@ -39,11 +39,12 @@ fun ConversationModeToggle(
 ) {
     val fonts = LocalAppFonts.current
     Row(
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(panelColor.copy(alpha = 0.7f))
-            .border(1.dp, hairlineColor, RoundedCornerShape(999.dp))
-            .padding(4.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(999.dp))
+                .background(panelColor.copy(alpha = 0.7f))
+                .border(1.dp, hairlineColor, RoundedCornerShape(999.dp))
+                .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         ConversationMode.entries.forEach { option ->
@@ -51,17 +52,20 @@ fun ConversationModeToggle(
             val background by animateColorAsState(if (isSelected) purpleDeepColor.copy(alpha = 0.2f) else Color.Transparent)
             val textColor by animateColorAsState(if (isSelected) textPrimaryColor else textMutedColor)
             Box(
-                modifier = Modifier
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(background)
-                    .then(
-                        if (isSelected) Modifier.border(1.dp, purpleColor.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
-                        else Modifier
-                    )
-                    .clickable(role = Role.Tab) { onModeSelected(option) }
-                    .semantics { selected = isSelected }
-                    .padding(horizontal = 22.dp),
+                modifier =
+                    Modifier
+                        .height(40.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(background)
+                        .then(
+                            if (isSelected) {
+                                Modifier.border(1.dp, purpleColor.copy(alpha = 0.35f), RoundedCornerShape(999.dp))
+                            } else {
+                                Modifier
+                            },
+                        ).clickable(role = Role.Tab) { onModeSelected(option) }
+                        .semantics { selected = isSelected }
+                        .padding(horizontal = 22.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(

@@ -41,32 +41,39 @@ import ofingidor.composeapp.generated.resources.persona_o_fingidor
 import ofingidor.composeapp.generated.resources.persona_ricardo_reis
 import org.jetbrains.compose.resources.painterResource
 
-private val portraits = mapOf(
-    Persona.FERNANDO_PESSOA to PersonaPortrait(
-        Res.drawable.persona_fernando_pessoa,
-        "Retrato de Fernando Pessoa",
-    ),
-    Persona.ALBERTO_CAEIRO to PersonaPortrait(
-        Res.drawable.persona_alberto_caeiro,
-        "Retrato de Alberto Caeiro",
-    ),
-    Persona.ALVARO_DE_CAMPOS to PersonaPortrait(
-        Res.drawable.persona_alvaro_de_campos,
-        "Retrato de Álvaro de Campos",
-    ),
-    Persona.RICARDO_REIS to PersonaPortrait(
-        Res.drawable.persona_ricardo_reis,
-        "Retrato de Ricardo Reis",
-    ),
-    Persona.BERNARDO_SOARES to PersonaPortrait(
-        Res.drawable.persona_bernardo_soares,
-        "Retrato de Bernardo Soares",
-    ),
-    Persona.O_FINGIDOR to PersonaPortrait(
-        Res.drawable.persona_o_fingidor,
-        "Retrato de O Fingidor",
-    ),
-)
+private val portraits =
+    mapOf(
+        Persona.FERNANDO_PESSOA to
+            PersonaPortrait(
+                Res.drawable.persona_fernando_pessoa,
+                "Retrato de Fernando Pessoa",
+            ),
+        Persona.ALBERTO_CAEIRO to
+            PersonaPortrait(
+                Res.drawable.persona_alberto_caeiro,
+                "Retrato de Alberto Caeiro",
+            ),
+        Persona.ALVARO_DE_CAMPOS to
+            PersonaPortrait(
+                Res.drawable.persona_alvaro_de_campos,
+                "Retrato de Álvaro de Campos",
+            ),
+        Persona.RICARDO_REIS to
+            PersonaPortrait(
+                Res.drawable.persona_ricardo_reis,
+                "Retrato de Ricardo Reis",
+            ),
+        Persona.BERNARDO_SOARES to
+            PersonaPortrait(
+                Res.drawable.persona_bernardo_soares,
+                "Retrato de Bernardo Soares",
+            ),
+        Persona.O_FINGIDOR to
+            PersonaPortrait(
+                Res.drawable.persona_o_fingidor,
+                "Retrato de O Fingidor",
+            ),
+    )
 
 data class PortraitChipLayout(
     val label: String,
@@ -95,8 +102,7 @@ data class DebatePortraitIdentity(
 val defaultAvatarSize: Dp = 28.dp
 private val compactChatAvatarSize: Dp = 24.dp
 
-fun resolveChatAvatarSize(identity: ChatPortraitIdentity): Dp =
-    if (identity.compact) compactChatAvatarSize else defaultAvatarSize
+fun resolveChatAvatarSize(identity: ChatPortraitIdentity): Dp = if (identity.compact) compactChatAvatarSize else defaultAvatarSize
 
 enum class AvatarContentDescriptionMode {
     MEANINGFUL,
@@ -107,35 +113,43 @@ fun resolveAvatarContentDescription(
     portrait: PersonaPortrait,
     requestedContentDescription: String?,
     mode: AvatarContentDescriptionMode,
-): String? = when (mode) {
-    AvatarContentDescriptionMode.MEANINGFUL -> requestedContentDescription ?: portrait.contentDescription
-    AvatarContentDescriptionMode.DECORATIVE -> null
-}
+): String? =
+    when (mode) {
+        AvatarContentDescriptionMode.MEANINGFUL -> requestedContentDescription ?: portrait.contentDescription
+        AvatarContentDescriptionMode.DECORATIVE -> null
+    }
 
 @Suppress("UNUSED_PARAMETER")
-fun portraitChipLayout(persona: Persona, isCompact: Boolean, isSelected: Boolean): PortraitChipLayout {
+fun portraitChipLayout(
+    persona: Persona,
+    isCompact: Boolean,
+    isSelected: Boolean,
+): PortraitChipLayout {
     val category = persona.category
-    val backgroundColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipColor
-        isSelected && category == PersonaCategory.DEV -> devChipColor
-        isSelected -> heteronymChipColor
-        else -> Color.Transparent
-    }
-    val borderColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipBorderColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipBorderColor
-        isSelected && category == PersonaCategory.DEV -> devChipBorderColor
-        isSelected -> focusedIndicatorColor
-        else -> focusedIndicatorColor.copy(alpha = 0.3f)
-    }
-    val labelColor = when {
-        isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipTextColor
-        isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipTextColor
-        isSelected && category == PersonaCategory.DEV -> devChipTextColor
-        isSelected -> Color.White
-        else -> Color.White.copy(alpha = 0.4f)
-    }
+    val backgroundColor =
+        when {
+            isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipColor
+            isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipColor
+            isSelected && category == PersonaCategory.DEV -> devChipColor
+            isSelected -> heteronymChipColor
+            else -> Color.Transparent
+        }
+    val borderColor =
+        when {
+            isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipBorderColor
+            isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipBorderColor
+            isSelected && category == PersonaCategory.DEV -> devChipBorderColor
+            isSelected -> focusedIndicatorColor
+            else -> focusedIndicatorColor.copy(alpha = 0.3f)
+        }
+    val labelColor =
+        when {
+            isSelected && category == PersonaCategory.ORTONIMO -> orthonymChipTextColor
+            isSelected && category == PersonaCategory.SEMI_HETERONIMO -> semiHeteronymChipTextColor
+            isSelected && category == PersonaCategory.DEV -> devChipTextColor
+            isSelected -> Color.White
+            else -> Color.White.copy(alpha = 0.4f)
+        }
 
     return PortraitChipLayout(
         label = persona.displayName,
@@ -148,17 +162,19 @@ fun portraitChipLayout(persona: Persona, isCompact: Boolean, isSelected: Boolean
     )
 }
 
-fun personaIdentityChipModel(persona: Persona, isCompact: Boolean, isSelected: Boolean): PersonaIdentityChipModel =
+fun personaIdentityChipModel(
+    persona: Persona,
+    isCompact: Boolean,
+    isSelected: Boolean,
+): PersonaIdentityChipModel =
     PersonaIdentityChipModel(
         persona = persona,
         layout = portraitChipLayout(persona = persona, isCompact = isCompact, isSelected = isSelected),
     )
 
-fun chatPortraitIdentity(persona: Persona): ChatPortraitIdentity =
-    ChatPortraitIdentity(label = persona.displayName)
+fun chatPortraitIdentity(persona: Persona): ChatPortraitIdentity = ChatPortraitIdentity(label = persona.displayName)
 
-fun debatePortraitIdentity(persona: Persona): DebatePortraitIdentity =
-    DebatePortraitIdentity(label = persona.displayName)
+fun debatePortraitIdentity(persona: Persona): DebatePortraitIdentity = DebatePortraitIdentity(label = persona.displayName)
 
 @Composable
 fun PersonaAvatar(
@@ -172,15 +188,16 @@ fun PersonaAvatar(
     Box(
         modifier
             .clip(CircleShape)
-            .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape)
+            .border(1.dp, Color.White.copy(alpha = 0.15f), CircleShape),
     ) {
         Image(
             painter = painterResource(portrait.resource),
-            contentDescription = resolveAvatarContentDescription(
-                portrait = portrait,
-                requestedContentDescription = contentDescription,
-                mode = contentDescriptionMode,
-            ),
+            contentDescription =
+                resolveAvatarContentDescription(
+                    portrait = portrait,
+                    requestedContentDescription = contentDescription,
+                    mode = contentDescriptionMode,
+                ),
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
             colorFilter = colorFilter,
@@ -193,10 +210,11 @@ fun PersonaAvatar(
  * The portraits carry the persona's name printed under the face. Zooming in on the face keeps
  * that text out of small circular crops.
  */
-fun Modifier.portraitZoom(): Modifier = graphicsLayer {
-    scaleX = 1.85f
-    scaleY = 1.85f
-    transformOrigin = TransformOrigin(0.5f, 0.36f)
-}
+fun Modifier.portraitZoom(): Modifier =
+    graphicsLayer {
+        scaleX = 1.85f
+        scaleY = 1.85f
+        transformOrigin = TransformOrigin(0.5f, 0.36f)
+    }
 
 fun personaPortrait(persona: Persona): PersonaPortrait? = portraits[persona]
