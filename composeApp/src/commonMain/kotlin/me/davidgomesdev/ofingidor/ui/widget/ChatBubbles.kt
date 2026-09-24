@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.InlineTextContent
 import androidx.compose.foundation.text.appendInlineContent
@@ -34,77 +36,172 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import me.davidgomesdev.ofingidor.shared.dto.Persona
-import me.davidgomesdev.ofingidor.ui.aiBubbleBackgroundColor
-import me.davidgomesdev.ofingidor.ui.aiBubbleBorder
-import me.davidgomesdev.ofingidor.ui.debateBubblePalette
+import me.davidgomesdev.ofingidor.shared.dto.PersonaCategory
+import me.davidgomesdev.ofingidor.ui.LocalAppFonts
+import me.davidgomesdev.ofingidor.ui.amberColor
+import me.davidgomesdev.ofingidor.ui.debateSidePalette
 import me.davidgomesdev.ofingidor.ui.errorBubbleBackgroundColor
 import me.davidgomesdev.ofingidor.ui.errorBubbleBorderColor
 import me.davidgomesdev.ofingidor.ui.errorBubbleTextColor
-import me.davidgomesdev.ofingidor.ui.inputCardBackgroundColor
+import me.davidgomesdev.ofingidor.ui.hairlineColor
+import me.davidgomesdev.ofingidor.ui.hairlineStrongColor
 import me.davidgomesdev.ofingidor.ui.model.DebateSide
 import me.davidgomesdev.ofingidor.ui.model.Source
-import me.davidgomesdev.ofingidor.ui.personaLabelColor
-import me.davidgomesdev.ofingidor.ui.userBubbleBorder
+import me.davidgomesdev.ofingidor.ui.purpleColor
+import me.davidgomesdev.ofingidor.ui.purpleDeepColor
+import me.davidgomesdev.ofingidor.ui.silverColor
+import me.davidgomesdev.ofingidor.ui.surfaceColor
+import me.davidgomesdev.ofingidor.ui.surfaceDeepColor
+import me.davidgomesdev.ofingidor.ui.surfaceRaisedColor
+import me.davidgomesdev.ofingidor.ui.textBodyColor
+import me.davidgomesdev.ofingidor.ui.textMutedColor
+import me.davidgomesdev.ofingidor.ui.textPrimaryColor
 
-private val accentColorLight = Color(0xFFA07FD4)
+private val userBubbleShape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomStart = 20.dp, bottomEnd = 6.dp)
+
+private fun personaAccent(persona: Persona): Color = if (persona == Persona.O_FINGIDOR) amberColor else purpleColor
+
+internal fun categoryCaption(persona: Persona): String = when (persona.category) {
+    PersonaCategory.HETERONIMO -> "HETERÓNIMO"
+    else -> persona.category.label.uppercase()
+}
 
 @Composable
 fun UserBubble(question: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.End,
-    ) {
-        Column(
-            modifier = Modifier.widthIn(max = 460.dp),
-            horizontalAlignment = Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+        Box(
+            Modifier
+                .widthIn(max = 520.dp)
+                .background(purpleDeepColor.copy(alpha = 0.12f), userBubbleShape)
+                .border(1.dp, purpleColor.copy(alpha = 0.4f), userBubbleShape)
+                .padding(horizontal = 20.dp, vertical = 14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 2.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                    .background(inputCardBackgroundColor)
-                    .border(
-                        width = 2.dp,
-                        color = userBubbleBorder,
-                        shape = RoundedCornerShape(
-                            topStart = 10.dp,
-                            topEnd = 2.dp,
-                            bottomStart = 10.dp,
-                            bottomEnd = 10.dp
-                        )
-                    )
-                    .padding(horizontal = 13.dp, vertical = 9.dp)
-            ) {
-                BubbleText(question = question)
+            Text(question, color = textPrimaryColor, fontSize = 16.sp, lineHeight = 24.sp)
+        }
+    }
+}
+
+/** The debate question, centred between the two voices. */
+@Composable
+fun CenteredUserBubble(question: String) {
+    val fonts = LocalAppFonts.current
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        Row(
+            Modifier
+                .widthIn(max = 620.dp)
+                .background(surfaceColor.copy(alpha = 0.92f), RoundedCornerShape(999.dp))
+                .border(1.dp, hairlineStrongColor, RoundedCornerShape(999.dp))
+                .padding(horizontal = 22.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            DisableSelection {
+                Text("PERGUNTA", color = textMutedColor, fontFamily = fonts.mono, fontSize = 10.sp, letterSpacing = 2.6.sp)
             }
+            Text(
+                question,
+                color = textPrimaryColor,
+                fontFamily = fonts.serif,
+                fontStyle = FontStyle.Italic,
+                fontSize = 21.sp,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
 
 @Composable
-fun CenteredUserBubble(question: String) {
+private fun PersonaSpeakerRow(
+    persona: Persona,
+    accent: Color,
+    isLoading: Boolean,
+    hasText: Boolean,
+    alignEnd: Boolean = false,
+) {
+    val fonts = LocalAppFonts.current
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(
-            modifier = Modifier
-                .widthIn(max = 460.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(inputCardBackgroundColor)
-                .border(2.dp, userBubbleBorder, RoundedCornerShape(10.dp))
-                .padding(horizontal = 13.dp, vertical = 9.dp),
-        ) {
-            BubbleText(question = question)
+        val avatar: @Composable () -> Unit = { GlowingAvatar(persona, accent, pulsing = isLoading) }
+        if (!alignEnd) avatar()
+        if (isLoading && !hasText) {
+            ShimmerText("A invocar ${persona.displayName}…", 20.sp, italicSerif = true)
+        } else {
+            Text(
+                persona.displayName,
+                color = accent,
+                fontFamily = fonts.serif,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 20.sp,
+            )
+            if (!alignEnd) {
+                DisableSelection {
+                    Text(categoryCaption(persona), color = textMutedColor, fontFamily = fonts.mono, fontSize = 10.sp, letterSpacing = 2.4.sp)
+                }
+            }
+        }
+        if (alignEnd) avatar()
+    }
+}
+
+@Composable
+private fun GlowingAvatar(persona: Persona, accent: Color, pulsing: Boolean, size: Dp = 34.dp) {
+    val halo by rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(2_800)))
+    Box(
+        Modifier
+            .size(size)
+            .drawBehind {
+                drawCircle(
+                    Brush.radialGradient(listOf(accent.copy(alpha = 0.45f), Color.Transparent), radius = this.size.width),
+                    radius = this.size.width,
+                )
+                if (pulsing) {
+                    drawCircle(
+                        accent.copy(alpha = 0.8f * (1f - halo)),
+                        radius = (this.size.width / 2f + 4.dp.toPx()) * (1f + 0.5f * halo),
+                        style = Stroke(1.dp.toPx()),
+                    )
+                }
+            }
+    ) {
+        PersonaAvatar(
+            persona = persona,
+            modifier = Modifier.fillMaxSize().border(1.5.dp, accent, CircleShape),
+            contentDescriptionMode = AvatarContentDescriptionMode.DECORATIVE,
+        )
+    }
+}
+
+@Composable
+private fun BreathingDots(accent: Color) {
+    val transition = rememberInfiniteTransition()
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(start = 46.dp)) {
+        listOf(accent, silverColor, accent).forEachIndexed { index, color ->
+            val scale by transition.animateFloat(
+                initialValue = 0.8f,
+                targetValue = 1.25f,
+                animationSpec = infiniteRepeatable(tween(900, delayMillis = index * 300), RepeatMode.Reverse),
+            )
+            Box(Modifier.size(6.dp).scale(scale).background(color, CircleShape))
         }
     }
 }
@@ -117,51 +214,22 @@ fun AiBubble(
     sources: List<Source>,
     isLoading: Boolean,
 ) {
-    val identity = chatPortraitIdentity(persona)
-    val inlineContent = if (isLoading) {
-        mapOf(
-            "cursor" to InlineTextContent(
-                placeholder = Placeholder(2.sp, 14.sp, PlaceholderVerticalAlign.TextCenter)
-            ) { BlinkingCursor() }
-        )
-    } else {
-        emptyMap()
-    }
-
-    val annotatedText = buildAnnotatedString {
-        append(message)
-        if (isLoading) appendInlineContent("cursor", "|")
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        PersonaAvatar(
-            persona = persona,
-            modifier = Modifier.size(resolveChatAvatarSize(identity)),
-            contentDescription = identity.label,
-        )
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 560.dp)
-                    .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-                    .background(aiBubbleBackgroundColor)
-                    .border(
-                        width = 2.dp,
-                        color = aiBubbleBorder,
-                        shape = RoundedCornerShape(
-                            topStart = 2.dp,
-                            topEnd = 10.dp,
-                            bottomStart = 10.dp,
-                            bottomEnd = 10.dp
-                        )
-                    )
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+    val fonts = LocalAppFonts.current
+    val accent = personaAccent(persona)
+    val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        PersonaSpeakerRow(persona, accent, isLoading, hasText = message.isNotEmpty())
+        if (message.isEmpty() && isLoading) {
+            BreathingDots(accent)
+        } else {
+            Box(
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .background(Brush.linearGradient(listOf(surfaceRaisedColor.copy(alpha = 0.92f), surfaceDeepColor.copy(alpha = 0.92f))), shape)
+                    .border(1.dp, hairlineColor, shape)
+                    .padding(horizontal = 28.dp, vertical = 24.dp)
             ) {
-                BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
+                StreamingText(message, isLoading, fonts.serif, textAlign = TextAlign.Start)
             }
             BubbleSources(sources = sources)
         }
@@ -176,48 +244,37 @@ fun DebatePersonaBubble(
     sources: List<Source>,
     isLoading: Boolean,
 ) {
-    val palette = debateBubblePalette(speaker)
-    val shape = when (side) {
-        DebateSide.LEFT -> RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
-        DebateSide.RIGHT -> RoundedCornerShape(topStart = 10.dp, topEnd = 2.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
+    val fonts = LocalAppFonts.current
+    val palette = debateSidePalette(side)
+    val alignEnd = side == DebateSide.RIGHT
+    val shape = if (alignEnd) {
+        RoundedCornerShape(topStart = 22.dp, topEnd = 6.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
+    } else {
+        RoundedCornerShape(topStart = 6.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
     }
-    val inlineContent = loadingInlineContent(isLoading)
-    val annotatedText = loadingAnnotatedText(message, isLoading)
-
     Column(
         modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 4.dp),
-        ) {
-            val identity = debatePortraitIdentity(speaker)
-            PersonaAvatar(
-                persona = speaker,
-                contentDescriptionMode = AvatarContentDescriptionMode.DECORATIVE,
-            )
-            Text(
-                text = identity.label,
-                color = palette.label,
-                fontSize = 10.sp,
-            )
-        }
-        Column(
-            horizontalAlignment = if (side == DebateSide.LEFT) Alignment.Start else Alignment.End,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Column(
-                modifier = Modifier
+        PersonaSpeakerRow(speaker, palette.label, isLoading, hasText = message.isNotEmpty(), alignEnd = alignEnd)
+        if (message.isEmpty() && isLoading) {
+            BreathingDots(palette.accent)
+        } else {
+            Box(
+                Modifier
                     .widthIn(max = 560.dp)
-                    .clip(shape)
-                    .background(palette.background)
-                    .border(2.dp, palette.border, shape)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .background(Brush.linearGradient(listOf(palette.bubbleTop, surfaceColor.copy(alpha = 0.9f))), shape)
+                    .border(1.dp, palette.border, shape)
+                    .padding(horizontal = 24.dp, vertical = 20.dp)
             ) {
-                BubbleMessageText(text = annotatedText, inlineContent = inlineContent)
+                StreamingText(
+                    message,
+                    isLoading,
+                    fonts.serif,
+                    textAlign = if (alignEnd) TextAlign.End else TextAlign.Start,
+                    fontSize = 21,
+                )
             }
             BubbleSources(sources = sources)
         }
@@ -225,99 +282,40 @@ fun DebatePersonaBubble(
 }
 
 @Composable
-private fun ExpandToggleChip(expanded: Boolean, hiddenCount: Int, onClick: () -> Unit) {
-    val label = if (expanded) "− menos" else "+$hiddenCount mais"
-    DisableSelection {
-        Text(
-            label,
-            color = accentColorLight.copy(alpha = 0.8f),
-            fontSize = 11.sp,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(accentColorLight.copy(alpha = 0.10f))
-                .border(1.dp, accentColorLight.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
-                .padding(horizontal = 8.dp, vertical = 3.dp)
-                .clickable(onClick = onClick),
-        )
-    }
-}
-
-@Composable
-private fun BubbleText(question: String) {
-    Text(
-        text = question,
-        color = Color(0xFFCCCCCC),
-        fontSize = 14.sp,
-    )
-}
-
-@Composable
-private fun BubbleMessageText(
-    text: androidx.compose.ui.text.AnnotatedString,
-    inlineContent: Map<String, InlineTextContent>,
+private fun StreamingText(
+    message: String,
+    isLoading: Boolean,
+    family: FontFamily,
+    textAlign: TextAlign,
+    fontSize: Int = 21,
 ) {
-    Text(
-        text = text,
-        color = Color(0xFFCCCCCC),
-        fontSize = 14.sp,
-        lineHeight = 22.sp,
-        inlineContent = inlineContent,
-    )
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun BubbleSources(sources: List<Source>) {
-    if (sources.isEmpty()) return
-
-    var expanded by remember { mutableStateOf(false) }
-    var tappedSourceId by remember { mutableStateOf<Long?>(null) }
-    val visibleSources = if (sources.size > 3 && !expanded) sources.take(3) else sources
-
-    FlowRow(
-        modifier = Modifier.widthIn(max = 560.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        visibleSources.forEach { source ->
-            key(source.id) {
-                SourceChip(
-                    source = source,
-                    tappedSourceId = tappedSourceId,
-                    onTap = { tappedSourceId = it },
-                )
-            }
-        }
-        if (sources.size > 3) {
-            ExpandToggleChip(
-                expanded = expanded,
-                hiddenCount = sources.size - 3,
-                onClick = { expanded = !expanded },
-            )
-        }
-    }
-}
-
-private fun loadingInlineContent(isLoading: Boolean): Map<String, InlineTextContent> =
-    if (isLoading) {
+    val inlineContent = if (isLoading) {
         mapOf(
             "cursor" to InlineTextContent(
-                placeholder = Placeholder(2.sp, 14.sp, PlaceholderVerticalAlign.TextCenter)
+                placeholder = Placeholder(2.sp, fontSize.sp, PlaceholderVerticalAlign.TextCenter)
             ) { BlinkingCursor() }
         )
     } else {
         emptyMap()
     }
-
-private fun loadingAnnotatedText(message: String, isLoading: Boolean) = buildAnnotatedString {
-    append(message)
-    if (isLoading) appendInlineContent("cursor", "|")
+    val text: AnnotatedString = buildAnnotatedString {
+        append(message)
+        if (isLoading) appendInlineContent("cursor", "|")
+    }
+    Text(
+        text = text,
+        color = textBodyColor,
+        fontFamily = family,
+        fontSize = fontSize.sp,
+        lineHeight = (fontSize * 1.55f).sp,
+        textAlign = textAlign,
+        inlineContent = inlineContent,
+    )
 }
 
 @Composable
 private fun BlinkingCursor() {
-    val infiniteTransition = rememberInfiniteTransition()
-    val cursorAlpha by infiniteTransition.animateFloat(
+    val cursorAlpha by rememberInfiniteTransition().animateFloat(
         initialValue = 1f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -335,37 +333,84 @@ private fun BlinkingCursor() {
         modifier = Modifier
             .fillMaxSize()
             .alpha(cursorAlpha)
-            .background(personaLabelColor)
+            .background(purpleColor)
     )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BubbleSources(sources: List<Source>) {
+    if (sources.isEmpty()) return
+    val fonts = LocalAppFonts.current
+
+    var expanded by remember { mutableStateOf(false) }
+    var tappedSourceId by remember { mutableStateOf<Long?>(null) }
+    val visibleSources = if (sources.size > 3 && !expanded) sources.take(3) else sources
+
+    FlowRow(
+        modifier = Modifier.widthIn(max = 760.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        DisableSelection {
+            Text("FONTES", color = textMutedColor, fontFamily = fonts.mono, fontSize = 10.sp, letterSpacing = 2.6.sp)
+        }
+        visibleSources.forEachIndexed { index, source ->
+            key(source.id) {
+                SourceChip(
+                    source = source,
+                    highlighted = index == 0,
+                    tappedSourceId = tappedSourceId,
+                    onTap = { tappedSourceId = it },
+                )
+            }
+        }
+        if (sources.size > 3) {
+            ExpandToggleChip(
+                expanded = expanded,
+                hiddenCount = sources.size - 3,
+                onClick = { expanded = !expanded },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandToggleChip(expanded: Boolean, hiddenCount: Int, onClick: () -> Unit) {
+    val fonts = LocalAppFonts.current
+    DisableSelection {
+        Text(
+            if (expanded) "− menos" else "+$hiddenCount mais",
+            color = textMutedColor,
+            fontFamily = fonts.mono,
+            fontSize = 11.sp,
+            modifier = Modifier
+                .clickable(role = Role.Button, onClick = onClick)
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+        )
+    }
 }
 
 @Composable
 fun ErrorBubble(errorDetail: String? = null) {
+    val shape = RoundedCornerShape(topStart = 6.dp, topEnd = 22.dp, bottomStart = 22.dp, bottomEnd = 22.dp)
     Column(
         modifier = Modifier
             .widthIn(max = 560.dp)
-            .clip(RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp))
-            .background(errorBubbleBackgroundColor)
-            .border(
-                width = 1.dp,
-                color = errorBubbleBorderColor,
-                shape = RoundedCornerShape(topStart = 2.dp, topEnd = 10.dp, bottomStart = 10.dp, bottomEnd = 10.dp)
-            )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .background(errorBubbleBackgroundColor, shape)
+            .border(1.dp, errorBubbleBorderColor, shape)
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Text(
-            "Algo correu mal. Tenta de novo.",
-            color = errorBubbleTextColor,
-            fontSize = 13.sp,
-        )
+        Text("Algo correu mal. Tenta de novo.", color = errorBubbleTextColor, fontSize = 14.sp)
         if (errorDetail != null) {
             SelectionContainer {
                 Text(
                     errorDetail,
-                    color = errorBubbleTextColor.copy(alpha = 0.6f),
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
+                    color = errorBubbleTextColor.copy(alpha = 0.7f),
+                    fontSize = 11.sp,
+                    fontFamily = LocalAppFonts.current.mono,
                 )
             }
         }

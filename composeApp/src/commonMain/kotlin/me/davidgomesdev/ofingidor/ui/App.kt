@@ -3,19 +3,12 @@ package me.davidgomesdev.ofingidor.ui
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,12 +20,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.random.Random
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import me.davidgomesdev.ofingidor.shared.dto.ChatEvent
@@ -42,25 +34,28 @@ import me.davidgomesdev.ofingidor.ui.model.ConversationMode
 import me.davidgomesdev.ofingidor.ui.model.ConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.DebateQuestionEntry
+import me.davidgomesdev.ofingidor.ui.model.DebateSide
 import me.davidgomesdev.ofingidor.ui.model.DebateTurn
 import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.Source
+import me.davidgomesdev.ofingidor.ui.model.chatHeroQuote
+import me.davidgomesdev.ofingidor.ui.model.debateHeroQuotes
+import me.davidgomesdev.ofingidor.ui.model.nextQuoteIndex
+import me.davidgomesdev.ofingidor.ui.model.pick
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
 import me.davidgomesdev.ofingidor.ui.service.formatChatConversation
 import me.davidgomesdev.ofingidor.ui.service.formatDebateConversation
 import me.davidgomesdev.ofingidor.ui.service.shareConversation
 import me.davidgomesdev.ofingidor.ui.widget.AiBubble
 import me.davidgomesdev.ofingidor.ui.widget.AppHeader
+import me.davidgomesdev.ofingidor.ui.widget.Atmosphere
 import me.davidgomesdev.ofingidor.ui.widget.CenteredUserBubble
-import me.davidgomesdev.ofingidor.ui.widget.ConversationModeToggle
 import me.davidgomesdev.ofingidor.ui.widget.DebatePersonaBubble
-import me.davidgomesdev.ofingidor.ui.widget.DebatePicker
 import me.davidgomesdev.ofingidor.ui.widget.ErrorBubble
-import me.davidgomesdev.ofingidor.ui.widget.PersonaTab
-import me.davidgomesdev.ofingidor.ui.widget.ThinkInputCard
 import me.davidgomesdev.ofingidor.ui.widget.UserBubble
 
-private val COMPACT_BREAKPOINT = 500.dp
+private val COMPACT_BREAKPOINT = 600.dp
+private val WIDE_BREAKPOINT = 1080.dp
 
 internal data class DevModeDisabledState(
     val selectedPersona: Persona,
@@ -132,7 +127,7 @@ internal fun debateFeedItemCount(
 fun App() {
     val thinkAPI = remember { ThinkAPI() }
 
-    MaterialTheme(typography = RobotoTypography()) {
+    MysticTheme {
         var inputText by remember { mutableStateOf("") }
         val turns = remember { mutableStateListOf<ConversationTurn>() }
         var ongoingTurn by remember { mutableStateOf<OngoingConversationTurn?>(null) }
@@ -150,6 +145,8 @@ fun App() {
         var ongoingDebateQuestion by remember { mutableStateOf<String?>(null) }
         var ongoingDebateStartOffset by remember { mutableStateOf<Int?>(null) }
         var debateError by remember { mutableStateOf<Throwable?>(null) }
+        var debateNextSlot by remember { mutableStateOf(DebateSide.RIGHT) }
+        var debateQuoteIndex by remember { mutableStateOf(Random.nextInt(debateHeroQuotes.size)) }
         val scrollState = rememberScrollState()
         val coroutineScope = rememberCoroutineScope()
 
@@ -237,6 +234,9 @@ fun App() {
             if (mode != conversationMode) {
                 resetConversationState()
                 conversationMode = mode
+                if (mode == ConversationMode.DEBATE) {
+                    debateQuoteIndex = nextQuoteIndex(debateQuoteIndex, debateHeroQuotes.size) { Random.nextInt(it) }
+                }
             }
         }
 
@@ -312,94 +312,90 @@ fun App() {
             }
         }
 
-        BoxWithConstraints(
-            modifier =
-                Modifier
-                    .background(backgroundColor)
-                    .fillMaxSize(),
-            contentAlignment = Alignment.TopCenter,
-        ) {
-            val isCompact = maxWidth < COMPACT_BREAKPOINT
-            val horizontalPadding = if (isCompact) 12.dp else 24.dp
+        val onPersonaPicked: (Persona) -> Unit = { persona ->
+            when (conversationMode) {
+                ConversationMode.CHAT -> selectedPersona = persona
+                ConversationMode.DEBATE -> {
+                    val pick = debatePair.pick(persona, debateNextSlot)
+                    debatePair = pick.pair
+                    debateNextSlot = pick.nextSlot
+                }
+            }
+        }
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.sizeIn(maxWidth = 700.dp),
-            ) {
-                StickyHeader(
-                    selectedPersona = selectedPersona,
-                    conversationMode = conversationMode,
-                    isDevMode = isDevMode,
+        BoxWithConstraints(Modifier.fillMaxSize().background(inkColor)) {
+            val isCompact = maxWidth < COMPACT_BREAKPOINT
+            val isWide = maxWidth >= WIDE_BREAKPOINT
+
+            Atmosphere()
+            Column(Modifier.fillMaxSize()) {
+                AppHeader(
+                    mode = conversationMode,
+                    onModeSelected = onModeSelected,
+                    devMode = isDevMode,
                     hasConversationStarted = hasConversationStarted,
                     onDevModeToggle = onDevModeToggle,
                     onNewConversation = onNewConversation,
                     onShare = onShare,
-                    onModeSelected = onModeSelected,
                     isCompact = isCompact,
                 )
 
-                Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .verticalScroll(scrollState)
-                            .padding(horizontal = horizontalPadding, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    if (!hasConversationStarted) {
-                        when (conversationMode) {
-                            ConversationMode.CHAT -> {
-                                PersonaTab(
-                                    selectedPersona = selectedPersona,
-                                    onPersonaSelected = { selectedPersona = it },
-                                    devMode = isDevMode,
-                                )
-                            }
+                val inputState = InputState(
+                    text = inputText,
+                    onTextChange = { inputText = it },
+                    isLoading = isLoading,
+                    onSubmit = onSubmit,
+                    placeholder = when (conversationMode) {
+                        ConversationMode.CHAT -> "Escreve o que te inquieta a alma…"
+                        ConversationMode.DEBATE -> "Lança uma pergunta aos dois…"
+                    },
+                )
+                val voices = VoicesState(
+                    mode = conversationMode,
+                    selectedPersona = selectedPersona,
+                    debatePair = debatePair,
+                    debateNextSlot = debateNextSlot,
+                    devMode = isDevMode,
+                    onPersonaPicked = onPersonaPicked,
+                    onSlotSelected = { debateNextSlot = it },
+                    onSwap = { debatePair = debatePair.swapped() },
+                )
 
-                            ConversationMode.DEBATE -> {
-                                DebatePicker(
-                                    selectedPair = debatePair,
-                                    onLeftPersonaSelected = { persona ->
-                                        if (persona != debatePair.right) {
-                                            debatePair = debatePair.copy(left = persona)
-                                        }
-                                    },
-                                    onRightPersonaSelected = { persona ->
-                                        if (persona != debatePair.left) {
-                                            debatePair = debatePair.copy(right = persona)
-                                        }
-                                    },
-                                    devMode = isDevMode,
-                                )
-                            }
-                        }
-                    }
-                    ConversationFeed(
-                        conversationMode = conversationMode,
-                        turns = turns,
-                        ongoingTurn = ongoingTurn,
-                        ongoingTurnError = ongoingTurnError,
-                        debatePair = debatePair,
-                        debateQuestions = debateQuestions,
-                        debateTurns = debateTurns,
-                        ongoingDebateQuestion = ongoingDebateQuestion,
-                        ongoingDebateStartOffset = ongoingDebateStartOffset,
-                        ongoingDebateTurn = ongoingDebateTurn,
-                        debateError = debateError,
-                        isDevMode = isDevMode,
-                        conversationTraceId = conversationTraceId,
-                        hasConversationStarted = hasConversationStarted,
-                    )
-                    ThinkInputCard(
-                        text = inputText,
-                        onTextChange = { inputText = it },
-                        isLoading = isLoading,
-                        onSubmit = onSubmit,
-                        onQuerySelected = { query -> inputText = query },
-                        hasConversationStarted = hasConversationStarted,
+                if (!hasConversationStarted) {
+                    LandingScreen(
+                        voices = voices,
+                        input = inputState,
+                        quote = if (conversationMode == ConversationMode.CHAT) chatHeroQuote else debateHeroQuotes[debateQuoteIndex],
+                        onQuerySelected = { inputText = it },
                         isCompact = isCompact,
+                        isWide = isWide,
+                        modifier = Modifier.weight(1f),
                     )
+                } else {
+                    ConversationScreen(
+                        voices = voices,
+                        input = inputState,
+                        scrollState = scrollState,
+                        isCompact = isCompact,
+                        isWide = isWide,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        ConversationFeed(
+                            conversationMode = conversationMode,
+                            turns = turns,
+                            ongoingTurn = ongoingTurn,
+                            ongoingTurnError = ongoingTurnError,
+                            debatePair = debatePair,
+                            debateQuestions = debateQuestions,
+                            debateTurns = debateTurns,
+                            ongoingDebateQuestion = ongoingDebateQuestion,
+                            ongoingDebateStartOffset = ongoingDebateStartOffset,
+                            ongoingDebateTurn = ongoingDebateTurn,
+                            debateError = debateError,
+                            isDevMode = isDevMode,
+                            conversationTraceId = conversationTraceId,
+                        )
+                    }
                 }
             }
         }
@@ -627,20 +623,7 @@ private fun ConversationFeed(
     debateError: Throwable?,
     isDevMode: Boolean,
     conversationTraceId: String,
-    hasConversationStarted: Boolean,
 ) {
-    if (!hasConversationStarted) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Começa uma conversa...", color = Color(0xFF333333), fontSize = 12.sp)
-        }
-    }
-
     when (conversationMode) {
         ConversationMode.CHAT -> {
             turns.forEach { turn ->
@@ -744,34 +727,4 @@ private fun DebateTurnView(
         sources = turn.sources,
         isLoading = isLoading,
     )
-}
-
-@Composable
-private fun StickyHeader(
-    selectedPersona: Persona,
-    conversationMode: ConversationMode,
-    isDevMode: Boolean,
-    hasConversationStarted: Boolean,
-    onDevModeToggle: () -> Unit,
-    onNewConversation: () -> Unit,
-    onShare: () -> Unit,
-    onModeSelected: (ConversationMode) -> Unit,
-    isCompact: Boolean,
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        AppHeader(
-            selectedPersona,
-            isDevMode,
-            hasConversationStarted,
-            onDevModeToggle,
-            onNewConversation,
-            onShare = if (hasConversationStarted) onShare else null,
-            isCompact = isCompact,
-        )
-        ConversationModeToggle(
-            mode = conversationMode,
-            onModeSelected = onModeSelected,
-        )
-        HorizontalDivider(color = cardBorderColor, thickness = 1.dp)
-    }
 }

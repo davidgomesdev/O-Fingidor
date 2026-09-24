@@ -2,7 +2,6 @@ package me.davidgomesdev.ofingidor.ui
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
@@ -12,6 +11,9 @@ import me.davidgomesdev.ofingidor.shared.dto.Persona
 import me.davidgomesdev.ofingidor.ui.model.DebatePair
 import me.davidgomesdev.ofingidor.ui.model.DebateSide
 import me.davidgomesdev.ofingidor.ui.model.DebateTurn
+import me.davidgomesdev.ofingidor.ui.model.debateHeroQuotes
+import me.davidgomesdev.ofingidor.ui.model.nextQuoteIndex
+import me.davidgomesdev.ofingidor.ui.model.pick
 import me.davidgomesdev.ofingidor.ui.model.OngoingConversationTurn
 import me.davidgomesdev.ofingidor.ui.model.Source
 import me.davidgomesdev.ofingidor.ui.service.ThinkAPI
@@ -267,12 +269,50 @@ class ComposeAppWebTest {
     }
 
     @Test
-    fun debateBubblePalette_usesPersonaSpecificColors() {
-        val palette = debateBubblePalette(Persona.ALVARO_DE_CAMPOS)
+    fun debateSidePalette_firstVoiceIsPurpleAndSecondIsGrey() {
+        assertEquals(purpleColor, debateSidePalette(DebateSide.LEFT).accent)
+        assertEquals(silverLightColor, debateSidePalette(DebateSide.RIGHT).accent)
+    }
 
-        assertEquals(Color(0xFF1F1713), palette.background)
-        assertEquals(Color(0xFF9A5A3A), palette.border)
-        assertEquals(Color(0xFFF2C5AE), palette.label)
+    @Test
+    fun debatePick_replacesTheSlotMarkedNextAndAlternates() {
+        val pair = DebatePair(Persona.FERNANDO_PESSOA, Persona.ALBERTO_CAEIRO)
+
+        val first = pair.pick(Persona.RICARDO_REIS, DebateSide.RIGHT)
+        assertEquals(DebatePair(Persona.FERNANDO_PESSOA, Persona.RICARDO_REIS), first.pair)
+        assertEquals(DebateSide.LEFT, first.nextSlot)
+
+        val second = first.pair.pick(Persona.BERNARDO_SOARES, first.nextSlot)
+        assertEquals(DebatePair(Persona.BERNARDO_SOARES, Persona.RICARDO_REIS), second.pair)
+        assertEquals(DebateSide.RIGHT, second.nextSlot)
+    }
+
+    @Test
+    fun debatePick_ignoresAVoiceAlreadyInTheDebate() {
+        val pair = DebatePair(Persona.FERNANDO_PESSOA, Persona.ALBERTO_CAEIRO)
+
+        val pick = pair.pick(Persona.FERNANDO_PESSOA, DebateSide.RIGHT)
+
+        assertEquals(pair, pick.pair)
+        assertEquals(DebateSide.RIGHT, pick.nextSlot)
+    }
+
+    @Test
+    fun debatePair_swappedExchangesSides() {
+        val pair = DebatePair(Persona.FERNANDO_PESSOA, Persona.ALBERTO_CAEIRO)
+        assertEquals(DebatePair(Persona.ALBERTO_CAEIRO, Persona.FERNANDO_PESSOA), pair.swapped())
+    }
+
+    @Test
+    fun nextQuoteIndex_neverRepeatsTheCurrentQuote() {
+        val size = debateHeroQuotes.size
+        for (current in 0 until size) {
+            for (roll in 0 until size - 1) {
+                val next = nextQuoteIndex(current, size) { roll }
+                assertNotEquals(current, next)
+                assertTrue(next in 0 until size)
+            }
+        }
     }
 
     @Test
