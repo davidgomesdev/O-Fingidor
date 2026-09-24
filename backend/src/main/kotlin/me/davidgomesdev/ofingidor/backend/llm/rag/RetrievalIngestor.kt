@@ -290,7 +290,10 @@ data class PessoaText(
         )
 
     companion object {
-        fun from(text: String, metadata: Metadata) = PessoaText(
+        fun from(
+            text: String,
+            metadata: Metadata,
+        ) = PessoaText(
             metadata.getString(TextAttributes.TITLE) ?: "",
             metadata.getString(TextAttributes.AUTHOR) ?: "",
             text,

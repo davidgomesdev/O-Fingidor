@@ -50,7 +50,7 @@ class RetrievalAugmentor(
     val retrievalIngestor: RetrievalIngestor,
     val chatModel: ChatModel,
     @ConfigProperty(name = "retrieval.decision-prompt.skip-retrieval")
-    skipRetrievalPrompt: String
+    skipRetrievalPrompt: String,
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
     private val tracer = GlobalOpenTelemetry.getTracer(this::class.java.name)
@@ -78,14 +78,22 @@ class RetrievalAugmentor(
 
                 val prompt = skipRetrievalTemplate.apply(q.text()).toUserMessage()
 
-                val skipRetrieval = chatModel.chat(prompt).aiMessage().text().let { decision ->
-                    span().addEvent("Skip Retrieval?", attributes {
-                        put("original_query", q.text())
-                        put("decision", decision)
-                    })
-                    log.info("From query '${q.text()}' decision about whether to skip retrieval was: '$decision'")
-                    decision.trim().trimStart('\'', '"').lowercase().startsWith("sim")
-                }
+                val skipRetrieval =
+                    chatModel.chat(prompt).aiMessage().text().let { decision ->
+                        span().addEvent(
+                            "Skip Retrieval?",
+                            attributes {
+                                put("original_query", q.text())
+                                put("decision", decision)
+                            },
+                        )
+                        log.info("From query '${q.text()}' decision about whether to skip retrieval was: '$decision'")
+                        decision
+                            .trim()
+                            .trimStart('\'', '"')
+                            .lowercase()
+                            .startsWith("sim")
+                    }
 
                 if (skipRetrieval) {
                     emptyList()
@@ -98,14 +106,12 @@ class RetrievalAugmentor(
                     .also { transformedQuery ->
                         traceQueryExpansion(transformedQuery, originalQuery)
                     }
-            }
-            .apply {
+            }.apply {
                 if (scoringModel.isResolvable) {
                     log.info("Re-ranking retrieved content")
                     contentAggregator(reRankingAggregator(scoringModel.get()))
                 }
-            }
-            .contentInjector(contentInjector)
+            }.contentInjector(contentInjector)
             .build()
 
     @Singleton
@@ -185,22 +191,22 @@ class RetrievalAugmentor(
 
     // Re-ranks against only the original user question, since query expansion produces several queries
     private fun reRankingAggregator(scoringModel: ScoringModel): ContentAggregator {
-        val reRanker = ReRankingContentAggregator
-            .builder()
-            .scoringModel(scoringModel)
-            .querySelector { queryToContents ->
-                val query = queryToContents.keys.first()
-                val userMessage = query.metadata()?.chatMessage() as? UserMessage
+        val reRanker =
+            ReRankingContentAggregator
+                .builder()
+                .scoringModel(scoringModel)
+                .querySelector { queryToContents ->
+                    val query = queryToContents.keys.first()
+                    val userMessage = query.metadata()?.chatMessage() as? UserMessage
 
-                if (userMessage != null && userMessage.hasSingleText()) {
-                    Query.from(userMessage.singleText(), query.metadata())
-                } else {
-                    query
-                }
-            }
-            .minScore(config.scoredResults().minScore())
-            .maxResults(config.scoredResults().max())
-            .build()
+                    if (userMessage != null && userMessage.hasSingleText()) {
+                        Query.from(userMessage.singleText(), query.metadata())
+                    } else {
+                        query
+                    }
+                }.minScore(config.scoredResults().minScore())
+                .maxResults(config.scoredResults().max())
+                .build()
 
         return ContentAggregator { queryToContents ->
             traceRetrievedContents(queryToContents)
@@ -281,23 +287,27 @@ class RetrievalAugmentor(
         queryToContents
             .mapValues { it.value.flatten() }
             .forEach { (query, retrieved) ->
-                retrieved.groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
+                retrieved
+                    .groupBy { it.textSegment().metadata().getString(TextAttributes.CATEGORY_NAME) }
                     .forEach { (category, contents) ->
                         val eventHeadline = "${contents.size} Sources retrieved on: '$category'"
 
-                        span().addEvent(eventHeadline, attributes {
-                            put("query", query.text())
-                            contents.forEachIndexed { index, content ->
-                                val metadata = content.textSegment().metadata()
+                        span().addEvent(
+                            eventHeadline,
+                            attributes {
+                                put("query", query.text())
+                                contents.forEachIndexed { index, content ->
+                                    val metadata = content.textSegment().metadata()
 
-                                TextAttributes.run {
-                                    put(
-                                        "${String.format("%02d", index)}_title",
-                                        "(${String.format("%.2f", content.score())}) ${metadata.getString(TITLE)}"
-                                    )
+                                    TextAttributes.run {
+                                        put(
+                                            "${String.format("%02d", index)}_title",
+                                            "(${String.format("%.2f", content.score())}) ${metadata.getString(TITLE)}",
+                                        )
+                                    }
                                 }
-                            }
-                        })
+                            },
+                        )
                     }
             }
     }

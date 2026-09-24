@@ -14,17 +14,18 @@ class DateTool {
         }
 }
 
-fun Month.toPortuguese(): String = when (this) {
-    Month.JANUARY -> "Janeiro"
-    Month.FEBRUARY -> "Fevereiro"
-    Month.MARCH -> "Março"
-    Month.APRIL -> "Abril"
-    Month.MAY -> "Maio"
-    Month.JUNE -> "Junho"
-    Month.JULY -> "Julho"
-    Month.AUGUST -> "Agosto"
-    Month.SEPTEMBER -> "Setembro"
-    Month.OCTOBER -> "Outubro"
-    Month.NOVEMBER -> "Novembro"
-    Month.DECEMBER -> "Dezembro"
-}
+fun Month.toPortuguese(): String =
+    when (this) {
+        Month.JANUARY -> "Janeiro"
+        Month.FEBRUARY -> "Fevereiro"
+        Month.MARCH -> "Março"
+        Month.APRIL -> "Abril"
+        Month.MAY -> "Maio"
+        Month.JUNE -> "Junho"
+        Month.JULY -> "Julho"
+        Month.AUGUST -> "Agosto"
+        Month.SEPTEMBER -> "Setembro"
+        Month.OCTOBER -> "Outubro"
+        Month.NOVEMBER -> "Novembro"
+        Month.DECEMBER -> "Dezembro"
+    }

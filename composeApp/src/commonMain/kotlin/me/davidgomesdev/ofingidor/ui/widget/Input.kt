@@ -92,18 +92,19 @@ import me.davidgomesdev.ofingidor.ui.textMutedColor
 import me.davidgomesdev.ofingidor.ui.textPrimaryColor
 import me.davidgomesdev.ofingidor.ui.textSecondaryColor
 
-private val exampleQueries = listOf(
-    "O que é o amor para ti?",
-    "Tens medo da morte?",
-    "Como encontrar sentido na vida?",
-    "O que pensas sobre a saudade?",
-    "Explica-me porquê que decidiste criar heterónimos.",
-    "Quem és?",
-    "Como te chamas?",
-    "O que é para ti a arte?",
-    "Achavas que ias ser reconhecido depois de morrer?",
-    "Qual a utilidade da escrita a teu ver?",
-)
+private val exampleQueries =
+    listOf(
+        "O que é o amor para ti?",
+        "Tens medo da morte?",
+        "Como encontrar sentido na vida?",
+        "O que pensas sobre a saudade?",
+        "Explica-me porquê que decidiste criar heterónimos.",
+        "Quem és?",
+        "Como te chamas?",
+        "O que é para ti a arte?",
+        "Achavas que ias ser reconhecido depois de morrer?",
+        "Qual a utilidade da escrita a teu ver?",
+    )
 
 enum class InputCardLayout {
     /** Landing page on wide screens: context row, two-line field, then hint and "Pensar". */
@@ -118,51 +119,61 @@ enum class InputCardLayout {
 
 /** Text that shimmers from grey to pale violet, for "thinking" states. */
 @Composable
-fun ShimmerText(text: String, fontSize: TextUnit, italicSerif: Boolean = false) {
+fun ShimmerText(
+    text: String,
+    fontSize: TextUnit,
+    italicSerif: Boolean = false,
+) {
     val fonts = LocalAppFonts.current
     val shift by rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(2_800, easing = LinearEasing)))
-    val brush = Brush.linearGradient(
-        0f to textMutedColor,
-        0.35f to textMutedColor,
-        0.5f to shimmerHighlightColor,
-        0.65f to textMutedColor,
-        1f to textMutedColor,
-        start = Offset(-400f + shift * 800f, 0f),
-        end = Offset(shift * 800f, 0f),
-        tileMode = TileMode.Clamp,
-    )
+    val brush =
+        Brush.linearGradient(
+            0f to textMutedColor,
+            0.35f to textMutedColor,
+            0.5f to shimmerHighlightColor,
+            0.65f to textMutedColor,
+            1f to textMutedColor,
+            start = Offset(-400f + shift * 800f, 0f),
+            end = Offset(shift * 800f, 0f),
+            tileMode = TileMode.Clamp,
+        )
     Text(
         text,
-        style = TextStyle(
-            brush = brush,
-            fontFamily = if (italicSerif) fonts.serif else fonts.sans,
-            fontStyle = if (italicSerif) FontStyle.Italic else FontStyle.Normal,
-            fontSize = fontSize,
-        ),
+        style =
+            TextStyle(
+                brush = brush,
+                fontFamily = if (italicSerif) fonts.serif else fonts.sans,
+                fontStyle = if (italicSerif) FontStyle.Italic else FontStyle.Normal,
+                fontSize = fontSize,
+            ),
     )
 }
 
 /** A glass card with a slowly shimmering purple and grey border. */
 @Composable
-fun SheenCard(radius: Dp, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+fun SheenCard(
+    radius: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
     val shift by rememberInfiniteTransition().animateFloat(0f, 1f, infiniteRepeatable(tween(9_000, easing = LinearEasing)))
     Box(
         modifier
             .drawBehind {
                 val period = size.width * 1.5f
-                val brush = Brush.linearGradient(
-                    0f to purpleColor.copy(alpha = 0.75f),
-                    0.25f to silverColor.copy(alpha = 0.14f),
-                    0.5f to purpleColor.copy(alpha = 0.08f),
-                    0.7f to silverColor.copy(alpha = 0.2f),
-                    1f to purpleColor.copy(alpha = 0.75f),
-                    start = Offset(-shift * period, 0f),
-                    end = Offset(period - shift * period, size.height),
-                    tileMode = TileMode.Repeated,
-                )
+                val brush =
+                    Brush.linearGradient(
+                        0f to purpleColor.copy(alpha = 0.75f),
+                        0.25f to silverColor.copy(alpha = 0.14f),
+                        0.5f to purpleColor.copy(alpha = 0.08f),
+                        0.7f to silverColor.copy(alpha = 0.2f),
+                        1f to purpleColor.copy(alpha = 0.75f),
+                        start = Offset(-shift * period, 0f),
+                        end = Offset(period - shift * period, size.height),
+                        tileMode = TileMode.Repeated,
+                    )
                 drawRoundRect(brush, cornerRadius = CornerRadius(radius.toPx()))
-            }
-            .padding(1.dp)
+            }.padding(1.dp)
             .clip(RoundedCornerShape(radius - 1.dp))
             .background(surfaceColor.copy(alpha = 0.92f)),
     ) {
@@ -183,41 +194,47 @@ fun ThinkInputCard(
 ) {
     SheenCard(radius = if (layout == InputCardLayout.FULL) 22.dp else 20.dp, modifier = modifier.fillMaxWidth()) {
         when (layout) {
-            InputCardLayout.FULL -> Column(
-                Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                contextRow?.invoke()
-                ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 2)
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    KeyboardHint(Modifier.weight(1f))
+            InputCardLayout.FULL -> {
+                Column(
+                    Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    contextRow?.invoke()
+                    ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 2)
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        KeyboardHint(Modifier.weight(1f))
+                        ThinkButton(onSubmit, isLoading)
+                    }
+                }
+            }
+
+            InputCardLayout.COMPACT -> {
+                Column(
+                    Modifier.padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    contextRow?.invoke()
+                    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Box(Modifier.weight(1f)) {
+                            ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 2)
+                        }
+                        ThinkIconButton(onSubmit, isLoading)
+                    }
+                }
+            }
+
+            InputCardLayout.INLINE -> {
+                Row(
+                    Modifier.padding(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Box(Modifier.weight(1f)) {
+                        ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 1)
+                    }
+                    Text("Ctrl + Enter", color = textMutedColor, fontSize = 12.sp)
                     ThinkButton(onSubmit, isLoading)
                 }
-            }
-
-            InputCardLayout.COMPACT -> Column(
-                Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                contextRow?.invoke()
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Box(Modifier.weight(1f)) {
-                        ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 2)
-                    }
-                    ThinkIconButton(onSubmit, isLoading)
-                }
-            }
-
-            InputCardLayout.INLINE -> Row(
-                Modifier.padding(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(Modifier.weight(1f)) {
-                    ThinkInputField(text, onTextChange, isLoading, onSubmit, placeholder, minLines = 1)
-                }
-                Text("Ctrl + Enter", color = textMutedColor, fontSize = 12.sp)
-                ThinkButton(onSubmit, isLoading)
             }
         }
     }
@@ -236,11 +253,12 @@ private fun KeyboardHint(modifier: Modifier = Modifier) {
                     color = textSecondaryColor,
                     fontFamily = fonts.mono,
                     fontSize = 11.sp,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(textPrimaryColor.copy(alpha = 0.04f))
-                        .border(1.dp, hairlineStrongColor, RoundedCornerShape(6.dp))
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                    modifier =
+                        Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(textPrimaryColor.copy(alpha = 0.04f))
+                            .border(1.dp, hairlineStrongColor, RoundedCornerShape(6.dp))
+                            .padding(horizontal = 7.dp, vertical = 3.dp),
                 )
             }
         }
@@ -270,23 +288,25 @@ private fun ThinkInputField(
         maxLines = 6,
         interactionSource = interactionSource,
         cursorBrush = SolidColor(purpleColor),
-        textStyle = TextStyle(
-            color = if (isLoading) textMutedColor else textPrimaryColor,
-            fontFamily = fonts.sans,
-            fontSize = 16.sp,
-            lineHeight = 24.sp,
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .semantics { contentDescription = "A tua pergunta" }
-            .onPreviewKeyEvent { keyEvent ->
-                if (isActionInputType(keyEvent) && !isLoading) {
-                    onSubmit()
-                    true
-                } else {
-                    false
-                }
-            },
+        textStyle =
+            TextStyle(
+                color = if (isLoading) textMutedColor else textPrimaryColor,
+                fontFamily = fonts.sans,
+                fontSize = 16.sp,
+                lineHeight = 24.sp,
+            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .semantics { contentDescription = "A tua pergunta" }
+                .onPreviewKeyEvent { keyEvent ->
+                    if (isActionInputType(keyEvent) && !isLoading) {
+                        onSubmit()
+                        true
+                    } else {
+                        false
+                    }
+                },
         decorationBox = { innerTextField ->
             Box(
                 Modifier
@@ -296,15 +316,15 @@ private fun ThinkInputField(
                             drawRoundRect(
                                 purpleDeepColor.copy(alpha = 0.14f),
                                 topLeft = Offset(-4.dp.toPx(), -4.dp.toPx()),
-                                size = androidx.compose.ui.geometry.Size(
-                                    size.width + 8.dp.toPx(),
-                                    size.height + 8.dp.toPx(),
-                                ),
+                                size =
+                                    androidx.compose.ui.geometry.Size(
+                                        size.width + 8.dp.toPx(),
+                                        size.height + 8.dp.toPx(),
+                                    ),
                                 cornerRadius = CornerRadius(18.dp.toPx()),
                             )
                         }
-                    }
-                    .clip(RoundedCornerShape(14.dp))
+                    }.clip(RoundedCornerShape(14.dp))
                     .background(fillColor)
                     .border(1.dp, borderColor, RoundedCornerShape(14.dp))
                     .padding(horizontal = 16.dp, vertical = 13.dp),
@@ -319,7 +339,10 @@ private fun ThinkInputField(
 }
 
 @Composable
-private fun ArrowIcon(color: Color, size: Dp = 16.dp) {
+private fun ArrowIcon(
+    color: Color,
+    size: Dp = 16.dp,
+) {
     Canvas(Modifier.size(size)) {
         val u = this.size.width / 16f
         val stroke = 1.6.dp.toPx()
@@ -329,24 +352,33 @@ private fun ArrowIcon(color: Color, size: Dp = 16.dp) {
     }
 }
 
-private fun Modifier.ctaSurface(isLoading: Boolean, radius: Dp): Modifier =
+private fun Modifier.ctaSurface(
+    isLoading: Boolean,
+    radius: Dp,
+): Modifier =
     this
         .clip(RoundedCornerShape(radius))
         .background(
-            if (isLoading) Brush.verticalGradient(listOf(purpleDeepColor.copy(alpha = 0.22f), purpleDeepColor.copy(alpha = 0.22f)))
-            else Brush.verticalGradient(listOf(ctaTopColor, ctaBottomColor))
-        )
-        .border(1.dp, purpleColor.copy(alpha = 0.45f), RoundedCornerShape(radius))
+            if (isLoading) {
+                Brush.verticalGradient(listOf(purpleDeepColor.copy(alpha = 0.22f), purpleDeepColor.copy(alpha = 0.22f)))
+            } else {
+                Brush.verticalGradient(listOf(ctaTopColor, ctaBottomColor))
+            },
+        ).border(1.dp, purpleColor.copy(alpha = 0.45f), RoundedCornerShape(radius))
 
 @Composable
-fun ThinkButton(onSubmit: () -> Unit, isLoading: Boolean) {
+fun ThinkButton(
+    onSubmit: () -> Unit,
+    isLoading: Boolean,
+) {
     val fonts = LocalAppFonts.current
     Row(
-        modifier = Modifier
-            .height(48.dp)
-            .ctaSurface(isLoading, 14.dp)
-            .clickable(enabled = !isLoading, role = Role.Button, onClick = onSubmit)
-            .padding(start = 24.dp, end = 22.dp),
+        modifier =
+            Modifier
+                .height(48.dp)
+                .ctaSurface(isLoading, 14.dp)
+                .clickable(enabled = !isLoading, role = Role.Button, onClick = onSubmit)
+                .padding(start = 24.dp, end = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
@@ -360,13 +392,17 @@ fun ThinkButton(onSubmit: () -> Unit, isLoading: Boolean) {
 }
 
 @Composable
-private fun ThinkIconButton(onSubmit: () -> Unit, isLoading: Boolean) {
+private fun ThinkIconButton(
+    onSubmit: () -> Unit,
+    isLoading: Boolean,
+) {
     Box(
-        modifier = Modifier
-            .size(52.dp)
-            .ctaSurface(isLoading, 14.dp)
-            .clickable(enabled = !isLoading, role = Role.Button, onClick = onSubmit)
-            .semantics { contentDescription = if (isLoading) "A pensar" else "Pensar" },
+        modifier =
+            Modifier
+                .size(52.dp)
+                .ctaSurface(isLoading, 14.dp)
+                .clickable(enabled = !isLoading, role = Role.Button, onClick = onSubmit)
+                .semantics { contentDescription = if (isLoading) "A pensar" else "Pensar" },
         contentAlignment = Alignment.Center,
     ) {
         ArrowIcon(if (isLoading) textMutedColor else Color.White, 18.dp)
@@ -390,7 +426,10 @@ fun ChatContextRow(persona: Persona) {
         Text(
             androidx.compose.ui.text.buildAnnotatedString {
                 append("A falar com ")
-                pushStyle(androidx.compose.ui.text.SpanStyle(color = accent, fontWeight = FontWeight.Medium))
+                pushStyle(
+                    androidx.compose.ui.text
+                        .SpanStyle(color = accent, fontWeight = FontWeight.Medium),
+                )
                 append(persona.displayName)
                 pop()
             },
@@ -459,7 +498,13 @@ private fun SwapIcon() {
 }
 
 @Composable
-private fun DebaterChip(persona: Persona, side: DebateSide, isNext: Boolean, isCompact: Boolean, onClick: () -> Unit) {
+private fun DebaterChip(
+    persona: Persona,
+    side: DebateSide,
+    isNext: Boolean,
+    isCompact: Boolean,
+    onClick: () -> Unit,
+) {
     val isFirst = side == DebateSide.LEFT
     val ring = if (isFirst) purpleColor else silverSoftColor
     Row(
@@ -471,13 +516,14 @@ private fun DebaterChip(persona: Persona, side: DebateSide, isNext: Boolean, isC
                     drawRoundRect(
                         color = textPrimaryColor.copy(alpha = 0.45f),
                         topLeft = Offset(-inset, -inset),
-                        size = androidx.compose.ui.geometry.Size(size.width + inset * 2, size.height + inset * 2),
+                        size =
+                            androidx.compose.ui.geometry
+                                .Size(size.width + inset * 2, size.height + inset * 2),
                         cornerRadius = CornerRadius(size.height),
                         style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 3.dp.toPx()))),
                     )
                 }
-            }
-            .clip(RoundedCornerShape(999.dp))
+            }.clip(RoundedCornerShape(999.dp))
             .background(if (isFirst) purpleDeepColor.copy(alpha = 0.16f) else silverColor.copy(alpha = 0.12f))
             .border(1.dp, if (isFirst) purpleColor.copy(alpha = 0.45f) else silverSoftColor.copy(alpha = 0.4f), RoundedCornerShape(999.dp))
             .clickable(role = Role.Button, onClick = onClick)
@@ -505,7 +551,11 @@ private fun DebaterChip(persona: Persona, side: DebateSide, isNext: Boolean, isC
  * and faded; on wide screens a "›" button scrolls further.
  */
 @Composable
-fun SuggestionsRow(onQuerySelected: (String) -> Unit, isCompact: Boolean, modifier: Modifier = Modifier) {
+fun SuggestionsRow(
+    onQuerySelected: (String) -> Unit,
+    isCompact: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val fonts = LocalAppFonts.current
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
@@ -540,10 +590,11 @@ fun SuggestionsRow(onQuerySelected: (String) -> Unit, isCompact: Boolean, modifi
                         fontSize = if (isCompact) 16.sp else 17.sp,
                         cutOff = cutOff,
                         onClick = { onQuerySelected(query) },
-                        modifier = Modifier.onGloballyPositioned {
-                            val x = it.positionInParent().x
-                            bounds[index] = x to x + it.size.width
-                        },
+                        modifier =
+                            Modifier.onGloballyPositioned {
+                                val x = it.positionInParent().x
+                                bounds[index] = x to x + it.size.width
+                            },
                     )
                 }
                 Box(Modifier.width(if (isCompact) 8.dp else 72.dp))
@@ -563,8 +614,7 @@ fun SuggestionsRow(onQuerySelected: (String) -> Unit, isCompact: Boolean, modifi
                             .border(1.dp, hairlineStrongColor, CircleShape)
                             .clickable(role = Role.Button) {
                                 scope.launch { scrollState.animateScrollBy(with(density) { 320.dp.toPx() }) }
-                            }
-                            .semantics { contentDescription = "Mais perguntas" },
+                            }.semantics { contentDescription = "Mais perguntas" },
                         contentAlignment = Alignment.Center,
                     ) {
                         Canvas(Modifier.size(16.dp)) {
@@ -581,12 +631,15 @@ fun SuggestionsRow(onQuerySelected: (String) -> Unit, isCompact: Boolean, modifi
 }
 
 @Composable
-private fun EdgeFade(modifier: Modifier, fromLeft: Boolean) {
+private fun EdgeFade(
+    modifier: Modifier,
+    fromLeft: Boolean,
+) {
     val colors = listOf(Color.Transparent, inkColor.copy(alpha = 0.85f))
     Box(
         modifier
             .fillMaxHeight()
-            .background(Brush.horizontalGradient(if (fromLeft) colors.reversed() else colors))
+            .background(Brush.horizontalGradient(if (fromLeft) colors.reversed() else colors)),
     )
 }
 

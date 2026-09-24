@@ -56,28 +56,37 @@ fun HeroEyebrow() {
 
 /** "Fala com quem fingiu ser tantos." in chat, "Faz discutir quem nunca foi um só." in debate. */
 @Composable
-fun HeroHeadline(mode: ConversationMode, isCompact: Boolean) {
+fun HeroHeadline(
+    mode: ConversationMode,
+    isCompact: Boolean,
+) {
     val fonts = LocalAppFonts.current
     val size = if (isCompact) 36.sp else 68.sp
-    val accent = SpanStyle(
-        color = purpleColor,
-        fontStyle = FontStyle.Italic,
-        shadow = Shadow(color = purpleDeepColor.copy(alpha = 0.55f), blurRadius = 40f),
-    )
+    val accent =
+        SpanStyle(
+            color = purpleColor,
+            fontStyle = FontStyle.Italic,
+            shadow = Shadow(color = purpleDeepColor.copy(alpha = 0.55f), blurRadius = 40f),
+        )
     val lineBreak = if (isCompact) " " else "\n"
-    val text = when (mode) {
-        ConversationMode.CHAT -> buildAnnotatedString {
-            append("Fala com quem$lineBreak")
-            withStyle(accent) { append("fingiu") }
-            append(" ser tantos.")
-        }
+    val text =
+        when (mode) {
+            ConversationMode.CHAT -> {
+                buildAnnotatedString {
+                    append("Fala com quem$lineBreak")
+                    withStyle(accent) { append("fingiu") }
+                    append(" ser tantos.")
+                }
+            }
 
-        ConversationMode.DEBATE -> buildAnnotatedString {
-            append("Faz ")
-            withStyle(accent) { append("discutir") }
-            append(" quem${lineBreak}nunca foi um só.")
+            ConversationMode.DEBATE -> {
+                buildAnnotatedString {
+                    append("Faz ")
+                    withStyle(accent) { append("discutir") }
+                    append(" quem${lineBreak}nunca foi um só.")
+                }
+            }
         }
-    }
     AnimatedContent(
         targetState = text,
         transitionSpec = {
@@ -86,21 +95,25 @@ fun HeroHeadline(mode: ConversationMode, isCompact: Boolean) {
     ) { headline ->
         Text(
             headline,
-            style = TextStyle(
-                color = textPrimaryColor,
-                fontFamily = fonts.serif,
-                fontWeight = FontWeight.Normal,
-                fontSize = size,
-                lineHeight = size,
-                letterSpacing = (-0.5).sp,
-            ),
+            style =
+                TextStyle(
+                    color = textPrimaryColor,
+                    fontFamily = fonts.serif,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = size,
+                    lineHeight = size,
+                    letterSpacing = (-0.5).sp,
+                ),
         )
     }
 }
 
 /** A verse with a thin fading rule before it and its source underneath. */
 @Composable
-fun HeroQuoteBlock(quote: HeroQuote, secondary: Boolean) {
+fun HeroQuoteBlock(
+    quote: HeroQuote,
+    secondary: Boolean,
+) {
     val fonts = LocalAppFonts.current
     AnimatedContent(
         targetState = quote,
@@ -114,9 +127,9 @@ fun HeroQuoteBlock(quote: HeroQuote, secondary: Boolean) {
                     .height(1.dp)
                     .background(
                         Brush.horizontalGradient(
-                            listOf(if (secondary) silverLightColor else purpleColor, Color.Transparent)
-                        )
-                    )
+                            listOf(if (secondary) silverLightColor else purpleColor, Color.Transparent),
+                        ),
+                    ),
             )
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(

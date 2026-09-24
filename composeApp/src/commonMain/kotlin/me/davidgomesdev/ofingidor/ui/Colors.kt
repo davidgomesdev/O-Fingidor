@@ -72,20 +72,25 @@ data class DebateSidePalette(
     val glow: Color,
 )
 
-fun debateSidePalette(side: DebateSide): DebateSidePalette = when (side) {
-    DebateSide.LEFT -> DebateSidePalette(
-        accent = purpleColor,
-        label = purpleColor,
-        bubbleTop = Color(0xBF281E42),
-        border = Color(0x4DB49CF5),
-        glow = Color(0xA67C5CD6),
-    )
+fun debateSidePalette(side: DebateSide): DebateSidePalette =
+    when (side) {
+        DebateSide.LEFT -> {
+            DebateSidePalette(
+                accent = purpleColor,
+                label = purpleColor,
+                bubbleTop = Color(0xBF281E42),
+                border = Color(0x4DB49CF5),
+                glow = Color(0xA67C5CD6),
+            )
+        }
 
-    DebateSide.RIGHT -> DebateSidePalette(
-        accent = silverLightColor,
-        label = Color(0xFFCFCBD6),
-        bubbleTop = Color(0xBF28272E),
-        border = Color(0x4D9A97A3),
-        glow = Color(0x809A97A3),
-        )
+        DebateSide.RIGHT -> {
+            DebateSidePalette(
+                accent = silverLightColor,
+                label = Color(0xFFCFCBD6),
+                bubbleTop = Color(0xBF28272E),
+                border = Color(0x4D9A97A3),
+                glow = Color(0x809A97A3),
+            )
+        }
     }

@@ -103,21 +103,33 @@ internal class VoicesState(
 )
 
 @Composable
-private fun InputContextRow(voices: VoicesState, isCompact: Boolean) {
+private fun InputContextRow(
+    voices: VoicesState,
+    isCompact: Boolean,
+) {
     when (voices.mode) {
-        ConversationMode.CHAT -> ChatContextRow(voices.selectedPersona)
-        ConversationMode.DEBATE -> DebateContextRow(
-            pair = voices.debatePair,
-            nextSlot = voices.debateNextSlot,
-            onSlotSelected = voices.onSlotSelected,
-            onSwap = voices.onSwap,
-            isCompact = isCompact,
-        )
+        ConversationMode.CHAT -> {
+            ChatContextRow(voices.selectedPersona)
+        }
+
+        ConversationMode.DEBATE -> {
+            DebateContextRow(
+                pair = voices.debatePair,
+                nextSlot = voices.debateNextSlot,
+                onSlotSelected = voices.onSlotSelected,
+                onSwap = voices.onSwap,
+                isCompact = isCompact,
+            )
+        }
     }
 }
 
 @Composable
-private fun InputCard(input: InputState, layout: InputCardLayout, contextRow: (@Composable () -> Unit)?) {
+private fun InputCard(
+    input: InputState,
+    layout: InputCardLayout,
+    contextRow: (@Composable () -> Unit)?,
+) {
     ThinkInputCard(
         text = input.text,
         onTextChange = input.onTextChange,
@@ -131,37 +143,43 @@ private fun InputCard(input: InputState, layout: InputCardLayout, contextRow: (@
 
 /** Under the constellation: the chosen voice's line, or who the next pick replaces in a debate. */
 @Composable
-private fun ConstellationCaption(voices: VoicesState, fontSize: Int) {
+private fun ConstellationCaption(
+    voices: VoicesState,
+    fontSize: Int,
+) {
     val fonts = LocalAppFonts.current
     val persona = voices.selectedPersona
     val accent = if (persona == Persona.O_FINGIDOR) amberColor else purpleColor
-    val text = when (voices.mode) {
-        ConversationMode.CHAT -> buildAnnotatedString {
-            if (voices.devMode) {
-                withStyle(SpanStyle(color = accent, fontStyle = FontStyle.Normal, fontWeight = FontWeight.Medium)) {
-                    append(persona.displayName)
+    val text =
+        when (voices.mode) {
+            ConversationMode.CHAT -> {
+                buildAnnotatedString {
+                    if (voices.devMode) {
+                        withStyle(SpanStyle(color = accent, fontStyle = FontStyle.Normal, fontWeight = FontWeight.Medium)) {
+                            append(persona.displayName)
+                        }
+                        append(" — ")
+                    }
+                    append("“${persona.voice().line}”")
                 }
-                append(" — ")
             }
-            append("“${persona.voice().line}”")
-        }
 
-        ConversationMode.DEBATE -> {
-            val side = voices.debateNextSlot
-            val outgoing = voices.debatePair.personaAt(side)
-            buildAnnotatedString {
-                append("Toca noutra voz para substituir ")
-                withStyle(
-                    SpanStyle(
-                        color = if (side == DebateSide.LEFT) purpleColor else silverPaleColor,
-                        fontStyle = FontStyle.Normal,
-                        fontWeight = FontWeight.Medium,
-                    )
-                ) { append(outgoing.displayName) }
-                append(".")
+            ConversationMode.DEBATE -> {
+                val side = voices.debateNextSlot
+                val outgoing = voices.debatePair.personaAt(side)
+                buildAnnotatedString {
+                    append("Toca noutra voz para substituir ")
+                    withStyle(
+                        SpanStyle(
+                            color = if (side == DebateSide.LEFT) purpleColor else silverPaleColor,
+                            fontStyle = FontStyle.Normal,
+                            fontWeight = FontWeight.Medium,
+                        ),
+                    ) { append(outgoing.displayName) }
+                    append(".")
+                }
             }
         }
-    }
     Text(
         text,
         color = textSecondaryColor,
@@ -183,8 +201,11 @@ internal fun LandingScreen(
     isWide: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    if (isWide) WideLanding(voices, input, quote, onQuerySelected, modifier)
-    else StackedLanding(voices, input, onQuerySelected, isCompact, modifier)
+    if (isWide) {
+        WideLanding(voices, input, quote, onQuerySelected, modifier)
+    } else {
+        StackedLanding(voices, input, onQuerySelected, isCompact, modifier)
+    }
 }
 
 @Composable
@@ -198,7 +219,13 @@ private fun WideLanding(
     val fonts = LocalAppFonts.current
     Column(modifier.fillMaxSize().padding(start = 96.dp, end = 56.dp, bottom = 28.dp)) {
         Row(Modifier.fillMaxWidth().weight(1f)) {
-            Column(Modifier.widthIn(max = 600.dp).weight(1f).fillMaxHeight().padding(top = 52.dp)) {
+            Column(
+                Modifier
+                    .widthIn(max = 600.dp)
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(top = 52.dp),
+            ) {
                 HeroEyebrow()
                 Spacer(Modifier.height(24.dp))
                 HeroHeadline(voices.mode, isCompact = false)
@@ -322,8 +349,7 @@ internal fun ConversationScreen(
                                 Brush.verticalGradient(0f to Color.Transparent, 32.dp.toPx() / size.height to Color.Black),
                                 blendMode = BlendMode.DstIn,
                             )
-                        }
-                        .verticalScroll(scrollState)
+                        }.verticalScroll(scrollState)
                         .padding(horizontal = if (isCompact) 14.dp else 32.dp, vertical = 24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -337,7 +363,7 @@ internal fun ConversationScreen(
             Box(
                 Modifier
                     .widthIn(max = 760.dp)
-                    .padding(start = if (isCompact) 12.dp else 24.dp, end = if (isCompact) 12.dp else 24.dp, bottom = 20.dp, top = 8.dp)
+                    .padding(start = if (isCompact) 12.dp else 24.dp, end = if (isCompact) 12.dp else 24.dp, bottom = 20.dp, top = 8.dp),
             ) {
                 InputCard(input, if (isCompact) InputCardLayout.COMPACT else InputCardLayout.INLINE, contextRow = null)
             }
@@ -349,7 +375,10 @@ private val grayscale = ColorFilter.colorMatrix(ColorMatrix().apply { setToSatur
 
 /** The voices, grouped as on the site, with the one in conversation lit and its portrait at the bottom. */
 @Composable
-private fun VoicesSidebar(voices: VoicesState, modifier: Modifier = Modifier) {
+private fun VoicesSidebar(
+    voices: VoicesState,
+    modifier: Modifier = Modifier,
+) {
     val fonts = LocalAppFonts.current
     val categories = PersonaCategory.entries.filter { it != PersonaCategory.DEV || voices.devMode }
     Column(
@@ -390,11 +419,12 @@ private fun VoicesSidebar(voices: VoicesState, modifier: Modifier = Modifier) {
                     .drawBehind {
                         drawRoundRect(
                             Brush.radialGradient(listOf(purpleDeepColor.copy(alpha = 0.45f), Color.Transparent)),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx()),
+                            cornerRadius =
+                                androidx.compose.ui.geometry
+                                    .CornerRadius(16.dp.toPx()),
                         )
-                    }
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, purpleColor.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
+                    }.clip(RoundedCornerShape(16.dp))
+                    .border(1.dp, purpleColor.copy(alpha = 0.3f), RoundedCornerShape(16.dp)),
             ) {
                 Image(
                     painter = painterResource(portrait.resource),
@@ -406,7 +436,7 @@ private fun VoicesSidebar(voices: VoicesState, modifier: Modifier = Modifier) {
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to inkColor.copy(alpha = 0.55f)))
+                        .background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to inkColor.copy(alpha = 0.55f))),
                 )
             }
         }
@@ -414,7 +444,10 @@ private fun VoicesSidebar(voices: VoicesState, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun VoiceRow(persona: Persona, isCurrent: Boolean) {
+private fun VoiceRow(
+    persona: Persona,
+    isCurrent: Boolean,
+) {
     val accent = if (persona == Persona.O_FINGIDOR) amberColor else purpleColor
     Row(
         Modifier
@@ -424,23 +457,24 @@ private fun VoiceRow(persona: Persona, isCurrent: Boolean) {
             .then(
                 if (isCurrent) {
                     Modifier
-                        .background(Brush.horizontalGradient(listOf(purpleDeepColor.copy(alpha = 0.24f), purpleDeepColor.copy(alpha = 0.06f))))
-                        .border(1.dp, purpleColor.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                        .background(
+                            Brush.horizontalGradient(listOf(purpleDeepColor.copy(alpha = 0.24f), purpleDeepColor.copy(alpha = 0.06f))),
+                        ).border(1.dp, purpleColor.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
                 } else {
                     Modifier
-                }
-            )
-            .semantics { selected = isCurrent }
+                },
+            ).semantics { selected = isCurrent }
             .padding(start = 8.dp, end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         PersonaAvatar(
             persona = persona,
-            modifier = Modifier
-                .size(36.dp)
-                .border(if (isCurrent) 2.dp else 1.dp, if (isCurrent) accent else silverColor.copy(alpha = 0.35f), CircleShape)
-                .graphicsLayer { alpha = if (isCurrent) 1f else 0.75f },
+            modifier =
+                Modifier
+                    .size(36.dp)
+                    .border(if (isCurrent) 2.dp else 1.dp, if (isCurrent) accent else silverColor.copy(alpha = 0.35f), CircleShape)
+                    .graphicsLayer { alpha = if (isCurrent) 1f else 0.75f },
             contentDescriptionMode = AvatarContentDescriptionMode.DECORATIVE,
             colorFilter = if (isCurrent) null else grayscale,
         )
@@ -456,7 +490,7 @@ private fun VoiceRow(persona: Persona, isCurrent: Boolean) {
                 Modifier
                     .size(7.dp)
                     .drawBehind { drawCircle(accent.copy(alpha = 0.5f), radius = size.width * 1.4f) }
-                    .background(accent, CircleShape)
+                    .background(accent, CircleShape),
             )
         }
     }
@@ -464,7 +498,10 @@ private fun VoiceRow(persona: Persona, isCurrent: Boolean) {
 
 /** The two debaters facing each other across a turning "vs" sigil. */
 @Composable
-private fun DuelHeader(pair: DebatePair, isCompact: Boolean) {
+private fun DuelHeader(
+    pair: DebatePair,
+    isCompact: Boolean,
+) {
     val portraitWidth = if (isCompact) 64.dp else 132.dp
     val portraitHeight = if (isCompact) 72.dp else 148.dp
     Row(
@@ -485,7 +522,11 @@ private fun DuelHeader(pair: DebatePair, isCompact: Boolean) {
 }
 
 @Composable
-private fun DuelName(persona: Persona, side: DebateSide, isCompact: Boolean) {
+private fun DuelName(
+    persona: Persona,
+    side: DebateSide,
+    isCompact: Boolean,
+) {
     val fonts = LocalAppFonts.current
     Column(
         horizontalAlignment = if (side == DebateSide.LEFT) Alignment.End else Alignment.Start,
@@ -511,7 +552,13 @@ private fun DuelName(persona: Persona, side: DebateSide, isCompact: Boolean) {
 }
 
 @Composable
-private fun DuelPortrait(persona: Persona, ring: Color, glow: Color, width: Dp, height: Dp) {
+private fun DuelPortrait(
+    persona: Persona,
+    ring: Color,
+    glow: Color,
+    width: Dp,
+    height: Dp,
+) {
     val portrait = personaPortrait(persona) ?: return
     Box(
         Modifier
@@ -521,9 +568,8 @@ private fun DuelPortrait(persona: Persona, ring: Color, glow: Color, width: Dp, 
                     Brush.radialGradient(listOf(glow, Color.Transparent), radius = size.maxDimension),
                     radius = size.maxDimension,
                 )
-            }
-            .clip(RoundedCornerShape(18.dp))
-            .border(2.dp, ring, RoundedCornerShape(18.dp))
+            }.clip(RoundedCornerShape(18.dp))
+            .border(2.dp, ring, RoundedCornerShape(18.dp)),
     ) {
         Image(
             painter = painterResource(portrait.resource),
@@ -553,7 +599,14 @@ private fun VsSigil(size: Dp) {
             drawCircle(
                 purpleColor.copy(alpha = 0.6f),
                 radius = this.size.width * 0.36f,
-                style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(30.dp.toPx() * this.size.width / 84.dp.toPx(), 12.dp.toPx()))),
+                style =
+                    Stroke(
+                        1.dp.toPx(),
+                        pathEffect =
+                            PathEffect.dashPathEffect(
+                                floatArrayOf(30.dp.toPx() * this.size.width / 84.dp.toPx(), 12.dp.toPx()),
+                            ),
+                    ),
             )
         }
         Text("vs", color = textPrimaryColor, fontFamily = fonts.serif, fontStyle = FontStyle.Italic, fontSize = (size.value * 0.31f).sp)

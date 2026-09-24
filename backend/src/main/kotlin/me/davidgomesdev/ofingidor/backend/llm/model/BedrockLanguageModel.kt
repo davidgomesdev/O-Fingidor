@@ -16,9 +16,12 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient
 import software.amazon.awssdk.services.bedrockruntime.auth.scheme.BedrockRuntimeAuthSchemeProvider
 
 @ApplicationScoped
-class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
+class BedrockLanguageModel(
+    val config: BedrockConfig,
+) : LanguageModel {
     override fun chatModel(): ChatModel =
-        BedrockChatModel.builder()
+        BedrockChatModel
+            .builder()
             .client(BedrockRuntimeClient.builder().withAuth().build())
             .modelId(config.chatModel().modelId())
             .returnThinking(config.chatModel().thinking())
@@ -26,7 +29,8 @@ class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
             .build()
 
     override fun streamingChatModel(): StreamingChatModel =
-        BedrockStreamingChatModel.builder()
+        BedrockStreamingChatModel
+            .builder()
             .client(BedrockRuntimeAsyncClient.builder().withAuth().build())
             .modelId(config.chatModel().modelId())
             .returnThinking(config.chatModel().thinking())
@@ -49,7 +53,8 @@ class BedrockLanguageModel(val config: BedrockConfig) : LanguageModel {
 
     private fun requestParameters(): BedrockChatRequestParameters =
         config.chatModel().let { config ->
-            BedrockChatRequestParameters.builder()
+            BedrockChatRequestParameters
+                .builder()
                 .maxOutputTokens(config.maxTokens())
                 .apply { if (config.thinking()) enableReasoning(config.thinkingBudgetTokens()) }
                 .build()
