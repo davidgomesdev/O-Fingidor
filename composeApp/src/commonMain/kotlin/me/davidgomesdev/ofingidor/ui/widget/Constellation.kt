@@ -478,14 +478,13 @@ private fun ConstellationNode(
                 painter = painterResource(portrait.resource),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                alignment = Alignment.TopCenter,
                 colorFilter =
                     when {
                         role != null -> null
                         isHovered -> grayscaleFilter(0.95f)
                         else -> grayscaleFilter(0.6f)
                     },
-                modifier = Modifier.fillMaxSize().portraitZoom(),
+                modifier = Modifier.fillMaxSize(),
             )
             if (isCentre) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

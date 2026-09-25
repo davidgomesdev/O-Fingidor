@@ -7,13 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.Dp
@@ -199,22 +196,10 @@ fun PersonaAvatar(
                     mode = contentDescriptionMode,
                 ),
             contentScale = ContentScale.Crop,
-            alignment = Alignment.TopCenter,
             colorFilter = colorFilter,
-            modifier = Modifier.fillMaxSize().portraitZoom(),
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
-
-/**
- * The portraits carry the persona's name printed under the face. Zooming in on the face keeps
- * that text out of small circular crops.
- */
-fun Modifier.portraitZoom(): Modifier =
-    graphicsLayer {
-        scaleX = 1.85f
-        scaleY = 1.85f
-        transformOrigin = TransformOrigin(0.5f, 0.36f)
-    }
 
 fun personaPortrait(persona: Persona): PersonaPortrait? = portraits[persona]
