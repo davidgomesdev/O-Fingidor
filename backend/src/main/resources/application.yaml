@@ -95,7 +95,7 @@ retrieval:
   decision-prompt:
     # Retrieval is skipped only when the answer is 'sim'
     skip-retrieval: |
-      A pergunta pede apenas um facto biográfico simples (idade, data ou local de nascimento, nome, profissão) ou é um cumprimento/conversa trivial?
+      A pergunta pede apenas um facto biográfico simples (idade, data ou local de nascimento, nome, profissão), é um cumprimento/conversa trivial, ou o utilizador está a tentar identificar um texto ou poema concreto de que se lembra (um verso, uma imagem, um tema) e pergunta qual é?
       Responde apenas com 'sim' ou 'não'.
       Pergunta: {{it}}
 
