@@ -22,8 +22,11 @@ class PoemRetrievalTool(
 ) {
     val log: Logger = Logger.getLogger(this::class.java)
 
-    @Tool("Encontra poemas com base no significado fornecido pelo utilizador")
-    fun getPoemByMeaning(
+    @Tool(
+        "Identifica um texto ou poema concreto a partir do que o utilizador se lembra dele " +
+            "(um verso, uma imagem, um tema). Usa-a sempre que o utilizador procurar um texto e perguntar qual é.",
+    )
+    fun identifyText(
         @P(
             "As palavras do próprio utilizador sobre o texto que procura: o verso de que se lembra, " +
                 "as imagens ou o tema que descreveu. Copia as palavras dele tal como as escreveu e remove " +
@@ -49,6 +52,8 @@ class PoemRetrievalTool(
                 )
             }
         val sortedTexts = sortTextsByScore(searchResult).take(config.identification().maxCandidates())
+
+        if (sortedTexts.isEmpty()) return "Nenhum texto encontrado."
 
         val bestMatch = sortedTexts.first().pessoaText
         val text =
