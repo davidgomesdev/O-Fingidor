@@ -12,7 +12,7 @@ import me.davidgomesdev.ofingidor.ui.service.openUrl
 private const val READER_URL = """https?://pessoa\.davidgomes\.blog[^\s'"`()<>\[\]]*"""
 
 /** Either a markdown link `[title](url)` (groups 1 and 2) or a bare URL (group 3). */
-private val readerLinkRegex = Regex("""\[([^\[\]\n]+)]\(($READER_URL)\)|($READER_URL)""")
+private val readerLinkRegex = Regex("""\[([^\[\]\n]+)\]\(($READER_URL)\)|($READER_URL)""")
 private const val TRAILING_PUNCTUATION = ".,;:!?"
 
 private val readerLinkStyles =
